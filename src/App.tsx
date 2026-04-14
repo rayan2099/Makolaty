@@ -490,7 +490,7 @@ const Home = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="inline-block px-4 py-1.5 rounded-full bg-primary/20 text-primary text-xs font-black mb-8 border border-primary/20"
           >
-            🔥 مرحباً بكم في ماكولاتي
+            مرحباً بكم في مأكولاتي
           </motion.div>
           
           <motion.h1 
