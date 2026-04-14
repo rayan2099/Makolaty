@@ -398,7 +398,7 @@ const CartDrawer = ({
                 </div>
                 <button 
                   onClick={onCheckout}
-                  className="w-full py-6 yellow-gradient text-secondary font-black rounded-2xl text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
+                  className="w-full py-6 bg-primary text-secondary font-black rounded-2xl text-2xl shadow-2xl shadow-primary/20 hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
                 >
                   إتمام الطلب <ChevronRight className="w-8 h-8" />
                 </button>
@@ -518,7 +518,7 @@ const CheckoutModal = ({
           <button 
             disabled={!form.name || !form.phone || isSubmitting}
             onClick={() => onSubmit(form)}
-            className="w-full py-5 yellow-gradient text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center gap-3"
+            className="w-full py-5 bg-primary text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 disabled:opacity-50 disabled:grayscale hover:bg-accent transition-all flex items-center justify-center gap-3"
           >
             {isSubmitting ? (
               <>
@@ -943,7 +943,7 @@ const StaffDashboard = () => {
           <p className="text-white/40 mb-8">يرجى تسجيل الدخول للوصول إلى لوحة الطلبات</p>
           <button 
             onClick={handleLogin}
-            className="w-full py-4 yellow-gradient text-secondary font-black rounded-2xl flex items-center justify-center gap-3"
+            className="w-full py-4 bg-primary text-secondary font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-accent transition-all"
           >
             تسجيل الدخول عبر قوقل
           </button>
@@ -1031,7 +1031,7 @@ const StaffDashboard = () => {
                       updateStatus(order.id!, 'confirmed');
                       window.open(generateWhatsAppLink(order), '_blank');
                     }}
-                    className="col-span-2 py-3 yellow-gradient text-secondary font-black rounded-xl flex items-center justify-center gap-2"
+                    className="col-span-2 py-3 bg-primary text-secondary font-black rounded-xl flex items-center justify-center gap-2 hover:bg-accent transition-all"
                   >
                     <ExternalLink className="w-4 h-4" /> تأكيد وإرسال واتساب
                   </button>

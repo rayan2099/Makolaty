@@ -22,7 +22,4 @@
   @apply bg-white/10 backdrop-blur-md border border-white/20;
 }
 
-.yellow-gradient {
-  @apply bg-gradient-to-br from-primary to-accent;
-}
 
