@@ -23,7 +23,8 @@ import {
   CheckCircle2, 
   Clock,
   ExternalLink,
-  LogOut
+  LogOut,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -329,12 +330,14 @@ const CartDrawer = ({
   onClose, 
   items, 
   onUpdateQty, 
+  onRemove,
   onCheckout 
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
   items: CartItem[]; 
   onUpdateQty: (id: string, size: string | undefined, delta: number) => void;
+  onRemove: (id: string, size: string | undefined) => void;
   onCheckout: () => void;
 }) => {
   const total = items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
@@ -374,7 +377,15 @@ const CartDrawer = ({
                       <img src={item.image} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-grow text-right">
-                      <h4 className="font-black text-lg leading-tight mb-1">{item.nameAr}</h4>
+                      <div className="flex justify-between items-start mb-1">
+                        <button 
+                          onClick={() => onRemove(item.id, item.selectedSize)}
+                          className="text-white/20 hover:text-red-500 transition-colors p-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <h4 className="font-black text-lg leading-tight">{item.nameAr}</h4>
+                      </div>
                       {item.selectedSize && <p className="text-xs text-primary font-black mb-3">{item.selectedSize}</p>}
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-4 bg-white/5 rounded-xl p-1.5 border border-white/5">
@@ -730,6 +741,10 @@ const Home = () => {
     }).filter(i => i.quantity > 0));
   };
 
+  const removeFromCart = (id: string, size: string | undefined) => {
+    setCart(prev => prev.filter(i => !(i.id === id && i.selectedSize === size)));
+  };
+
   const handleCheckout = async (formData: any) => {
     setIsSubmitting(true);
     const total = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
@@ -865,6 +880,7 @@ const Home = () => {
         onClose={() => setIsCartOpen(false)} 
         items={cart} 
         onUpdateQty={updateQty}
+        onRemove={removeFromCart}
         onCheckout={() => setIsCheckoutOpen(true)}
       />
 
