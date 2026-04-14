@@ -823,7 +823,7 @@ const Home = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl sm:text-7xl md:text-9xl font-black mb-6 md:mb-10 leading-tight tracking-normal px-2"
           >
-            ذوق أصيل،<br />
+            ذوق أصيل<br />
             <span className="text-primary">تجربة لا تُنسى</span>
           </motion.h1>
 
