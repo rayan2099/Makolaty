@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Component } from 'react';
 import { 
   BrowserRouter as Router, 
   Routes, 
@@ -34,13 +34,95 @@ import {
   orderBy, 
   updateDoc, 
   doc, 
-  serverTimestamp 
+  serverTimestamp,
+  getDocFromServer
 } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import { db, auth } from './firebase';
 import { cn } from './lib/utils';
 import { MenuItem, CartItem, Order, CATEGORIES, STAFF_WHATSAPP } from './types';
 import { INITIAL_MENU } from './data';
+
+// --- Error Handling ---
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId: string | undefined;
+    email: string | null | undefined;
+    emailVerified: boolean | undefined;
+    isAnonymous: boolean | undefined;
+    tenantId: string | null | undefined;
+    providerInfo: {
+      providerId: string;
+      displayName: string | null;
+      email: string | null;
+      photoUrl: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData.map(provider => ({
+        providerId: provider.providerId,
+        displayName: provider.displayName,
+        email: provider.email,
+        photoUrl: provider.photoURL
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  return errInfo;
+}
+
+function sanitizeForFirestore(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(v => sanitizeForFirestore(v));
+  } else if (obj !== null && typeof obj === 'object' && !(obj instanceof Date)) {
+    // Check if it's a plain object
+    const proto = Object.getPrototypeOf(obj);
+    if (proto === null || proto === Object.prototype) {
+      return Object.fromEntries(
+        Object.entries(obj)
+          .filter(([_, v]) => v !== undefined)
+          .map(([k, v]) => [k, sanitizeForFirestore(v)])
+      );
+    }
+  }
+  return obj;
+}
+
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if(error instanceof Error && error.message.includes('the client is offline')) {
+      console.error("Please check your Firebase configuration. ");
+    }
+  }
+}
+testConnection();
 
 // --- Helpers ---
 const formatPhone = (phone: string) => {
@@ -58,6 +140,60 @@ const generateWhatsAppLink = (order: Order) => {
 };
 
 // --- Components ---
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  override render() {
+    if (this.state.hasError) {
+      const error = this.state.error;
+      let errorMessage = 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
+      try {
+        const parsed = JSON.parse(error?.message || '');
+        if (parsed.error) errorMessage = `خطأ في قاعدة البيانات: ${parsed.error}`;
+      } catch (e) {
+        // Not a JSON error
+      }
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-secondary p-4 text-center">
+          <div className="glass p-8 rounded-3xl max-w-md border border-white/10">
+            <X className="w-16 h-16 text-red-500 mx-auto mb-6" />
+            <h2 className="text-2xl font-black text-white mb-4">عذراً، حدث خطأ ما</h2>
+            <p className="text-white/60 mb-8 font-bold">{errorMessage}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full py-4 bg-primary text-secondary font-black rounded-2xl shadow-xl shadow-primary/20"
+            >
+              إعادة تحميل الصفحة
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () => void }) => (
   <nav className="fixed top-0 left-0 right-0 z-50 bg-secondary/80 backdrop-blur-lg border-b border-white/5 px-4 py-3 md:py-4">
@@ -260,11 +396,13 @@ const CartDrawer = ({
 const CheckoutModal = ({ 
   isOpen, 
   onClose, 
-  onSubmit 
+  onSubmit,
+  isSubmitting
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  onSubmit: (data: any) => void 
+  onSubmit: (data: any) => void;
+  isSubmitting: boolean;
 }) => {
   const [form, setForm] = useState({
     name: '',
@@ -286,11 +424,12 @@ const CheckoutModal = ({
       <motion.div 
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="relative w-full max-w-lg glass rounded-[3rem] p-10 overflow-hidden border border-white/10 shadow-2xl"
+        className="relative w-full max-w-lg glass rounded-[3rem] p-10 flex flex-col max-h-[90vh] border border-white/10 shadow-2xl"
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl -z-10" />
-        <h2 className="text-4xl font-black text-primary mb-8 text-right">بيانات العميل</h2>
-        <div className="space-y-8 text-right">
+        <h2 className="text-4xl font-black text-primary mb-8 text-right shrink-0">بيانات العميل</h2>
+        
+        <div className="space-y-8 text-right overflow-y-auto pr-2 no-scrollbar">
           <div className="space-y-3">
             <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
               الاسم الكامل <User className="w-3 h-3" />
@@ -355,13 +494,21 @@ const CheckoutModal = ({
               />
             </div>
           )}
+        </div>
 
+        <div className="pt-8 shrink-0">
           <button 
-            disabled={!form.name || !form.phone}
+            disabled={!form.name || !form.phone || isSubmitting}
             onClick={() => onSubmit(form)}
-            className="w-full py-5 yellow-gradient text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 disabled:opacity-50 disabled:grayscale transition-all mt-4"
+            className="w-full py-5 yellow-gradient text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center gap-3"
           >
-            تأكيد وإرسال الطلب
+            {isSubmitting ? (
+              <>
+                <Clock className="w-6 h-6 animate-spin" /> جاري الإرسال...
+              </>
+            ) : (
+              'تأكيد وإرسال الطلب'
+            )}
           </button>
         </div>
       </motion.div>
@@ -407,11 +554,64 @@ const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: stri
   );
 };
 
+const SuccessModal = ({ 
+  isOpen, 
+  onClose, 
+  onWhatsApp 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onWhatsApp: () => void 
+}) => (
+  <AnimatePresence>
+    {isOpen && (
+      <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-black/90 backdrop-blur-xl"
+          onClick={onClose}
+        />
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          className="relative w-full max-w-md glass rounded-[3rem] p-10 text-center border border-white/10 shadow-2xl"
+        >
+          <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-8">
+            <CheckCircle2 className="w-12 h-12 text-primary" />
+          </div>
+          <h2 className="text-3xl font-black text-white mb-4">تم استلام طلبك!</h2>
+          <p className="text-white/60 mb-10 font-bold leading-relaxed">
+            شكراً لطلبك من مأكولاتي. تم تسجيل طلبك في النظام، يرجى الضغط على الزر أدناه لتأكيد الطلب عبر الواتساب.
+          </p>
+          <button 
+            onClick={onWhatsApp}
+            className="w-full py-5 bg-[#25D366] text-white font-black rounded-2xl text-xl shadow-2xl shadow-[#25D366]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+          >
+            تأكيد عبر واتساب <ExternalLink className="w-6 h-6" />
+          </button>
+          <button 
+            onClick={onClose}
+            className="mt-6 text-white/40 font-bold hover:text-white transition-colors"
+          >
+            إغلاق
+          </button>
+        </motion.div>
+      </div>
+    )}
+  </AnimatePresence>
+);
+
 const Home = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
   const filteredMenu = INITIAL_MENU.filter(item => 
     activeCategory === 'all' || item.category === activeCategory
@@ -445,32 +645,53 @@ const Home = () => {
   };
 
   const handleCheckout = async (formData: any) => {
+    setIsSubmitting(true);
     const total = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
     const orderData: Order = {
       customerName: formData.name,
       customerPhone: formData.phone,
       orderType: formData.type,
-      googleMapsLink: formData.maps,
+      googleMapsLink: formData.maps || '',
       items: cart,
       total,
       status: 'pending',
       createdAt: serverTimestamp()
     };
 
+    const path = 'orders';
+    const sanitizedOrder = sanitizeForFirestore(orderData);
+    console.log('Sending order data:', sanitizedOrder);
     try {
-      await addDoc(collection(db, 'orders'), orderData);
+      await addDoc(collection(db, path), sanitizedOrder);
+      setLastOrder(orderData);
       setCart([]);
       setIsCheckoutOpen(false);
       setIsCartOpen(false);
-      alert('تم إرسال طلبك بنجاح! سنتواصل معك قريباً.');
+      setIsSuccessOpen(true);
     } catch (err) {
-      console.error(err);
-      alert('حدث خطأ أثناء إرسال الطلب.');
+      const errInfo = handleFirestoreError(err, OperationType.CREATE, path);
+      alert(`حدث خطأ أثناء إرسال الطلب: ${errInfo.error}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleWhatsAppConfirm = () => {
+    if (lastOrder) {
+      const link = generateWhatsAppLink(lastOrder);
+      window.open(link, '_blank');
+      setIsSuccessOpen(false);
     }
   };
 
   return (
     <div className="min-h-screen pb-20">
+      <SuccessModal 
+        isOpen={isSuccessOpen} 
+        onClose={() => setIsSuccessOpen(false)} 
+        onWhatsApp={handleWhatsAppConfirm}
+      />
+
       <Navbar cartCount={cart.reduce((s, i) => s + i.quantity, 0)} onOpenCart={() => setIsCartOpen(true)} />
       
       {/* Hero */}
@@ -562,6 +783,7 @@ const Home = () => {
         isOpen={isCheckoutOpen} 
         onClose={() => setIsCheckoutOpen(false)} 
         onSubmit={handleCheckout} 
+        isSubmitting={isSubmitting}
       />
 
       {/* Floating Chat */}
@@ -598,9 +820,12 @@ const StaffDashboard = () => {
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+    const path = 'orders';
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Order));
       setOrders(docs);
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, path);
     });
     return () => unsub();
   }, [user]);
@@ -610,7 +835,12 @@ const StaffDashboard = () => {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await updateDoc(doc(db, 'orders', id), { status });
+    const path = `orders/${id}`;
+    try {
+      await updateDoc(doc(db, 'orders', id), { status });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, path);
+    }
   };
 
   if (!user) {
@@ -737,10 +967,12 @@ const StaffDashboard = () => {
 export default function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/staff" element={<StaffDashboard />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/staff" element={<StaffDashboard />} />
+        </Routes>
+      </ErrorBoundary>
     </Router>
   );
 }
