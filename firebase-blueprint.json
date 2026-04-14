@@ -1,0 +1,45 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "A customer order for the restaurant",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string", "description": "Customer's full name" },
+        "customerPhone": { "type": "string", "description": "Customer's WhatsApp number" },
+        "orderType": { "type": "string", "enum": ["pickup", "delivery"], "description": "Pickup or Delivery" },
+        "googleMapsLink": { "type": "string", "description": "Link to delivery location" },
+        "items": { "type": "array", "description": "List of ordered items" },
+        "total": { "type": "number", "description": "Total price in SR" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"], "description": "Order status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Order creation timestamp" }
+      },
+      "required": ["customerName", "customerPhone", "orderType", "items", "total", "status", "createdAt"]
+    },
+    "MenuItem": {
+      "title": "Menu Item",
+      "description": "A food item in the menu",
+      "type": "object",
+      "properties": {
+        "nameAr": { "type": "string" },
+        "nameEn": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "calories": { "type": "number" },
+        "image": { "type": "string" },
+        "sizes": { "type": "array" }
+      },
+      "required": ["nameAr", "nameEn", "category", "price"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "/menu": {
+      "schema": "MenuItem",
+      "description": "Restaurant menu items"
+    }
+  }
+}

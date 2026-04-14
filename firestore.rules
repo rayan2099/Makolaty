@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.email == "helpooclassmate@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isValidOrder(data) {
+      return data.customerName is string && data.customerName.size() > 0 && data.customerName.size() < 100 &&
+             data.customerPhone is string && data.customerPhone.size() > 0 &&
+             data.orderType in ['pickup', 'delivery'] &&
+             data.total is number && data.total >= 0 &&
+             data.status in ['pending', 'confirmed', 'completed', 'cancelled'];
+    }
+
+    // Orders: Anyone can create (to place an order), but only admins can read/update
+    match /orders/{orderId} {
+      allow create: if isValidOrder(request.resource.data);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Menu: Anyone can read, only admins can write
+    match /menu/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
