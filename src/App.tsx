@@ -133,10 +133,28 @@ const formatPhone = (phone: string) => {
 };
 
 const generateWhatsAppLink = (order: Order) => {
-  const phone = formatPhone(order.customerPhone);
-  const itemsList = order.items.map(i => `${i.nameAr} x${i.quantity}`).join(', ');
-  const message = `أهلاً ${order.customerName}، نؤكد استلام طلبك من ماكولاتي: ${itemsList}. المجموع: ${order.total} ريال. هل تود التأكيد؟`;
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  const staffPhone = formatPhone(STAFF_WHATSAPP);
+  const itemsList = order.items.map(i => {
+    const sizeStr = i.selectedSize ? ` (${i.selectedSize})` : '';
+    return `${i.quantity} x ${i.nameAr}${sizeStr}`;
+  }).join('\n');
+  
+  const typeStr = order.orderType === 'delivery' ? 'توصيل' : 'استلام';
+  
+  const message = `طلب جديد من موقع ماكولاتي 🍔
+👤 العميل: ${order.customerName}
+📍 النوع: ${typeStr}
+📞 الجوال: ${order.customerPhone}
+
+🛒 تفاصيل الطلب:
+
+${itemsList}
+
+💰 المجموع الإجمالي: ${order.total} ريال
+
+✅ لتاكيد الطلب، قم بالارسال الان..`;
+
+  return `https://wa.me/${staffPhone}?text=${encodeURIComponent(message)}`;
 };
 
 // --- Components ---
@@ -380,9 +398,9 @@ const CartDrawer = ({
                 </div>
                 <button 
                   onClick={onCheckout}
-                  className="w-full py-5 yellow-gradient text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  className="w-full py-6 yellow-gradient text-secondary font-black rounded-2xl text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
                 >
-                  إتمام الطلب
+                  إتمام الطلب <ChevronRight className="w-8 h-8" />
                 </button>
               </div>
             )}
@@ -557,47 +575,114 @@ const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: stri
 const SuccessModal = ({ 
   isOpen, 
   onClose, 
-  onWhatsApp 
+  onWhatsApp,
+  order,
+  isWhatsAppClicked
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  onWhatsApp: () => void 
+  onWhatsApp: () => void;
+  order: Order | null;
+  isWhatsAppClicked: boolean;
 }) => (
   <AnimatePresence>
-    {isOpen && (
+    {isOpen && order && (
       <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/90 backdrop-blur-xl"
+          className="absolute inset-0 bg-black/95 backdrop-blur-2xl"
           onClick={onClose}
         />
         <motion.div 
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="relative w-full max-w-md glass rounded-[3rem] p-10 text-center border border-white/10 shadow-2xl"
+          className="relative w-full max-w-lg glass rounded-[3rem] p-8 md:p-10 border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar"
         >
-          <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-8">
-            <CheckCircle2 className="w-12 h-12 text-primary" />
-          </div>
-          <h2 className="text-3xl font-black text-white mb-4">تم استلام طلبك!</h2>
-          <p className="text-white/60 mb-10 font-bold leading-relaxed">
-            شكراً لطلبك من مأكولاتي. تم تسجيل طلبك في النظام، يرجى الضغط على الزر أدناه لتأكيد الطلب عبر الواتساب.
-          </p>
-          <button 
-            onClick={onWhatsApp}
-            className="w-full py-5 bg-[#25D366] text-white font-black rounded-2xl text-xl shadow-2xl shadow-[#25D366]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-          >
-            تأكيد عبر واتساب <ExternalLink className="w-6 h-6" />
-          </button>
-          <button 
-            onClick={onClose}
-            className="mt-6 text-white/40 font-bold hover:text-white transition-colors"
-          >
-            إغلاق
-          </button>
+          {isWhatsAppClicked ? (
+            <div className="text-center py-10">
+              <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-8">
+                <CheckCircle2 className="w-12 h-12 text-primary" />
+              </div>
+              <h2 className="text-3xl font-black text-white mb-4">شكراً لك!</h2>
+              <p className="text-white/60 font-bold leading-relaxed text-lg">
+                نحن بانتظار رسالتك الآن في الواتساب لتجهيز طلبك.
+              </p>
+              <button 
+                onClick={onClose}
+                className="mt-10 w-full py-4 bg-white/5 text-white font-black rounded-2xl hover:bg-white/10 transition-all"
+              >
+                إغلاق
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <ShoppingBag className="w-10 h-10 text-primary" />
+                </div>
+                <h2 className="text-3xl font-black text-white mb-2">تم تسجيل طلبك!</h2>
+                <p className="text-primary font-bold">خطوة واحدة وتستمتع بوجبتك!</p>
+              </div>
+
+              {/* Order Summary Card */}
+              <div className="bg-white/5 rounded-3xl p-6 border border-white/10 mb-8 text-right">
+                <h3 className="text-white/40 text-xs font-black uppercase tracking-widest mb-4">ملخص الطلب</h3>
+                <div className="space-y-4 mb-6">
+                  {order.items.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center">
+                      <span className="text-primary font-black">{item.finalPrice * item.quantity} SR</span>
+                      <div className="text-right">
+                        <p className="text-white font-bold">{item.nameAr}</p>
+                        <p className="text-white/40 text-xs">{item.quantity} x {item.finalPrice} SR {item.selectedSize && `(${item.selectedSize})`}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-4 border-t border-white/10 flex justify-between items-center">
+                  <span className="text-2xl font-black text-primary">{order.total} SR</span>
+                  <span className="text-white font-black">الإجمالي النهائي</span>
+                </div>
+              </div>
+
+              {/* Customer Data */}
+              <div className="grid grid-cols-2 gap-4 mb-8 text-right">
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <p className="text-white/40 text-[10px] font-black mb-1">نوع الطلب</p>
+                  <p className="text-white font-bold">{order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}</p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <p className="text-white/40 text-[10px] font-black mb-1">اسم العميل</p>
+                  <p className="text-white font-bold truncate">{order.customerName}</p>
+                </div>
+              </div>
+
+              <p className="text-white/60 text-center mb-8 font-bold leading-relaxed">
+                يرجى الضغط على الزر أدناه لإرسال طلبك عبر الواتساب وتأكيده مع فريقنا.
+              </p>
+
+              <div className="space-y-4">
+                <button 
+                  onClick={onWhatsApp}
+                  className="w-full py-6 bg-[#25D366] text-white font-black rounded-2xl text-xl shadow-2xl shadow-[#25D366]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                >
+                  تأكيد الطلب عبر واتساب <ExternalLink className="w-6 h-6" />
+                </button>
+                <p className="text-[10px] text-white/30 text-center font-bold">
+                  يجب الضغط على إرسال في تطبيق الواتساب بعد انتقالك إليه لضمان وصول الطلب
+                </p>
+              </div>
+
+              <button 
+                onClick={onClose}
+                className="mt-8 w-full text-white/20 font-bold hover:text-white transition-colors text-sm"
+              >
+                إلغاء
+              </button>
+            </>
+          )}
         </motion.div>
       </div>
     )}
@@ -611,6 +696,7 @@ const Home = () => {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  const [isWhatsAppClicked, setIsWhatsAppClicked] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
   const filteredMenu = INITIAL_MENU.filter(item => 
@@ -667,6 +753,7 @@ const Home = () => {
       setCart([]);
       setIsCheckoutOpen(false);
       setIsCartOpen(false);
+      setIsWhatsAppClicked(false);
       setIsSuccessOpen(true);
     } catch (err) {
       const errInfo = handleFirestoreError(err, OperationType.CREATE, path);
@@ -680,7 +767,7 @@ const Home = () => {
     if (lastOrder) {
       const link = generateWhatsAppLink(lastOrder);
       window.open(link, '_blank');
-      setIsSuccessOpen(false);
+      setIsWhatsAppClicked(true);
     }
   };
 
@@ -690,6 +777,8 @@ const Home = () => {
         isOpen={isSuccessOpen} 
         onClose={() => setIsSuccessOpen(false)} 
         onWhatsApp={handleWhatsAppConfirm}
+        order={lastOrder}
+        isWhatsAppClicked={isWhatsAppClicked}
       />
 
       <Navbar cartCount={cart.reduce((s, i) => s + i.quantity, 0)} onOpenCart={() => setIsCartOpen(true)} />
