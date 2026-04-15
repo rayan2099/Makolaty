@@ -342,12 +342,21 @@ const CartDrawer = ({
   onAdd: (item: MenuItem) => void;
   onCheckout: () => void;
 }) => {
+  const [viewingCategory, setViewingCategory] = useState<string | null>(null);
   const total = items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
   
-  const suggestedAddons = INITIAL_MENU.filter(item => 
-    (item.category === 'sauces' || item.category === 'drinks') && 
-    !items.some(cartItem => cartItem.id === item.id)
-  ).slice(0, 4);
+  const suggestedDrinks = INITIAL_MENU.filter(item => 
+    item.category === 'drinks' && !items.some(cartItem => cartItem.id === item.id)
+  );
+  
+  const suggestedSauces = INITIAL_MENU.filter(item => 
+    item.category === 'sauces' && !items.some(cartItem => cartItem.id === item.id)
+  );
+
+  const handleAddAndBack = (item: MenuItem) => {
+    onAdd(item);
+    setViewingCategory(null);
+  };
 
   return (
     <AnimatePresence>
@@ -367,7 +376,19 @@ const CartDrawer = ({
             className="fixed top-0 left-0 bottom-0 w-full max-w-md bg-secondary z-[70] shadow-2xl flex flex-col border-r border-white/10"
           >
             <div className="p-8 border-b border-white/10 flex justify-between items-center">
-              <h2 className="text-3xl font-black text-primary">سلة الطلبات</h2>
+              <div className="flex items-center gap-4">
+                {viewingCategory && (
+                  <button 
+                    onClick={() => setViewingCategory(null)}
+                    className="p-2 hover:bg-white/5 rounded-full text-primary transition-colors"
+                  >
+                    <ChevronRight className="w-6 h-6 rotate-180" />
+                  </button>
+                )}
+                <h2 className="text-3xl font-black text-primary">
+                  {viewingCategory === 'drinks' ? 'المشروبات' : viewingCategory === 'sauces' ? 'الصوصات' : 'سلة الطلبات'}
+                </h2>
+              </div>
               <button onClick={onClose} className="flex items-center gap-2 px-4 py-2 hover:bg-white/5 rounded-xl transition-colors text-white/60 font-bold">
                 <span>إغلاق</span>
                 <X className="w-5 h-5" />
@@ -375,7 +396,31 @@ const CartDrawer = ({
             </div>
 
             <div className="flex-grow overflow-y-auto p-8 space-y-8">
-              {items.length === 0 ? (
+              {viewingCategory ? (
+                <div className="grid grid-cols-1 gap-4">
+                  {(viewingCategory === 'drinks' ? suggestedDrinks : suggestedSauces).map(addon => (
+                    <button
+                      key={addon.id}
+                      onClick={() => handleAddAndBack(addon)}
+                      className="bg-white/5 border border-white/5 p-4 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all text-right group"
+                    >
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 shadow-lg">
+                        <img src={addon.image} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-grow">
+                        <p className="text-white font-black text-lg">{addon.nameAr}</p>
+                        <p className="text-primary font-black">{addon.price} SR</p>
+                      </div>
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-secondary transition-all">
+                        <Plus className="w-5 h-5" />
+                      </div>
+                    </button>
+                  ))}
+                  { (viewingCategory === 'drinks' ? suggestedDrinks : suggestedSauces).length === 0 && (
+                    <p className="text-white/20 text-center py-10 font-bold">تم إضافة جميع الأصناف المتوفرة</p>
+                  )}
+                </div>
+              ) : items.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-white/10">
                   <ShoppingBag className="w-24 h-24 mb-6" />
                   <p className="font-black text-xl mb-8">السلة فارغة حالياً</p>
@@ -425,29 +470,32 @@ const CartDrawer = ({
                     <Plus className="w-4 h-4" /> إضافة المزيد من الأصناف
                   </button>
 
-                  {suggestedAddons.length > 0 && (
-                    <div className="mt-12">
-                      <h3 className="text-white/40 text-xs font-black uppercase tracking-widest mb-6 text-right">إضافات مقترحة</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        {suggestedAddons.map(addon => (
-                          <button
-                            key={addon.id}
-                            onClick={() => onAdd(addon)}
-                            className="bg-white/5 border border-white/5 p-3 rounded-2xl flex items-center gap-3 hover:bg-white/10 transition-all text-right"
-                          >
-                            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
-                              <img src={addon.image} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex-grow overflow-hidden">
-                              <p className="text-white text-[10px] font-bold truncate">{addon.nameAr}</p>
-                              <p className="text-primary text-[10px] font-black">{addon.price} SR</p>
-                            </div>
-                            <Plus className="w-4 h-4 text-primary shrink-0" />
-                          </button>
-                        ))}
-                      </div>
+                  <div className="mt-12">
+                    <h3 className="text-white/40 text-xs font-black uppercase tracking-widest mb-6 text-right">إضافات مقترحة</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        onClick={() => setViewingCategory('drinks')}
+                        className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col items-center gap-3 hover:bg-white/10 transition-all group relative overflow-hidden"
+                      >
+                        <div className="absolute top-3 right-3 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-secondary">
+                          <Plus className="w-4 h-4" />
+                        </div>
+                        <span className="text-3xl">🥤</span>
+                        <span className="text-white font-black">مشروبات</span>
+                      </button>
+
+                      <button
+                        onClick={() => setViewingCategory('sauces')}
+                        className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col items-center gap-3 hover:bg-white/10 transition-all group relative overflow-hidden"
+                      >
+                        <div className="absolute top-3 right-3 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-secondary">
+                          <Plus className="w-4 h-4" />
+                        </div>
+                        <span className="text-3xl">🍯</span>
+                        <span className="text-white font-black">صوصات</span>
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </>
               )}
             </div>

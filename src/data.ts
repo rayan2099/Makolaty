@@ -464,38 +464,65 @@ export const INITIAL_MENU: MenuItem[] = [
   // --- Sauces ---
   {
     id: 'sc-1',
-    nameAr: 'صوص ثوم',
-    nameEn: 'Garlic Sauce',
+    nameAr: 'صوص مشكل',
+    nameEn: 'Mixed Sauce',
     category: 'sauces',
     price: 2,
-    calories: 100,
+    calories: 144,
     image: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=800&q=80'
   },
   {
     id: 'sc-2',
-    nameAr: 'صوص طحينة',
-    nameEn: 'Tahini Sauce',
+    nameAr: 'صوص ثوم حار',
+    nameEn: 'Hot Garlic Sauce',
     category: 'sauces',
-    price: 2,
-    calories: 90,
-    image: 'https://images.unsplash.com/photo-1541529086526-db283c563270?auto=format&fit=crop&w=800&q=80'
+    price: 1,
+    calories: 150,
+    image: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=800&q=80'
   },
   {
     id: 'sc-3',
-    nameAr: 'صوص حراق',
-    nameEn: 'Spicy Sauce',
+    nameAr: 'ثوم',
+    nameEn: 'Garlic',
     category: 'sauces',
-    price: 2,
-    calories: 50,
-    image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=800&q=80'
+    price: 1,
+    calories: 140,
+    image: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=800&q=80'
   },
   {
     id: 'sc-4',
-    nameAr: 'صوص رانش',
-    nameEn: 'Ranch Sauce',
+    nameAr: 'صوص مأكولاتي',
+    nameEn: 'Food Sauce',
     category: 'sauces',
-    price: 3,
-    calories: 120,
+    price: 1,
+    calories: 140,
+    image: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'sc-5',
+    nameAr: 'صوص حار',
+    nameEn: 'Hot Sauce',
+    category: 'sauces',
+    price: 2,
+    calories: 145,
+    image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'sc-6',
+    nameAr: 'صوص مدخن',
+    nameEn: 'Smoker Sauce',
+    category: 'sauces',
+    price: 2,
+    calories: 153,
+    image: 'https://images.unsplash.com/photo-1541529086526-db283c563270?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'sc-7',
+    nameAr: 'صوص جبن',
+    nameEn: 'Cheese Sauce',
+    category: 'sauces',
+    price: 2,
+    calories: 160,
     image: 'https://images.unsplash.com/photo-1639129937330-fb3fb44f00d6?auto=format&fit=crop&w=800&q=80'
   }
 ];
