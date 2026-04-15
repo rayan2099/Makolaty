@@ -361,43 +361,63 @@ const CartDrawer = ({
           >
             <div className="p-8 border-b border-white/10 flex justify-between items-center">
               <h2 className="text-3xl font-black text-primary">سلة الطلبات</h2>
-              <button onClick={onClose} className="p-3 hover:bg-white/5 rounded-full transition-colors"><X /></button>
+              <button onClick={onClose} className="flex items-center gap-2 px-4 py-2 hover:bg-white/5 rounded-xl transition-colors text-white/60 font-bold">
+                <span>إغلاق</span>
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             <div className="flex-grow overflow-y-auto p-8 space-y-8">
               {items.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-white/10">
                   <ShoppingBag className="w-24 h-24 mb-6" />
-                  <p className="font-black text-xl">السلة فارغة حالياً</p>
+                  <p className="font-black text-xl mb-8">السلة فارغة حالياً</p>
+                  <button 
+                    onClick={onClose}
+                    className="px-8 py-4 bg-primary text-secondary font-black rounded-2xl hover:bg-accent transition-all flex items-center gap-2"
+                  >
+                    <Plus className="w-5 h-5" /> تصفح القائمة
+                  </button>
                 </div>
               ) : (
-                items.map((item, idx) => (
-                  <div key={`${item.id}-${item.selectedSize}-${idx}`} className="flex gap-6">
-                    <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 shadow-xl">
-                      <img src={item.image} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-grow text-right">
-                      <div className="flex justify-between items-start mb-1">
-                        <button 
-                          onClick={() => onRemove(item.id, item.selectedSize)}
-                          className="text-white/20 hover:text-red-500 transition-colors p-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        <h4 className="font-black text-lg leading-tight">{item.nameAr}</h4>
-                      </div>
-                      {item.selectedSize && <p className="text-xs text-primary font-black mb-3">{item.selectedSize}</p>}
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center gap-4 bg-white/5 rounded-xl p-1.5 border border-white/5">
-                          <button onClick={() => onUpdateQty(item.id, item.selectedSize, -1)} className="p-1 hover:text-primary transition-colors"><Minus className="w-4 h-4" /></button>
-                          <span className="font-black text-sm w-4 text-center">{item.quantity}</span>
-                          <button onClick={() => onUpdateQty(item.id, item.selectedSize, 1)} className="p-1 hover:text-primary transition-colors"><Plus className="w-4 h-4" /></button>
+                <>
+                  <div className="space-y-8">
+                    {items.map((item, idx) => (
+                      <div key={`${item.id}-${item.selectedSize}-${idx}`} className="flex gap-6">
+                        <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 shadow-xl">
+                          <img src={item.image} className="w-full h-full object-cover" />
                         </div>
-                        <span className="font-black text-xl text-primary">{item.finalPrice * item.quantity} SR</span>
+                        <div className="flex-grow text-right">
+                          <div className="flex justify-between items-start mb-1">
+                            <button 
+                              onClick={() => onRemove(item.id, item.selectedSize)}
+                              className="text-white/20 hover:text-red-500 transition-colors p-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <h4 className="font-black text-lg leading-tight">{item.nameAr}</h4>
+                          </div>
+                          {item.selectedSize && <p className="text-xs text-primary font-black mb-3">{item.selectedSize}</p>}
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-4 bg-white/5 rounded-xl p-1.5 border border-white/5">
+                              <button onClick={() => onUpdateQty(item.id, item.selectedSize, -1)} className="p-1 hover:text-primary transition-colors"><Minus className="w-4 h-4" /></button>
+                              <span className="font-black text-sm w-4 text-center">{item.quantity}</span>
+                              <button onClick={() => onUpdateQty(item.id, item.selectedSize, 1)} className="p-1 hover:text-primary transition-colors"><Plus className="w-4 h-4" /></button>
+                            </div>
+                            <span className="font-black text-xl text-primary">{item.finalPrice * item.quantity} SR</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))
+                  
+                  <button 
+                    onClick={onClose}
+                    className="w-full py-4 border border-dashed border-white/10 text-white/60 font-bold rounded-2xl hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2 mt-4"
+                  >
+                    <Plus className="w-4 h-4" /> إضافة المزيد من الأصناف
+                  </button>
+                </>
               )}
             </div>
 
