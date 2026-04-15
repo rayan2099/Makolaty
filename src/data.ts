@@ -423,5 +423,79 @@ export const INITIAL_MENU: MenuItem[] = [
     price: 7,
     calories: 210,
     image: 'https://images.unsplash.com/photo-1577906030551-59758a51244f?auto=format&fit=crop&w=800&q=80'
+  },
+  // --- Drinks ---
+  {
+    id: 'dr-1',
+    nameAr: 'بيبسي',
+    nameEn: 'Pepsi',
+    category: 'drinks',
+    price: 3,
+    calories: 150,
+    image: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'dr-2',
+    nameAr: 'سفن أب',
+    nameEn: '7Up',
+    category: 'drinks',
+    price: 3,
+    calories: 140,
+    image: 'https://images.unsplash.com/photo-1622708782464-0106786579c8?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'dr-3',
+    nameAr: 'ماء',
+    nameEn: 'Water',
+    category: 'drinks',
+    price: 1,
+    calories: 0,
+    image: 'https://images.unsplash.com/photo-1548964856-ac521ad29d83?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'dr-4',
+    nameAr: 'عصير برتقال طازج',
+    nameEn: 'Fresh Orange Juice',
+    category: 'drinks',
+    price: 10,
+    calories: 120,
+    image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80'
+  },
+  // --- Sauces ---
+  {
+    id: 'sc-1',
+    nameAr: 'صوص ثوم',
+    nameEn: 'Garlic Sauce',
+    category: 'sauces',
+    price: 2,
+    calories: 100,
+    image: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'sc-2',
+    nameAr: 'صوص طحينة',
+    nameEn: 'Tahini Sauce',
+    category: 'sauces',
+    price: 2,
+    calories: 90,
+    image: 'https://images.unsplash.com/photo-1541529086526-db283c563270?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'sc-3',
+    nameAr: 'صوص حراق',
+    nameEn: 'Spicy Sauce',
+    category: 'sauces',
+    price: 2,
+    calories: 50,
+    image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'sc-4',
+    nameAr: 'صوص رانش',
+    nameEn: 'Ranch Sauce',
+    category: 'sauces',
+    price: 3,
+    calories: 120,
+    image: 'https://images.unsplash.com/photo-1639129937330-fb3fb44f00d6?auto=format&fit=crop&w=800&q=80'
   }
 ];

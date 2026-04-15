@@ -331,6 +331,7 @@ const CartDrawer = ({
   items, 
   onUpdateQty, 
   onRemove,
+  onAdd,
   onCheckout 
 }: { 
   isOpen: boolean; 
@@ -338,9 +339,15 @@ const CartDrawer = ({
   items: CartItem[]; 
   onUpdateQty: (id: string, size: string | undefined, delta: number) => void;
   onRemove: (id: string, size: string | undefined) => void;
+  onAdd: (item: MenuItem) => void;
   onCheckout: () => void;
 }) => {
   const total = items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
+  
+  const suggestedAddons = INITIAL_MENU.filter(item => 
+    (item.category === 'sauces' || item.category === 'drinks') && 
+    !items.some(cartItem => cartItem.id === item.id)
+  ).slice(0, 4);
 
   return (
     <AnimatePresence>
@@ -417,6 +424,30 @@ const CartDrawer = ({
                   >
                     <Plus className="w-4 h-4" /> إضافة المزيد من الأصناف
                   </button>
+
+                  {suggestedAddons.length > 0 && (
+                    <div className="mt-12">
+                      <h3 className="text-white/40 text-xs font-black uppercase tracking-widest mb-6 text-right">إضافات مقترحة</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {suggestedAddons.map(addon => (
+                          <button
+                            key={addon.id}
+                            onClick={() => onAdd(addon)}
+                            className="bg-white/5 border border-white/5 p-3 rounded-2xl flex items-center gap-3 hover:bg-white/10 transition-all text-right"
+                          >
+                            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
+                              <img src={addon.image} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-grow overflow-hidden">
+                              <p className="text-white text-[10px] font-bold truncate">{addon.nameAr}</p>
+                              <p className="text-primary text-[10px] font-black">{addon.price} SR</p>
+                            </div>
+                            <Plus className="w-4 h-4 text-primary shrink-0" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -574,6 +605,8 @@ const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: stri
     pastries: '🥟',
     meals: '🍱',
     appetizers: '🥗',
+    drinks: '🥤',
+    sauces: '🍯',
     all: '🍽️'
   };
 
@@ -853,7 +886,7 @@ const Home = () => {
             transition={{ delay: 0.2 }}
             className="text-base sm:text-lg md:text-xl font-bold text-white/60 mb-10 md:mb-16 max-w-3xl mx-auto tracking-wide leading-relaxed px-4 text-center"
           >
-            شاورما | بيتزا | باستا | برجر | فطاير <br className="md:hidden" /> كلها بنكهة ماكولاتي المميزة
+            شاورما | بيتزا | باستا | برجر | فطاير | مشروبات | صوصات <br className="md:hidden" /> كلها بنكهة ماكولاتي المميزة
           </motion.p>
 
           <div className="flex flex-col md:flex-row gap-4 justify-center items-stretch md:items-center max-w-[320px] sm:max-w-md md:max-w-none mx-auto px-4">
@@ -901,6 +934,7 @@ const Home = () => {
         items={cart} 
         onUpdateQty={updateQty}
         onRemove={removeFromCart}
+        onAdd={addToCart}
         onCheckout={() => setIsCheckoutOpen(true)}
       />
 

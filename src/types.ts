@@ -35,6 +35,8 @@ export const CATEGORIES = [
   { id: 'sandwiches', nameAr: 'ساندوتشات', nameEn: 'Sandwiches' },
   { id: 'pasta', nameAr: 'باستا', nameEn: 'Pasta' },
   { id: 'appetizers', nameAr: 'مقبلات', nameEn: 'Appetizers' },
+  { id: 'drinks', nameAr: 'مشروبات', nameEn: 'Drinks' },
+  { id: 'sauces', nameAr: 'صوصات', nameEn: 'Sauces' },
 ];
 
 export const STAFF_WHATSAPP = '+966535110460';
