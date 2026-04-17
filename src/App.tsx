@@ -135,25 +135,35 @@ const formatPhone = (phone: string) => {
 
 const generateWhatsAppLink = (order: Order) => {
   const staffPhone = formatPhone(STAFF_WHATSAPP);
-  const itemsList = order.items.map(i => {
-    const sizeStr = i.selectedSize ? ` (${i.selectedSize})` : '';
-    return `${i.quantity} x ${i.nameAr}${sizeStr}`;
-  }).join('\n');
   
-  const typeStr = order.orderType === 'delivery' ? 'توصيل' : 'استلام';
-  
-  const message = `طلب جديد من موقع ماكولاتي 🍔
-👤 العميل: ${order.customerName}
-📍 النوع: ${typeStr}
-📞 الجوال: ${order.customerPhone}
+  const itemsList = order.items
+    .map(i => {
+      const sizeStr = i.selectedSize ? ` (${i.selectedSize})` : '';
+      return `• ${i.nameAr}${sizeStr} x${i.quantity} = SR ${i.finalPrice * i.quantity}`;
+    })
+    .join('\n');
 
-🛒 تفاصيل الطلب:
+  const deliverySection = order.orderType === 'delivery'
+    ? `\n📍 رابط الموقع: ${order.googleMapsLink}\n`
+    : '\n🏪 استلام من الفرع\n';
 
-${itemsList}
+  const notesSection = order.notes?.trim()
+    ? `\n📝 ملاحظات: ${order.notes}\n`
+    : '';
 
-💰 المجموع الإجمالي: ${order.total} ريال
-
-✅ لتاكيد الطلب، قم بالارسال الان..`;
+  const message = 
+    `🛒 *طلب جديد*\n` +
+    `━━━━━━━━━━━━━━\n` +
+    `👤 العميل: ${order.customerName}\n` +
+    `📦 نوع الطلب: ${order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}\n` +
+    deliverySection +
+    `━━━━━━━━━━━━━━\n` +
+    `${itemsList}\n` +
+    `━━━━━━━━━━━━━━\n` +
+    `💰 الإجمالي: SR ${order.total}\n` +
+    notesSection +
+    `━━━━━━━━━━━━━━\n` +
+    `✅ لتاكيد الطلب، قم بالارسال الان..`;
 
   return `https://wa.me/${staffPhone}?text=${encodeURIComponent(message)}`;
 };
@@ -332,7 +342,9 @@ const CartDrawer = ({
   onUpdateQty, 
   onRemove,
   onAdd,
-  onCheckout 
+  onCheckout,
+  notes,
+  onNotesChange
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
@@ -341,21 +353,18 @@ const CartDrawer = ({
   onRemove: (id: string, size: string | undefined) => void;
   onAdd: (item: MenuItem) => void;
   onCheckout: () => void;
+  notes: string;
+  onNotesChange: (val: string) => void;
 }) => {
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
   const total = items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
   
-  const suggestedDrinks = INITIAL_MENU.filter(item => 
-    item.category === 'drinks' && !items.some(cartItem => cartItem.id === item.id)
-  );
+  const suggestedDrinks = INITIAL_MENU.filter(item => item.category === 'drinks');
   
-  const suggestedSauces = INITIAL_MENU.filter(item => 
-    item.category === 'sauces' && !items.some(cartItem => cartItem.id === item.id)
-  );
+  const suggestedSauces = INITIAL_MENU.filter(item => item.category === 'sauces');
 
-  const handleAddAndBack = (item: MenuItem) => {
+  const handleAddItem = (item: MenuItem) => {
     onAdd(item);
-    setViewingCategory(null);
   };
 
   return (
@@ -401,7 +410,7 @@ const CartDrawer = ({
                   {(viewingCategory === 'drinks' ? suggestedDrinks : suggestedSauces).map(addon => (
                     <button
                       key={addon.id}
-                      onClick={() => handleAddAndBack(addon)}
+                      onClick={() => handleAddItem(addon)}
                       className="bg-white/5 border border-white/5 p-4 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all text-right group"
                     >
                       <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 shadow-lg">
@@ -409,7 +418,14 @@ const CartDrawer = ({
                       </div>
                       <div className="flex-grow">
                         <p className="text-white font-black text-lg">{addon.nameAr}</p>
-                        <p className="text-primary font-black">{addon.price} SR</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-primary font-black">{addon.price} SR</p>
+                          {items.find(i => i.id === addon.id) && (
+                            <span className="bg-primary/20 text-primary text-[10px] px-2 py-0.5 rounded-full font-black">
+                              تم إضافة {items.find(i => i.id === addon.id)?.quantity}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-secondary transition-all">
                         <Plus className="w-5 h-5" />
@@ -433,28 +449,28 @@ const CartDrawer = ({
                 </div>
               ) : (
                 <>
-                  <div className="space-y-8">
+                  <div className="space-y-4">
                     {items.map((item, idx) => (
-                      <div key={`${item.id}-${item.selectedSize}-${idx}`} className="flex gap-6">
-                        <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 shadow-xl">
+                      <div key={`${item.id}-${item.selectedSize}-${idx}`} className="flex gap-4">
+                        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 shadow-lg">
                           <img src={item.image} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-grow text-right">
-                          <div className="flex justify-between items-start mb-1">
+                          <div className="flex justify-between items-start mb-0.5">
                             <button 
                               onClick={() => onRemove(item.id, item.selectedSize)}
                               className="text-white/20 hover:text-red-500 transition-colors p-1"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                             <h4 className="font-black text-lg leading-tight">{item.nameAr}</h4>
                           </div>
-                          {item.selectedSize && <p className="text-xs text-primary font-black mb-3">{item.selectedSize}</p>}
-                          <div className="flex items-center justify-between mt-2">
-                            <div className="flex items-center gap-4 bg-white/5 rounded-xl p-1.5 border border-white/5">
-                              <button onClick={() => onUpdateQty(item.id, item.selectedSize, -1)} className="p-1 hover:text-primary transition-colors"><Minus className="w-4 h-4" /></button>
-                              <span className="font-black text-sm w-4 text-center">{item.quantity}</span>
-                              <button onClick={() => onUpdateQty(item.id, item.selectedSize, 1)} className="p-1 hover:text-primary transition-colors"><Plus className="w-4 h-4" /></button>
+                          {item.selectedSize && <p className="text-[10px] text-primary font-black mb-1.5">{item.selectedSize}</p>}
+                          <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center gap-3 bg-white/5 rounded-lg p-1 border border-white/5">
+                              <button onClick={() => onUpdateQty(item.id, item.selectedSize, -1)} className="p-0.5 hover:text-primary transition-colors"><Minus className="w-3.5 h-3.5" /></button>
+                              <span className="font-black text-xs w-3 text-center">{item.quantity}</span>
+                              <button onClick={() => onUpdateQty(item.id, item.selectedSize, 1)} className="p-0.5 hover:text-primary transition-colors"><Plus className="w-3.5 h-3.5" /></button>
                             </div>
                             <span className="font-black text-xl text-primary">{item.finalPrice * item.quantity} SR</span>
                           </div>
@@ -465,10 +481,27 @@ const CartDrawer = ({
                   
                   <button 
                     onClick={onClose}
-                    className="w-full py-4 border border-dashed border-white/10 text-white/60 font-bold rounded-2xl hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2 mt-4"
+                    className="w-full py-3 border border-dashed border-white/10 text-white/40 font-bold rounded-xl hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2 mt-2 text-sm"
                   >
-                    <Plus className="w-4 h-4" /> إضافة المزيد من الأصناف
+                    <Plus className="w-3.5 h-3.5" /> إضافة المزيد من الأصناف
                   </button>
+
+                  {/* Notes Section */}
+                  <div className="mt-4 px-4 text-right">
+                    <label className="text-base text-gray-400 block mb-2 font-bold">
+                      ملاحظات إضافية (اختياري)
+                    </label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => onNotesChange(e.target.value)}
+                      placeholder="مثال: بدون بصل، صوص زيادة..."
+                      dir="rtl"
+                      rows={3}
+                      className="w-full bg-white/[0.02] border border-white/10 rounded-2xl p-4 text-white font-bold placeholder:text-white/10 focus:outline-none focus:border-primary/30 transition-all resize-none shadow-inner"
+                      maxLength={200}
+                    />
+                    <p className="text-xs text-gray-500 text-left mt-1">{notes.length}/200</p>
+                  </div>
 
                   <div className="mt-12">
                     <h3 className="text-white/40 text-xs font-black uppercase tracking-widest mb-6 text-right">إضافات مقترحة</h3>
@@ -503,15 +536,24 @@ const CartDrawer = ({
             {items.length > 0 && (
               <div className="p-8 border-t border-white/10 bg-white/5 backdrop-blur-xl">
                 <div className="flex justify-between items-center mb-8">
-                  <span className="text-white/40 font-black text-lg">المجموع الكلي</span>
+                  <span className="text-white/40 font-black text-xl">المجموع الكلي</span>
                   <span className="text-4xl font-black text-primary">{total} SR</span>
                 </div>
-                <button 
-                  onClick={onCheckout}
-                  className="w-full py-6 bg-primary text-secondary font-black rounded-2xl text-2xl shadow-2xl shadow-primary/20 hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
-                >
-                  إتمام الطلب <ChevronRight className="w-8 h-8" />
-                </button>
+                {viewingCategory ? (
+                  <button 
+                    onClick={() => setViewingCategory(null)}
+                    className="w-full py-6 bg-primary text-secondary font-black rounded-2xl text-2xl shadow-2xl shadow-primary/20 hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
+                  >
+                    تأكيد الإضافات <CheckCircle2 className="w-8 h-8" />
+                  </button>
+                ) : (
+                  <button 
+                    onClick={onCheckout}
+                    className="w-full py-6 bg-primary text-secondary font-black rounded-2xl text-2xl shadow-2xl shadow-primary/20 hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
+                  >
+                    إتمام الطلب <ChevronRight className="w-8 h-8" />
+                  </button>
+                )}
               </div>
             )}
           </motion.div>
@@ -559,33 +601,33 @@ const CheckoutModal = ({
         
         <div className="space-y-8 text-right overflow-y-auto pr-2 no-scrollbar">
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
+            <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
               الاسم الكامل <User className="w-3 h-3" />
             </label>
             <input 
               type="text" 
               value={form.name}
               onChange={e => setForm({...form, name: e.target.value})}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary transition-all text-right font-bold"
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary transition-all text-right font-bold text-lg"
               placeholder="أدخل اسمك هنا..."
             />
           </div>
 
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
+            <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
               رقم الجوال (واتساب) <Phone className="w-3 h-3" />
             </label>
             <input 
               type="tel" 
               value={form.phone}
               onChange={e => setForm({...form, phone: e.target.value})}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary transition-all text-right font-bold"
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary transition-all text-right font-bold text-lg"
               placeholder="05xxxxxxxx"
             />
           </div>
 
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] text-right block">نوع الطلب</label>
+            <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] text-right block">نوع الطلب</label>
             <div className="flex gap-4">
               <button 
                 onClick={() => setForm({...form, type: 'pickup'})}
@@ -610,14 +652,14 @@ const CheckoutModal = ({
 
           {form.type === 'delivery' && (
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
+              <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
                 رابط قوقل ماب <MapPin className="w-3 h-3" />
               </label>
               <input 
                 type="url" 
                 value={form.maps}
                 onChange={e => setForm({...form, maps: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary transition-all text-right font-bold"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary transition-all text-right font-bold text-lg"
                 placeholder="https://goo.gl/maps/..."
               />
             </div>
@@ -762,30 +804,45 @@ const SuccessModal = ({
               {/* Customer Data */}
               <div className="grid grid-cols-2 gap-4 mb-8 text-right">
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <p className="text-white/40 text-[10px] font-black mb-1">نوع الطلب</p>
+                  <p className="text-white/40 text-base font-black mb-1">نوع الطلب</p>
                   <p className="text-white font-bold">{order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}</p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <p className="text-white/40 text-[10px] font-black mb-1">اسم العميل</p>
+                  <p className="text-white/40 text-base font-black mb-1">اسم العميل</p>
                   <p className="text-white font-bold truncate">{order.customerName}</p>
                 </div>
               </div>
+
+              {order.notes && (
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 mb-8 text-right">
+                  <p className="text-white/40 text-[10px] font-black mb-1">الملاحظات</p>
+                  <p className="text-white font-bold leading-relaxed">{order.notes}</p>
+                </div>
+              )}
 
               <p className="text-white/60 text-center mb-8 font-bold leading-relaxed">
                 يرجى الضغط على الزر أدناه لإرسال طلبك عبر الواتساب وتأكيده مع فريقنا.
               </p>
 
-              <div className="space-y-4">
+              {/* Sticky confirm button — always visible */}
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent pb-8 z-50">
                 <button 
                   onClick={onWhatsApp}
-                  className="w-full py-6 bg-[#25D366] text-white font-black rounded-2xl text-xl shadow-2xl shadow-[#25D366]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                  className="w-full py-5 bg-[#25D366] text-white rounded-2xl font-bold text-xl flex items-center justify-center gap-3 active:scale-95 transition-transform shadow-2xl shadow-[#25D366]/40"
                 >
-                  تأكيد الطلب عبر واتساب <ExternalLink className="w-6 h-6" />
+                  <span>تأكيد الطلب عبر واتساب</span>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.86L.054 23.05a.75.75 0 00.916.916l5.19-1.478A11.948 11.948 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.692-.518-5.22-1.42l-.374-.22-3.88 1.105 1.107-3.797-.243-.393A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                  </svg>
                 </button>
-                <p className="text-[10px] text-white/30 text-center font-bold">
+                <p className="text-[10px] text-white/30 text-center font-bold mt-2">
                   يجب الضغط على إرسال في تطبيق الواتساب بعد انتقالك إليه لضمان وصول الطلب
                 </p>
               </div>
+
+              {/* Add padding at bottom so content isn't hidden behind sticky button */}
+              <div className="h-28" />
 
               <button 
                 onClick={onClose}
@@ -810,6 +867,7 @@ const Home = () => {
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [isWhatsAppClicked, setIsWhatsAppClicked] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const [orderNotes, setOrderNotes] = useState('');
 
   const filteredMenu = INITIAL_MENU.filter(item => 
     activeCategory === 'all' || item.category === activeCategory
@@ -856,6 +914,7 @@ const Home = () => {
       googleMapsLink: formData.maps || '',
       items: cart,
       total,
+      notes: orderNotes,
       status: 'pending',
       createdAt: serverTimestamp()
     };
@@ -867,6 +926,7 @@ const Home = () => {
       await addDoc(collection(db, path), sanitizedOrder);
       setLastOrder(orderData);
       setCart([]);
+      setOrderNotes('');
       setIsCheckoutOpen(false);
       setIsCartOpen(false);
       setIsWhatsAppClicked(false);
@@ -984,6 +1044,8 @@ const Home = () => {
         onRemove={removeFromCart}
         onAdd={addToCart}
         onCheckout={() => setIsCheckoutOpen(true)}
+        notes={orderNotes}
+        onNotesChange={setOrderNotes}
       />
 
       <CheckoutModal 
@@ -1141,6 +1203,13 @@ const StaffDashboard = () => {
                 </div>
                 <span className="text-2xl font-black text-primary">{order.total} SR</span>
               </div>
+
+              {order.notes && (
+                <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 mb-6 text-right">
+                  <p className="text-primary text-[10px] font-black mb-1">الملاحظات</p>
+                  <p className="text-white font-bold text-sm leading-relaxed">{order.notes}</p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 {order.status === 'pending' && (

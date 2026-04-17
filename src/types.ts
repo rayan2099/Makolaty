@@ -23,6 +23,7 @@ export interface Order {
   googleMapsLink?: string;
   items: CartItem[];
   total: number;
+  notes?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   createdAt: any;
 }
