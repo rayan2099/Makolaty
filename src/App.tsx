@@ -149,7 +149,7 @@ const generateWhatsAppLink = (order: Order) => {
       if (i.spicyLevel === 2) options.push('حراق اكسترا');
       const optionsStr = options.length > 0 ? ` [${options.join(' + ')}]` : '';
       
-      return `• ${i.nameAr}${sizeStr}${optionsStr} x${i.quantity} = SR ${i.finalPrice * i.quantity}`;
+      return `• ${i.quantity} ${i.nameAr}${sizeStr}${optionsStr}`;
     })
     .join('\n');
 
@@ -170,8 +170,9 @@ const generateWhatsAppLink = (order: Order) => {
     `━━━━━━━━━━━━━━\n` +
     `${itemsList}\n` +
     `━━━━━━━━━━━━━━\n` +
-    `💰 الإجمالي: SR ${order.total}\n` +
     notesSection +
+    `━━━━━━━━━━━━━━\n` +
+    `💰 الإجمالي: SR ${order.total}\n` +
     `━━━━━━━━━━━━━━`;
 
   return `https://wa.me/${staffPhone}?text=${encodeURIComponent(message)}`;
@@ -839,16 +840,36 @@ const SuccessModal = ({
               <div className="bg-white/5 rounded-3xl p-6 border border-white/10 mb-8 text-right">
                 <h3 className="text-white/40 text-xs font-black uppercase tracking-widest mb-4">ملخص الطلب</h3>
                 <div className="space-y-4 mb-6">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center">
-                      <span className="text-primary font-black">{item.finalPrice * item.quantity} SR</span>
-                      <div className="text-right">
-                        <p className="text-white font-bold">{item.nameAr}</p>
-                        <p className="text-white/40 text-xs">{item.quantity} x {item.finalPrice} SR {item.selectedSize && `(${item.selectedSize})`}</p>
+                  {order.items.map((item, idx) => {
+                    const options = [];
+                    if (item.ketchupLevel === 1) options.push('كاتشب');
+                    if (item.ketchupLevel === 2) options.push('كاتشب اكسترا');
+                    if (item.mayoLevel === 1) options.push('مايونيز');
+                    if (item.mayoLevel === 2) options.push('مايونيز اكسترا');
+                    if (item.spicyLevel === 1) options.push('حراق');
+                    if (item.spicyLevel === 2) options.push('حراق اكسترا');
+                    const optionsStr = options.length > 0 ? ` [${options.join(' + ')}]` : '';
+                    
+                    return (
+                      <div key={idx} className="text-right py-1">
+                        <p className="text-white font-bold">
+                          <span className="text-primary ml-1">{item.quantity}</span>
+                          {item.nameAr}
+                          {item.selectedSize && <span className="text-primary text-xs mr-1">({item.selectedSize})</span>}
+                        </p>
+                        {optionsStr && <p className="text-white/40 text-[10px] mt-0.5">{optionsStr}</p>}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
+
+                {order.notes && (
+                  <div className="py-4 border-t border-white/5 mb-2 text-right">
+                    <p className="text-white/40 text-[10px] font-black mb-1">الملاحظات</p>
+                    <p className="text-white font-bold text-sm leading-relaxed">{order.notes}</p>
+                  </div>
+                )}
+
                 <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                   <span className="text-2xl font-black text-primary">{order.total} SR</span>
                   <span className="text-white font-black">الإجمالي النهائي</span>
@@ -866,13 +887,6 @@ const SuccessModal = ({
                   <p className="text-white font-bold truncate">{order.customerName}</p>
                 </div>
               </div>
-
-              {order.notes && (
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 mb-8 text-right">
-                  <p className="text-white/40 text-[10px] font-black mb-1">الملاحظات</p>
-                  <p className="text-white font-bold leading-relaxed">{order.notes}</p>
-                </div>
-              )}
 
               <p className="text-white/60 text-center mb-8 font-bold leading-relaxed">
                 يرجى الضغط على الزر أدناه لإرسال طلبك عبر الواتساب وتأكيده مع فريقنا.
@@ -1242,46 +1256,46 @@ const StaffDashboard = () => {
 
               <div className="space-y-3 mb-6">
                 {order.items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 bg-primary/20 text-primary rounded-lg flex items-center justify-center font-bold text-xs">
-                        {item.quantity}
-                      </span>
-                      <div>
-                        <p className="font-bold text-sm">{item.nameAr}</p>
-                        {item.selectedSize && <p className="text-[10px] text-primary">{item.selectedSize}</p>}
-                        <div className="flex flex-wrap gap-1">
-                          {item.spicyLevel === 1 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px]">حراق</span>}
-                          {item.spicyLevel === 2 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px]">حراق اكسترا</span>}
-                          {item.mayoLevel === 1 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px]">مايونيز</span>}
-                          {item.mayoLevel === 2 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px]">مايونيز اكسترا</span>}
-                          {item.ketchupLevel === 1 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px]">كاتشب</span>}
-                          {item.ketchupLevel === 2 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px]">كاتشب اكسترا</span>}
-                        </div>
+                  <div key={idx} className="flex justify-start items-center bg-white/5 p-3 rounded-xl gap-3">
+                    <span className="w-8 h-8 bg-primary/20 text-primary rounded-lg flex items-center justify-center font-black text-sm shrink-0">
+                      {item.quantity}
+                    </span>
+                    <div className="text-right flex-1">
+                      <p className="font-black text-sm text-white">{item.nameAr}</p>
+                      {item.selectedSize && <p className="text-[10px] text-primary font-black">{item.selectedSize}</p>}
+                      <div className="flex flex-wrap gap-1 mt-1 justify-end">
+                        {item.spicyLevel === 1 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px] font-bold">حراق</span>}
+                        {item.spicyLevel === 2 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px] font-bold">حراق اكسترا</span>}
+                        {item.mayoLevel === 1 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px] font-bold">مايونيز</span>}
+                        {item.mayoLevel === 2 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px] font-bold">مايونيز اكسترا</span>}
+                        {item.ketchupLevel === 1 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px] font-bold">كاتشب</span>}
+                        {item.ketchupLevel === 2 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px] font-bold">كاتشب اكسترا</span>}
                       </div>
                     </div>
-                    <span className="font-black text-sm">{item.finalPrice * item.quantity} SR</span>
                   </div>
                 ))}
               </div>
 
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2 text-white/40 text-sm">
+              {order.notes && (
+                <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 mb-4 text-right">
+                  <p className="text-primary text-[10px] font-black mb-1">الملاحظات</p>
+                  <p className="text-white font-bold text-sm leading-relaxed">{order.notes}</p>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center mb-6 pt-4 border-t border-white/5">
+                <div className="flex items-center gap-2 text-white/40 text-sm font-bold">
                   {order.orderType === 'delivery' ? (
                     <><MapPin className="w-4 h-4" /> توصيل</>
                   ) : (
                     <><ShoppingBag className="w-4 h-4" /> استلام</>
                   )}
                 </div>
-                <span className="text-2xl font-black text-primary">{order.total} SR</span>
-              </div>
-
-              {order.notes && (
-                <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 mb-6 text-right">
-                  <p className="text-primary text-[10px] font-black mb-1">الملاحظات</p>
-                  <p className="text-white font-bold text-sm leading-relaxed">{order.notes}</p>
+                <div className="text-right">
+                  <p className="text-[10px] text-white/40 font-black uppercase mb-1">الإجمالي</p>
+                  <span className="text-2xl font-black text-primary">{order.total} SR</span>
                 </div>
-              )}
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 {order.status === 'pending' && (
