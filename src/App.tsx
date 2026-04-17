@@ -21,6 +21,7 @@ import {
   Phone, 
   User, 
   CheckCircle2, 
+  Check, 
   Clock,
   ExternalLink,
   LogOut,
@@ -139,7 +140,16 @@ const generateWhatsAppLink = (order: Order) => {
   const itemsList = order.items
     .map(i => {
       const sizeStr = i.selectedSize ? ` (${i.selectedSize})` : '';
-      return `• ${i.nameAr}${sizeStr} x${i.quantity} = SR ${i.finalPrice * i.quantity}`;
+      const options = [];
+      if (i.ketchupLevel === 1) options.push('كاتشب');
+      if (i.ketchupLevel === 2) options.push('كاتشب اكسترا');
+      if (i.mayoLevel === 1) options.push('مايونيز');
+      if (i.mayoLevel === 2) options.push('مايونيز اكسترا');
+      if (i.spicyLevel === 1) options.push('حراق');
+      if (i.spicyLevel === 2) options.push('حراق اكسترا');
+      const optionsStr = options.length > 0 ? ` [${options.join(' + ')}]` : '';
+      
+      return `• ${i.nameAr}${sizeStr}${optionsStr} x${i.quantity} = SR ${i.finalPrice * i.quantity}`;
     })
     .join('\n');
 
@@ -162,8 +172,7 @@ const generateWhatsAppLink = (order: Order) => {
     `━━━━━━━━━━━━━━\n` +
     `💰 الإجمالي: SR ${order.total}\n` +
     notesSection +
-    `━━━━━━━━━━━━━━\n` +
-    `✅ لتاكيد الطلب، قم بالارسال الان..`;
+    `━━━━━━━━━━━━━━`;
 
   return `https://wa.me/${staffPhone}?text=${encodeURIComponent(message)}`;
 };
@@ -341,6 +350,7 @@ const CartDrawer = ({
   items, 
   onUpdateQty, 
   onRemove,
+  onUpdateOption,
   onAdd,
   onCheckout,
   notes,
@@ -351,6 +361,7 @@ const CartDrawer = ({
   items: CartItem[]; 
   onUpdateQty: (id: string, size: string | undefined, delta: number) => void;
   onRemove: (id: string, size: string | undefined) => void;
+  onUpdateOption: (id: string, size: string | undefined, option: 'ketchup' | 'mayo' | 'spicy', level: number) => void;
   onAdd: (item: MenuItem) => void;
   onCheckout: () => void;
   notes: string;
@@ -449,31 +460,72 @@ const CartDrawer = ({
                 </div>
               ) : (
                 <>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {items.map((item, idx) => (
-                      <div key={`${item.id}-${item.selectedSize}-${idx}`} className="flex gap-4">
-                        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 shadow-lg">
+                      <div key={`${item.id}-${item.selectedSize}-${idx}`} className="flex flex-row items-center gap-3 relative pb-4 border-b border-white/5 last:border-0">
+                        {/* Far Right: Product Image */}
+                        <div className="relative w-[56px] h-[56px] rounded-xl overflow-hidden flex-shrink-0 shadow-lg border border-white/10">
                           <img src={item.image} className="w-full h-full object-cover" />
                         </div>
-                        <div className="flex-grow text-right">
-                          <div className="flex justify-between items-start mb-0.5">
+
+                        {/* Right-Center: Name + Options (Right next to image) */}
+                        <div className="text-right flex-1">
+                          <div className="flex items-center justify-start gap-2 mb-1">
+                            <h4 className="font-bold text-sm text-white">{item.nameAr}</h4>
                             <button 
                               onClick={() => onRemove(item.id, item.selectedSize)}
-                              className="text-white/20 hover:text-red-500 transition-colors p-1"
+                              className="text-white/20 hover:text-red-500 transition-colors"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
-                            <h4 className="font-black text-lg leading-tight">{item.nameAr}</h4>
                           </div>
-                          {item.selectedSize && <p className="text-[10px] text-primary font-black mb-1.5">{item.selectedSize}</p>}
-                          <div className="flex items-center justify-between mt-1">
-                            <div className="flex items-center gap-3 bg-white/5 rounded-lg p-1 border border-white/5">
-                              <button onClick={() => onUpdateQty(item.id, item.selectedSize, -1)} className="p-0.5 hover:text-primary transition-colors"><Minus className="w-3.5 h-3.5" /></button>
-                              <span className="font-black text-xs w-3 text-center">{item.quantity}</span>
-                              <button onClick={() => onUpdateQty(item.id, item.selectedSize, 1)} className="p-0.5 hover:text-primary transition-colors"><Plus className="w-3.5 h-3.5" /></button>
-                            </div>
-                            <span className="font-black text-xl text-primary">{item.finalPrice * item.quantity} SR</span>
+
+                          {item.selectedSize && <p className="text-[10px] text-primary font-bold mb-1">{item.selectedSize}</p>}
+                          
+                          <div className="flex flex-row flex-wrap gap-1 justify-start">
+                            {[
+                              { label: 'سبايسي', key: 'spicy', level: item.spicyLevel || 0 },
+                              { label: 'مايونيز', key: 'mayo', level: item.mayoLevel || 0 },
+                              { label: 'كاتشب', key: 'ketchup', level: item.ketchupLevel || 0 }
+                            ].map(opt => (
+                              <div key={opt.key} className="flex items-center gap-0.5">
+                                {opt.level > 0 && (
+                                  <button
+                                    onClick={() => onUpdateOption(item.id, item.selectedSize, opt.key as any, opt.level === 2 ? 1 : 2)}
+                                    className="w-4 h-4 rounded-full bg-primary text-secondary flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-md"
+                                  >
+                                    {opt.level === 2 ? <Minus className="w-2.5 h-2.5" /> : <Plus className="w-2.5 h-2.5" />}
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => onUpdateOption(item.id, item.selectedSize, opt.key as any, opt.level === 0 ? 1 : 0)}
+                                  className={cn(
+                                    "px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all flex items-center gap-1",
+                                    opt.level > 0 
+                                      ? "bg-primary border-primary text-secondary" 
+                                      : "bg-white/5 border-white/10 text-white/30"
+                                  )}
+                                >
+                                  {opt.level === 2 && <span className="text-[7px] bg-secondary/10 px-0.5 rounded">اكسترا</span>}
+                                  {opt.label}
+                                </button>
+                              </div>
+                            ))}
                           </div>
+                        </div>
+
+                        {/* Far Left: Quantity stepper and price */}
+                        <div className="flex flex-col items-center gap-2 min-w-[70px] shrink-0">
+                          <div className="flex items-center gap-2.5 bg-white/5 rounded-lg px-3 py-1.5 border border-white/10 shadow-lg">
+                            <button onClick={() => onUpdateQty(item.id, item.selectedSize, 1)} className="hover:text-primary transition-colors">
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="font-black text-base w-5 text-center text-white">{item.quantity}</span>
+                            <button onClick={() => onUpdateQty(item.id, item.selectedSize, -1)} className="hover:text-primary transition-colors">
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <span className="font-black text-base text-primary">{item.finalPrice * item.quantity} SR</span>
                         </div>
                       </div>
                     ))}
@@ -481,14 +533,41 @@ const CartDrawer = ({
                   
                   <button 
                     onClick={onClose}
-                    className="w-full py-3 border border-dashed border-white/10 text-white/40 font-bold rounded-xl hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2 mt-2 text-sm"
+                    className="w-full py-3 border border-dashed border-white/10 text-white/40 font-bold rounded-xl hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2 mt-4 text-sm"
                   >
                     <Plus className="w-3.5 h-3.5" /> إضافة المزيد من الأصناف
                   </button>
 
+                  <div className="mt-8">
+                    <h3 className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-4 text-right">إضافات مقترحة</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setViewingCategory('drinks')}
+                        className="bg-white/5 border border-white/10 py-5 rounded-3xl flex flex-col items-center gap-2 hover:bg-white/10 transition-all group relative overflow-hidden"
+                      >
+                        <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center text-secondary">
+                          <Plus className="w-3 h-3" />
+                        </div>
+                        <span className="text-3xl">🥤</span>
+                        <span className="text-white font-black text-sm">مشروبات</span>
+                      </button>
+
+                      <button
+                        onClick={() => setViewingCategory('sauces')}
+                        className="bg-white/5 border border-white/10 py-5 rounded-3xl flex flex-col items-center gap-2 hover:bg-white/10 transition-all group relative overflow-hidden"
+                      >
+                        <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center text-secondary">
+                          <Plus className="w-3 h-3" />
+                        </div>
+                        <span className="text-3xl">🍯</span>
+                        <span className="text-white font-black text-sm">صوصات</span>
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Notes Section */}
-                  <div className="mt-4 px-4 text-right">
-                    <label className="text-base text-gray-400 block mb-2 font-bold">
+                  <div className="mt-6 px-2 text-right">
+                    <label className="text-xs text-white/40 block mb-2 font-bold">
                       ملاحظات إضافية (اختياري)
                     </label>
                     <textarea
@@ -496,37 +575,12 @@ const CartDrawer = ({
                       onChange={(e) => onNotesChange(e.target.value)}
                       placeholder="مثال: بدون بصل، صوص زيادة..."
                       dir="rtl"
-                      rows={3}
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-2xl p-4 text-white font-bold placeholder:text-white/10 focus:outline-none focus:border-primary/30 transition-all resize-none shadow-inner"
+                      rows={1}
+                      className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 text-white font-bold placeholder:text-white/10 focus:outline-none focus:border-primary/30 transition-all resize-none text-sm"
                       maxLength={200}
                     />
-                    <p className="text-xs text-gray-500 text-left mt-1">{notes.length}/200</p>
-                  </div>
-
-                  <div className="mt-12">
-                    <h3 className="text-white/40 text-xs font-black uppercase tracking-widest mb-6 text-right">إضافات مقترحة</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <button
-                        onClick={() => setViewingCategory('drinks')}
-                        className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col items-center gap-3 hover:bg-white/10 transition-all group relative overflow-hidden"
-                      >
-                        <div className="absolute top-3 right-3 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-secondary">
-                          <Plus className="w-4 h-4" />
-                        </div>
-                        <span className="text-3xl">🥤</span>
-                        <span className="text-white font-black">مشروبات</span>
-                      </button>
-
-                      <button
-                        onClick={() => setViewingCategory('sauces')}
-                        className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col items-center gap-3 hover:bg-white/10 transition-all group relative overflow-hidden"
-                      >
-                        <div className="absolute top-3 right-3 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-secondary">
-                          <Plus className="w-4 h-4" />
-                        </div>
-                        <span className="text-3xl">🍯</span>
-                        <span className="text-white font-black">صوصات</span>
-                      </button>
+                    <div className="flex justify-between mt-1">
+                      <p className="text-[10px] text-white/20">{notes.length}/200</p>
                     </div>
                   </div>
                 </>
@@ -534,24 +588,24 @@ const CartDrawer = ({
             </div>
 
             {items.length > 0 && (
-              <div className="p-8 border-t border-white/10 bg-white/5 backdrop-blur-xl">
-                <div className="flex justify-between items-center mb-8">
-                  <span className="text-white/40 font-black text-xl">المجموع الكلي</span>
-                  <span className="text-4xl font-black text-primary">{total} SR</span>
+              <div className="p-4 border-t border-white/10 bg-white/5 backdrop-blur-xl shrink-0">
+                <div className="flex justify-between items-center mb-2 px-2">
+                  <span className="text-white/40 font-black text-sm">المجموع الكلي</span>
+                  <span className="text-2xl font-black text-primary">{total} SR</span>
                 </div>
                 {viewingCategory ? (
                   <button 
                     onClick={() => setViewingCategory(null)}
-                    className="w-full py-6 bg-primary text-secondary font-black rounded-2xl text-2xl shadow-2xl shadow-primary/20 hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
+                    className="w-full py-4 bg-primary text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
                   >
-                    تأكيد الإضافات <CheckCircle2 className="w-8 h-8" />
+                    تأكيد الإضافات <CheckCircle2 className="w-6 h-6" />
                   </button>
                 ) : (
                   <button 
                     onClick={onCheckout}
-                    className="w-full py-6 bg-primary text-secondary font-black rounded-2xl text-2xl shadow-2xl shadow-primary/20 hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
+                    className="w-full py-4 bg-primary text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
                   >
-                    إتمام الطلب <ChevronRight className="w-8 h-8" />
+                    إتمام الطلب <ChevronRight className="w-6 h-6" />
                   </button>
                 )}
               </div>
@@ -904,6 +958,15 @@ const Home = () => {
     setCart(prev => prev.filter(i => !(i.id === id && i.selectedSize === size)));
   };
 
+  const updateOption = (id: string, size: string | undefined, option: 'ketchup' | 'mayo' | 'spicy', level: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id && item.selectedSize === size) {
+        return { ...item, [`${option}Level`]: level };
+      }
+      return item;
+    }));
+  };
+
   const handleCheckout = async (formData: any) => {
     setIsSubmitting(true);
     const total = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
@@ -1042,6 +1105,7 @@ const Home = () => {
         items={cart} 
         onUpdateQty={updateQty}
         onRemove={removeFromCart}
+        onUpdateOption={updateOption}
         onAdd={addToCart}
         onCheckout={() => setIsCheckoutOpen(true)}
         notes={orderNotes}
@@ -1186,6 +1250,14 @@ const StaffDashboard = () => {
                       <div>
                         <p className="font-bold text-sm">{item.nameAr}</p>
                         {item.selectedSize && <p className="text-[10px] text-primary">{item.selectedSize}</p>}
+                        <div className="flex flex-wrap gap-1">
+                          {item.spicyLevel === 1 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px]">حراق</span>}
+                          {item.spicyLevel === 2 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px]">حراق اكسترا</span>}
+                          {item.mayoLevel === 1 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px]">مايونيز</span>}
+                          {item.mayoLevel === 2 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px]">مايونيز اكسترا</span>}
+                          {item.ketchupLevel === 1 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px]">كاتشب</span>}
+                          {item.ketchupLevel === 2 && <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px]">كاتشب اكسترا</span>}
+                        </div>
                       </div>
                     </div>
                     <span className="font-black text-sm">{item.finalPrice * item.quantity} SR</span>
