@@ -153,27 +153,21 @@ const generateWhatsAppLink = (order: Order) => {
     })
     .join('\n');
 
-  const deliverySection = order.orderType === 'delivery'
-    ? `\n📍 رابط الموقع: ${order.googleMapsLink}\n`
-    : '\n🏪 استلام من الفرع\n';
-
-  const notesSection = order.notes?.trim()
-    ? `\n📝 ملاحظات: ${order.notes}\n`
-    : '';
-
-  const message = 
-    `🛒 *طلب جديد*\n` +
-    `━━━━━━━━━━━━━━\n` +
-    `👤 العميل: ${order.customerName}\n` +
-    `📦 نوع الطلب: ${order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}\n` +
-    deliverySection +
-    `━━━━━━━━━━━━━━\n` +
-    `${itemsList}\n` +
-    `━━━━━━━━━━━━━━\n` +
-    notesSection +
-    `━━━━━━━━━━━━━━\n` +
-    `💰 الإجمالي: SR ${order.total}\n` +
-    `━━━━━━━━━━━━━━`;
+  const sep = '────────────────';
+  
+  const message = [
+    `*طلب جديد 🛒*`,
+    sep,
+    `👤 *العميل:* ${order.customerName}`,
+    `📦 *نوع الطلب:* ${order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}`,
+    order.orderType === 'delivery' ? `📍 *الموقع:* ${order.googleMapsLink}` : `استلام من الفرع 🏪`,
+    sep,
+    itemsList,
+    sep,
+    order.notes?.trim() ? `📝 *ملاحظات:* ${order.notes}\n${sep}` : '',
+    `💰 *الإجمالي:* SR ${order.total}`,
+    sep
+  ].filter(Boolean).join('\n');
 
   return `https://wa.me/${staffPhone}?text=${encodeURIComponent(message)}`;
 };
