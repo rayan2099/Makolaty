@@ -24,7 +24,8 @@ import {
   Clock,
   ExternalLink,
   LogOut,
-  Trash2
+  Trash2,
+  Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './supabase';
@@ -1370,19 +1371,95 @@ const parseSizesInput = (value: string) => {
     .filter((size): size is { name: string; price: number } => Boolean(size));
 };
 
+const MENU_IMAGE_BUCKET = 'menu-images';
+const MENU_IMAGE_SIZE = 900;
+
+const resizeMenuImage = async (file: File) => {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('unsupported-image-type');
+  }
+
+  if (file.size > 12 * 1024 * 1024) {
+    throw new Error('image-too-large');
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+  image.src = objectUrl;
+
+  try {
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = MENU_IMAGE_SIZE;
+    canvas.height = MENU_IMAGE_SIZE;
+
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('image-processing-failed');
+
+    const sourceSize = Math.min(image.naturalWidth, image.naturalHeight);
+    const sourceX = (image.naturalWidth - sourceSize) / 2;
+    const sourceY = (image.naturalHeight - sourceSize) / 2;
+
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      sourceSize,
+      sourceSize,
+      0,
+      0,
+      MENU_IMAGE_SIZE,
+      MENU_IMAGE_SIZE
+    );
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (!blob) {
+          reject(new Error('image-processing-failed'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/webp', 0.86);
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+};
+
+const uploadMenuImage = async (file: File, itemId: string) => {
+  const resizedImage = await resizeMenuImage(file);
+  const path = `items/${itemId}.webp`;
+
+  const { error } = await supabase.storage
+    .from(MENU_IMAGE_BUCKET)
+    .upload(path, resizedImage, {
+      cacheControl: '31536000',
+      contentType: 'image/webp',
+      upsert: true,
+    });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from(MENU_IMAGE_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+};
+
 const MenuManagement = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [activeMenuCategory, setActiveMenuCategory] = useState('all');
   const [isSaving, setIsSaving] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState('');
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
   const [form, setForm] = useState({
     nameAr: '',
     nameEn: '',
     category: CATEGORIES[0]?.id || 'shawarma',
     price: '',
     calories: '',
-    image: '',
     sizes: '',
     isAvailable: true,
   });
@@ -1406,6 +1483,18 @@ const MenuManagement = () => {
   useEffect(() => {
     loadItems();
   }, []);
+
+  useEffect(() => {
+    if (!selectedImageFile) {
+      setImagePreviewUrl('');
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedImageFile);
+    setImagePreviewUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedImageFile]);
 
   const categoryCounts = items.reduce<Record<string, number>>((counts, item) => {
     counts[item.category] = (counts[item.category] || 0) + 1;
@@ -1484,21 +1573,26 @@ const MenuManagement = () => {
 
     setIsSaving(true);
     const id = `item-${Date.now()}`;
-    const payload = sanitizeForSupabase({
-      id,
-      nameAr: form.nameAr.trim(),
-      nameEn: form.nameEn.trim(),
-      category: form.category,
-      price,
-      calories: Number.isFinite(calories) ? calories : undefined,
-      image: form.image.trim() || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
-      sizes,
-      isAvailable: form.isAvailable,
-      sortOrder: Date.now(),
-      createdAt: new Date().toISOString(),
-    });
 
     try {
+      const uploadedImageUrl = selectedImageFile
+        ? await uploadMenuImage(selectedImageFile, id)
+        : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';
+
+      const payload = sanitizeForSupabase({
+        id,
+        nameAr: form.nameAr.trim(),
+        nameEn: form.nameEn.trim(),
+        category: form.category,
+        price,
+        calories: Number.isFinite(calories) ? calories : undefined,
+        image: uploadedImageUrl,
+        sizes,
+        isAvailable: form.isAvailable,
+        sortOrder: Date.now(),
+        createdAt: new Date().toISOString(),
+      });
+
       const { error } = await supabase.from('menu_items').insert(payload);
       if (error) throw error;
       setMessage('تمت إضافة الصنف بنجاح.');
@@ -1508,14 +1602,20 @@ const MenuManagement = () => {
         category: CATEGORIES[0]?.id || 'shawarma',
         price: '',
         calories: '',
-        image: '',
         sizes: '',
         isAvailable: true,
       });
+      setSelectedImageFile(null);
       await loadItems();
     } catch (error) {
       await handleSupabaseError(error, OperationType.CREATE, 'menu_items');
-      setMessage('تعذر إضافة الصنف. تأكد من صلاحيات الموظف وجدول menu_items.');
+      if (error instanceof Error && error.message === 'unsupported-image-type') {
+        setMessage('نوع الصورة غير مدعوم. ارفع صورة بصيغة PNG أو JPG أو WebP.');
+      } else if (error instanceof Error && error.message === 'image-too-large') {
+        setMessage('حجم الصورة كبير جداً. اختر صورة أقل من 12MB.');
+      } else {
+        setMessage('تعذر إضافة الصنف أو رفع الصورة. تأكد من إنشاء bucket باسم menu-images في Supabase.');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -1576,13 +1676,33 @@ const MenuManagement = () => {
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
             />
           </div>
-          <input
-            value={form.image}
-            onChange={e => setForm({ ...form, image: e.target.value })}
-            placeholder="رابط صورة الصنف"
-            type="url"
-            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
-          />
+          <label className="block cursor-pointer rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-4 transition-all hover:border-primary hover:bg-primary/10">
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/*"
+              onChange={e => setSelectedImageFile(e.target.files?.[0] || null)}
+              className="sr-only"
+            />
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-20 overflow-hidden rounded-2xl border border-white/10 bg-secondary shrink-0">
+                {imagePreviewUrl ? (
+                  <img src={imagePreviewUrl} alt="معاينة صورة الصنف" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-primary">
+                    <Upload className="h-7 w-7" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 text-right">
+                <p className="font-black text-white">
+                  {selectedImageFile ? selectedImageFile.name : 'رفع صورة الصنف'}
+                </p>
+                <p className="mt-1 text-xs font-bold leading-relaxed text-white/45">
+                  PNG أو JPG أو WebP. سيتم ضبطها تلقائياً إلى مقاس موحد للقائمة.
+                </p>
+              </div>
+            </div>
+          </label>
           <input
             value={form.sizes}
             onChange={e => setForm({ ...form, sizes: e.target.value })}
