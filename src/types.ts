@@ -7,6 +7,8 @@ export interface MenuItem {
   calories?: number;
   image: string;
   sizes?: { name: string; price: number }[];
+  isAvailable?: boolean;
+  sortOrder?: number;
 }
 
 export interface CartItem extends MenuItem {
@@ -25,6 +27,9 @@ export interface Order {
   orderType: 'pickup' | 'delivery';
   googleMapsLink?: string;
   items: CartItem[];
+  subtotal?: number;
+  deliveryFee?: number;
+  deliveryDistanceKm?: number;
   total: number;
   notes?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';

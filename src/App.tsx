@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, Component } from 'react';
+import React, { useState, useEffect, Component } from 'react';
 import { 
   BrowserRouter as Router, 
   Routes, 
@@ -28,22 +28,13 @@ import {
   Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  collection, 
-  addDoc, 
-  onSnapshot, 
-  query, 
-  orderBy, 
-  updateDoc, 
-  doc, 
-  serverTimestamp,
-  getDocFromServer
-} from 'firebase/firestore';
-import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
-import { db, auth } from './firebase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { supabase } from './supabase';
 import { cn } from './lib/utils';
 import { MenuItem, CartItem, Order, CATEGORIES, STAFF_WHATSAPP } from './types';
 import { INITIAL_MENU } from './data';
+import { extractCoordinatesFromMapsLink, getDeliveryQuote, isShortMapsLink, type DeliveryQuote } from './delivery';
+import { useResolveMapsLink } from './hooks/useResolveMapsLink';
 
 // --- Error Handling ---
 
@@ -56,59 +47,41 @@ enum OperationType {
   WRITE = 'write',
 }
 
-interface FirestoreErrorInfo {
+interface SupabaseErrorInfo {
   error: string;
   operationType: OperationType;
   path: string | null;
   authInfo: {
     userId: string | undefined;
     email: string | null | undefined;
-    emailVerified: boolean | undefined;
-    isAnonymous: boolean | undefined;
-    tenantId: string | null | undefined;
-    providerInfo: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
   }
 }
 
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
+async function handleSupabaseError(error: unknown, operationType: OperationType, path: string | null) {
+  const { data } = await supabase.auth.getUser();
+  const errInfo: SupabaseErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
+      userId: data.user?.id,
+      email: data.user?.email,
     },
     operationType,
     path
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  console.error('Supabase Error: ', JSON.stringify(errInfo));
   return errInfo;
 }
 
-function sanitizeForFirestore(obj: any): any {
+function sanitizeForSupabase(obj: any): any {
   if (Array.isArray(obj)) {
-    return obj.map(v => sanitizeForFirestore(v));
+    return obj.map(v => sanitizeForSupabase(v));
   } else if (obj !== null && typeof obj === 'object' && !(obj instanceof Date)) {
-    // Check if it's a plain object
     const proto = Object.getPrototypeOf(obj);
     if (proto === null || proto === Object.prototype) {
       return Object.fromEntries(
         Object.entries(obj)
           .filter(([_, v]) => v !== undefined)
-          .map(([k, v]) => [k, sanitizeForFirestore(v)])
+          .map(([k, v]) => [k, sanitizeForSupabase(v)])
       );
     }
   }
@@ -116,15 +89,18 @@ function sanitizeForFirestore(obj: any): any {
 }
 
 async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if(error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration. ");
-    }
-  }
+  const { error } = await supabase.from('orders').select('id').limit(1);
+  if (error) console.error('Please check your Supabase configuration.', error.message);
 }
 testConnection();
+
+const formatOrderTime = (createdAt: Order['createdAt']) => {
+  if (!createdAt) return '';
+  if (typeof createdAt === 'string') return new Date(createdAt).toLocaleTimeString();
+  if (createdAt instanceof Date) return createdAt.toLocaleTimeString();
+  if (typeof createdAt?.toDate === 'function') return createdAt.toDate().toLocaleTimeString();
+  return '';
+};
 
 // --- Helpers ---
 const formatPhone = (phone: string) => {
@@ -165,6 +141,8 @@ const generateWhatsAppLink = (order: Order) => {
     itemsList,
     sep,
     order.notes?.trim() ? `📝 *ملاحظات:* ${order.notes}\n${sep}` : '',
+    order.orderType === 'delivery' ? `🚚 *رسوم التوصيل:* SR ${order.deliveryFee ?? 0}` : '',
+    order.orderType === 'delivery' && order.deliveryDistanceKm ? `📏 *المسافة:* ${order.deliveryDistanceKm} كم` : '',
     `💰 *الإجمالي:* SR ${order.total}`,
     sep
   ].filter(Boolean).join('\n');
@@ -343,6 +321,7 @@ const CartDrawer = ({
   isOpen, 
   onClose, 
   items, 
+  menuItems,
   onUpdateQty, 
   onRemove,
   onUpdateOption,
@@ -354,6 +333,7 @@ const CartDrawer = ({
   isOpen: boolean; 
   onClose: () => void; 
   items: CartItem[]; 
+  menuItems: MenuItem[];
   onUpdateQty: (id: string, size: string | undefined, delta: number) => void;
   onRemove: (id: string, size: string | undefined) => void;
   onUpdateOption: (id: string, size: string | undefined, option: 'ketchup' | 'mayo' | 'spicy', level: number) => void;
@@ -365,9 +345,9 @@ const CartDrawer = ({
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
   const total = items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
   
-  const suggestedDrinks = INITIAL_MENU.filter(item => item.category === 'drinks');
+  const suggestedDrinks = menuItems.filter(item => item.category === 'drinks');
   
-  const suggestedSauces = INITIAL_MENU.filter(item => item.category === 'sauces');
+  const suggestedSauces = menuItems.filter(item => item.category === 'sauces');
 
   const handleAddItem = (item: MenuItem) => {
     onAdd(item);
@@ -616,12 +596,14 @@ const CheckoutModal = ({
   isOpen, 
   onClose, 
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  orderSubtotal
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
   onSubmit: (data: any) => void;
   isSubmitting: boolean;
+  orderSubtotal: number;
 }) => {
   const [form, setForm] = useState({
     name: '',
@@ -629,6 +611,70 @@ const CheckoutModal = ({
     type: 'pickup' as 'pickup' | 'delivery',
     maps: ''
   });
+  const [locationError, setLocationError] = useState('');
+  const [isLocating, setIsLocating] = useState(false);
+  const [showManualLocation, setShowManualLocation] = useState(false);
+  const [mapsLinkInput, setMapsLinkInput] = useState('');
+  const { resolveLink, isResolving, error: resolveError, clearError: clearResolveError } = useResolveMapsLink();
+
+  const customerCoordinates = form.type === 'delivery'
+    ? extractCoordinatesFromMapsLink(form.maps)
+    : null;
+  const hasShortMapsLink = form.type === 'delivery' && isShortMapsLink(mapsLinkInput);
+  const deliveryQuote: DeliveryQuote | null = form.type === 'delivery' && customerCoordinates
+    ? getDeliveryQuote(orderSubtotal, customerCoordinates)
+    : null;
+  const finalTotal = orderSubtotal + (deliveryQuote?.isAllowed ? deliveryQuote.fee : 0);
+  const isDeliveryBlocked = form.type === 'delivery' && (!customerCoordinates || !deliveryQuote?.isAllowed);
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('المتصفح لا يدعم تحديد الموقع.');
+      return;
+    }
+
+    setLocationError('');
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setForm(prev => ({
+          ...prev,
+          maps: `https://www.google.com/maps?q=${latitude},${longitude}`
+        }));
+        setIsLocating(false);
+      },
+      () => {
+        setIsLocating(false);
+        setLocationError('تعذر تحديد موقعك. يرجى السماح بالوصول للموقع أو استخدام خيار الرابط اليدوي.');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 60000,
+      }
+    );
+  };
+
+  const handleResolveMapsLink = async () => {
+    setLocationError('');
+    const localCoordinates = extractCoordinatesFromMapsLink(mapsLinkInput);
+    if (localCoordinates) {
+      setForm(prev => ({
+        ...prev,
+        maps: `https://www.google.com/maps?q=${localCoordinates.lat},${localCoordinates.lng}`
+      }));
+      return;
+    }
+
+    const coordinates = await resolveLink(mapsLinkInput);
+    if (!coordinates) return;
+
+    setForm(prev => ({
+      ...prev,
+      maps: `https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}`
+    }));
+  };
 
   if (!isOpen) return null;
 
@@ -702,22 +748,136 @@ const CheckoutModal = ({
           {form.type === 'delivery' && (
             <div className="space-y-3">
               <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
-                رابط قوقل ماب <MapPin className="w-3 h-3" />
+                موقع التوصيل <MapPin className="w-3 h-3" />
               </label>
-              <input 
-                type="url" 
-                value={form.maps}
-                onChange={e => setForm({...form, maps: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary transition-all text-right font-bold text-lg"
-                placeholder="https://goo.gl/maps/..."
-              />
+              <button
+                type="button"
+                onClick={useCurrentLocation}
+                disabled={isLocating}
+                className="w-full py-5 bg-primary text-secondary rounded-2xl font-black text-xl shadow-2xl shadow-primary/20 hover:bg-accent disabled:opacity-60 transition-all flex items-center justify-center gap-3"
+              >
+                {isLocating ? (
+                  <>
+                    <Clock className="w-5 h-5 animate-spin" /> جاري تحديد الموقع...
+                  </>
+                ) : customerCoordinates ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5" /> تم تحديد موقع التوصيل
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="w-5 h-5" /> حدد موقعي للتوصيل
+                  </>
+                )}
+              </button>
+              {customerCoordinates && (
+                <p className="text-primary text-xs font-bold leading-relaxed">
+                  سنستخدم هذا الموقع لحساب المسافة ورسوم التوصيل.
+                </p>
+              )}
+              {locationError && (
+                <p className="text-red-400 text-xs font-bold leading-relaxed">{locationError}</p>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowManualLocation(value => !value)}
+                className="w-full py-3 text-white/40 hover:text-white font-bold transition-colors"
+              >
+                {showManualLocation ? 'إخفاء الرابط اليدوي' : 'استخدام رابط خرائط بدلاً من ذلك'}
+              </button>
+              {showManualLocation && (
+                <div className="space-y-2">
+                  <input 
+                    type="url" 
+                    value={mapsLinkInput}
+                    onChange={e => {
+                      const nextValue = e.target.value;
+                      const localCoordinates = extractCoordinatesFromMapsLink(nextValue);
+                      setLocationError('');
+                      clearResolveError();
+                      setMapsLinkInput(nextValue);
+                      if (localCoordinates) {
+                        setForm(prev => ({
+                          ...prev,
+                          maps: `https://www.google.com/maps?q=${localCoordinates.lat},${localCoordinates.lng}`
+                        }));
+                      }
+                    }}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary transition-all text-right font-bold text-lg"
+                    placeholder="https://maps.app.goo.gl/..."
+                  />
+                  <button
+                    type="button"
+                    onClick={handleResolveMapsLink}
+                    disabled={!mapsLinkInput || isResolving}
+                    className="w-full py-3 bg-white/5 border border-white/10 rounded-2xl font-black text-white/70 hover:bg-white/10 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    {isResolving ? (
+                      <>
+                        <Clock className="w-4 h-4 animate-spin" /> جارٍ تحديد الموقع من الرابط...
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-4 h-4" /> قراءة الموقع من الرابط
+                      </>
+                    )}
+                  </button>
+                  {resolveError && (
+                    <p className="text-red-400 text-xs font-bold leading-relaxed">
+                      {resolveError} يمكنك استخدام زر تحديد موقعي للتوصيل بدلاً من ذلك.
+                    </p>
+                  )}
+                  {mapsLinkInput && !customerCoordinates && !resolveError && !isResolving && (
+                    <p className={cn(
+                      "text-xs font-bold leading-relaxed",
+                      hasShortMapsLink ? "text-primary" : "text-white/40"
+                    )}>
+                      {hasShortMapsLink
+                        ? 'سنحاول قراءة الرابط المختصر من خلال الخادم. إذا لم ينجح، استخدم زر تحديد موقعي للتوصيل.'
+                        : 'اضغط قراءة الموقع من الرابط لحساب المسافة ورسوم التوصيل، أو الصق رابطاً يحتوي على الإحداثيات ليتم حسابه تلقائياً.'}
+                    </p>
+                  )}
+                </div>
+              )}
+              {deliveryQuote && (
+                <div className={cn(
+                  "rounded-2xl p-4 border text-right",
+                  deliveryQuote.isAllowed ? "bg-primary/10 border-primary/20" : "bg-red-500/10 border-red-500/20"
+                )}>
+                  <p className={cn(
+                    "font-black text-sm mb-1",
+                    deliveryQuote.isAllowed ? "text-primary" : "text-red-400"
+                  )}>
+                    {deliveryQuote.messageAr}
+                  </p>
+                  <p className="text-white/50 text-xs font-bold">
+                    المسافة التقريبية: {deliveryQuote.distanceKm} كم
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <div className="pt-8 shrink-0">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4 text-right space-y-2">
+            <div className="flex justify-between text-sm font-bold text-white/50">
+              <span>{orderSubtotal} SR</span>
+              <span>قيمة الطلب</span>
+            </div>
+            {form.type === 'delivery' && deliveryQuote?.isAllowed && (
+              <div className="flex justify-between text-sm font-bold text-white/50">
+                <span>{deliveryQuote.fee} SR</span>
+                <span>رسوم التوصيل</span>
+              </div>
+            )}
+            <div className="flex justify-between text-xl font-black text-primary pt-2 border-t border-white/10">
+              <span>{finalTotal} SR</span>
+              <span>الإجمالي</span>
+            </div>
+          </div>
           <button 
-            disabled={!form.name || !form.phone || isSubmitting}
+            disabled={!form.name || !form.phone || isSubmitting || isDeliveryBlocked}
             onClick={() => onSubmit(form)}
             className="w-full py-5 bg-primary text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 disabled:opacity-50 disabled:grayscale hover:bg-accent transition-all flex items-center justify-center gap-3"
           >
@@ -865,7 +1025,15 @@ const SuccessModal = ({
                 )}
 
                 <div className="pt-4 border-t border-white/10 flex justify-between items-center">
-                  <span className="text-2xl font-black text-primary">{order.total} SR</span>
+                  <div className="text-left">
+                    {order.orderType === 'delivery' && (
+                      <p className="text-white/40 text-xs font-bold mb-1">
+                        التوصيل: {order.deliveryFee ?? 0} SR
+                        {order.deliveryDistanceKm ? ` | ${order.deliveryDistanceKm} كم` : ''}
+                      </p>
+                    )}
+                    <span className="text-2xl font-black text-primary">{order.total} SR</span>
+                  </div>
                   <span className="text-white font-black">الإجمالي النهائي</span>
                 </div>
               </div>
@@ -922,6 +1090,7 @@ const SuccessModal = ({
 
 const Home = () => {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(INITIAL_MENU);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -931,7 +1100,37 @@ const Home = () => {
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [orderNotes, setOrderNotes] = useState('');
 
-  const filteredMenu = INITIAL_MENU.filter(item => 
+  useEffect(() => {
+    const loadMenuItems = async () => {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('isAvailable', true)
+        .order('sortOrder', { ascending: true })
+        .order('nameAr', { ascending: true });
+
+      if (error) {
+        console.warn('Using local fallback menu because Supabase menu_items could not be loaded.', error.message);
+        setMenuItems(INITIAL_MENU);
+        return;
+      }
+
+      setMenuItems(data && data.length > 0 ? data as MenuItem[] : INITIAL_MENU);
+    };
+
+    loadMenuItems();
+
+    const channel = supabase
+      .channel('menu-items-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, loadMenuItems)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const filteredMenu = menuItems.filter(item => 
     activeCategory === 'all' || item.category === activeCategory
   );
 
@@ -977,24 +1176,41 @@ const Home = () => {
 
   const handleCheckout = async (formData: any) => {
     setIsSubmitting(true);
-    const total = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
+    const subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
+    const customerCoordinates = formData.type === 'delivery'
+      ? extractCoordinatesFromMapsLink(formData.maps)
+      : null;
+    const deliveryQuote = customerCoordinates ? getDeliveryQuote(subtotal, customerCoordinates) : null;
+
+    if (formData.type === 'delivery' && (!deliveryQuote || !deliveryQuote.isAllowed)) {
+      alert(deliveryQuote?.messageAr || 'يرجى إضافة موقع صحيح للتوصيل.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    const deliveryFee = formData.type === 'delivery' ? deliveryQuote?.fee ?? 0 : 0;
+    const total = subtotal + deliveryFee;
     const orderData: Order = {
       customerName: formData.name,
       customerPhone: formData.phone,
       orderType: formData.type,
       googleMapsLink: formData.maps || '',
       items: cart,
+      subtotal,
+      deliveryFee,
+      deliveryDistanceKm: formData.type === 'delivery' ? deliveryQuote?.distanceKm : undefined,
       total,
       notes: orderNotes,
       status: 'pending',
-      createdAt: serverTimestamp()
+      createdAt: new Date().toISOString()
     };
 
     const path = 'orders';
-    const sanitizedOrder = sanitizeForFirestore(orderData);
+    const sanitizedOrder = sanitizeForSupabase(orderData);
     console.log('Sending order data:', sanitizedOrder);
     try {
-      await addDoc(collection(db, path), sanitizedOrder);
+      const { error } = await supabase.from(path).insert(sanitizedOrder);
+      if (error) throw error;
       setLastOrder(orderData);
       setCart([]);
       setOrderNotes('');
@@ -1003,7 +1219,7 @@ const Home = () => {
       setIsWhatsAppClicked(false);
       setIsSuccessOpen(true);
     } catch (err) {
-      const errInfo = handleFirestoreError(err, OperationType.CREATE, path);
+      const errInfo = await handleSupabaseError(err, OperationType.CREATE, path);
       alert(`حدث خطأ أثناء إرسال الطلب: ${errInfo.error}`);
     } finally {
       setIsSubmitting(false);
@@ -1111,6 +1327,7 @@ const Home = () => {
         isOpen={isCartOpen} 
         onClose={() => setIsCartOpen(false)} 
         items={cart} 
+        menuItems={menuItems}
         onUpdateQty={updateQty}
         onRemove={removeFromCart}
         onUpdateOption={updateOption}
@@ -1125,6 +1342,7 @@ const Home = () => {
         onClose={() => setIsCheckoutOpen(false)} 
         onSubmit={handleCheckout} 
         isSubmitting={isSubmitting}
+        orderSubtotal={cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0)}
       />
 
       {/* Floating Chat */}
@@ -1138,49 +1356,298 @@ const Home = () => {
   );
 };
 
+const parseSizesInput = (value: string) => {
+  if (!value.trim()) return undefined;
+
+  return value
+    .split(',')
+    .map(part => {
+      const [name, price] = part.split(':').map(item => item.trim());
+      const parsedPrice = Number(price);
+      if (!name || !Number.isFinite(parsedPrice) || parsedPrice < 0) return null;
+      return { name, price: parsedPrice };
+    })
+    .filter((size): size is { name: string; price: number } => Boolean(size));
+};
+
+const MenuManagement = () => {
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [form, setForm] = useState({
+    nameAr: '',
+    nameEn: '',
+    category: CATEGORIES[0]?.id || 'shawarma',
+    price: '',
+    calories: '',
+    image: '',
+    sizes: '',
+    isAvailable: true,
+  });
+
+  const loadItems = async () => {
+    const { data, error } = await supabase
+      .from('menu_items')
+      .select('*')
+      .order('sortOrder', { ascending: true })
+      .order('nameAr', { ascending: true });
+
+    if (error) {
+      await handleSupabaseError(error, OperationType.LIST, 'menu_items');
+      setMessage('تعذر تحميل عناصر القائمة.');
+      return;
+    }
+
+    setItems((data || []) as MenuItem[]);
+  };
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
+  const addMenuItem = async () => {
+    setMessage('');
+    const price = Number(form.price);
+    const calories = form.calories ? Number(form.calories) : undefined;
+    const sizes = parseSizesInput(form.sizes);
+
+    if (!form.nameAr.trim() || !form.nameEn.trim() || !form.category || !Number.isFinite(price) || price <= 0) {
+      setMessage('يرجى تعبئة الاسم والتصنيف والسعر بشكل صحيح.');
+      return;
+    }
+
+    if (form.sizes.trim() && (!sizes || sizes.length === 0)) {
+      setMessage('صيغة الأحجام غير صحيحة. مثال: صغير:6, كبير:12');
+      return;
+    }
+
+    setIsSaving(true);
+    const id = `item-${Date.now()}`;
+    const payload = sanitizeForSupabase({
+      id,
+      nameAr: form.nameAr.trim(),
+      nameEn: form.nameEn.trim(),
+      category: form.category,
+      price,
+      calories: Number.isFinite(calories) ? calories : undefined,
+      image: form.image.trim() || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
+      sizes,
+      isAvailable: form.isAvailable,
+      sortOrder: Date.now(),
+      createdAt: new Date().toISOString(),
+    });
+
+    try {
+      const { error } = await supabase.from('menu_items').insert(payload);
+      if (error) throw error;
+      setMessage('تمت إضافة الصنف بنجاح.');
+      setForm({
+        nameAr: '',
+        nameEn: '',
+        category: CATEGORIES[0]?.id || 'shawarma',
+        price: '',
+        calories: '',
+        image: '',
+        sizes: '',
+        isAvailable: true,
+      });
+      await loadItems();
+    } catch (error) {
+      await handleSupabaseError(error, OperationType.CREATE, 'menu_items');
+      setMessage('تعذر إضافة الصنف. تأكد من صلاحيات الموظف وجدول menu_items.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6">
+      <div className="glass rounded-3xl p-6 text-right h-fit">
+        <h2 className="text-2xl font-black text-primary mb-2">إضافة صنف جديد</h2>
+        <p className="text-white/40 text-sm font-bold mb-6">أضف أي صنف جديد وسيظهر في قائمة العملاء.</p>
+
+        <div className="space-y-4">
+          <input
+            value={form.nameAr}
+            onChange={e => setForm({ ...form, nameAr: e.target.value })}
+            placeholder="اسم الصنف بالعربي"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
+          />
+          <input
+            value={form.nameEn}
+            onChange={e => setForm({ ...form, nameEn: e.target.value })}
+            placeholder="اسم الصنف بالإنجليزي"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
+          />
+          <select
+            value={form.category}
+            onChange={e => setForm({ ...form, category: e.target.value })}
+            className="w-full bg-secondary border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
+          >
+            {CATEGORIES.map(category => (
+              <option key={category.id} value={category.id}>{category.nameAr}</option>
+            ))}
+          </select>
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              value={form.price}
+              onChange={e => setForm({ ...form, price: e.target.value })}
+              placeholder="السعر"
+              type="number"
+              min="0"
+              step="0.5"
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
+            />
+            <input
+              value={form.calories}
+              onChange={e => setForm({ ...form, calories: e.target.value })}
+              placeholder="السعرات"
+              type="number"
+              min="0"
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
+            />
+          </div>
+          <input
+            value={form.image}
+            onChange={e => setForm({ ...form, image: e.target.value })}
+            placeholder="رابط صورة الصنف"
+            type="url"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
+          />
+          <input
+            value={form.sizes}
+            onChange={e => setForm({ ...form, sizes: e.target.value })}
+            placeholder="أحجام اختيارية: صغير:6, كبير:12"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
+          />
+          <label className="flex items-center justify-end gap-3 text-white/60 font-bold">
+            متاح للعملاء
+            <input
+              type="checkbox"
+              checked={form.isAvailable}
+              onChange={e => setForm({ ...form, isAvailable: e.target.checked })}
+              className="w-5 h-5 accent-primary"
+            />
+          </label>
+          {message && <p className="text-primary text-sm font-bold leading-relaxed">{message}</p>}
+          <button
+            onClick={addMenuItem}
+            disabled={isSaving}
+            className="w-full py-4 bg-primary text-secondary font-black rounded-2xl hover:bg-accent disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" /> {isSaving ? 'جاري الحفظ...' : 'إضافة الصنف'}
+          </button>
+        </div>
+      </div>
+
+      <div className="glass rounded-3xl p-6 text-right">
+        <h2 className="text-2xl font-black text-primary mb-6">الأصناف المضافة</h2>
+        {items.length === 0 ? (
+          <p className="text-white/40 font-bold">لا توجد أصناف مضافة في Supabase حتى الآن.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {items.map(item => (
+              <div key={item.id} className="bg-white/5 rounded-2xl p-4 border border-white/10 flex gap-4 items-center">
+                <img src={item.image} alt={item.nameEn} className="w-16 h-16 rounded-xl object-cover" />
+                <div className="flex-1">
+                  <p className="font-black text-white">{item.nameAr}</p>
+                  <p className="text-white/40 text-xs font-bold">{item.nameEn}</p>
+                  <p className="text-primary font-black mt-1">{item.price} SR</p>
+                </div>
+                <span className={cn(
+                  "text-[10px] px-2 py-1 rounded-full font-black",
+                  item.isAvailable ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                )}>
+                  {item.isAvailable ? 'متاح' : 'مخفي'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const StaffDashboard = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [activeView, setActiveView] = useState<'orders' | 'menu'>('orders');
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (u) => {
-      if (u) {
-        if (u.email === 'helpooclassmate@gmail.com') {
-          setUser(u);
-        } else {
-          alert('غير مصرح لك بالدخول');
-          signOut(auth);
-          navigate('/');
-        }
+    const syncUser = async (currentUser: SupabaseUser | null) => {
+      if (!currentUser) {
+        setUser(null);
+        return;
       }
+
+      if (currentUser.email === 'helpooclassmate@gmail.com') {
+        setUser(currentUser);
+      } else {
+        alert('غير مصرح لك بالدخول');
+        await supabase.auth.signOut();
+        setUser(null);
+        navigate('/');
+      }
+    };
+
+    supabase.auth.getUser().then(({ data }) => syncUser(data.user));
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncUser(session?.user ?? null);
     });
-    return () => unsubAuth();
+
+    return () => authListener.subscription.unsubscribe();
   }, [navigate]);
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
     const path = 'orders';
-    const unsub = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Order));
-      setOrders(docs);
-    }, (err) => {
-      handleFirestoreError(err, OperationType.LIST, path);
-    });
-    return () => unsub();
+
+    const loadOrders = async () => {
+      const { data, error } = await supabase
+        .from(path)
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) {
+        await handleSupabaseError(error, OperationType.LIST, path);
+        return;
+      }
+
+      setOrders((data || []) as Order[]);
+    };
+
+    loadOrders();
+
+    const channel = supabase
+      .channel('orders-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: path }, loadOrders)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
-  const handleLogin = () => {
-    signInWithPopup(auth, new GoogleAuthProvider());
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/staff'
+      }
+    });
+    if (error) await handleSupabaseError(error, OperationType.GET, 'auth');
   };
 
   const updateStatus = async (id: string, status: string) => {
     const path = `orders/${id}`;
     try {
-      await updateDoc(doc(db, 'orders', id), { status });
+      const { error } = await supabase.from('orders').update({ status }).eq('id', id);
+      if (error) throw error;
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, path);
+      await handleSupabaseError(err, OperationType.UPDATE, path);
     }
   };
 
@@ -1209,14 +1676,38 @@ const StaffDashboard = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-12">
           <div>
-            <h1 className="text-4xl font-black text-primary">لوحة الطلبات</h1>
-            <p className="text-white/40">إدارة طلبات العملاء الحالية</p>
+            <h1 className="text-4xl font-black text-primary">لوحة الموظفين</h1>
+            <p className="text-white/40">إدارة الطلبات وقائمة المطعم</p>
           </div>
-          <button onClick={() => signOut(auth)} className="p-3 bg-white/5 rounded-xl hover:text-red-500 transition-colors">
+          <button onClick={() => supabase.auth.signOut()} className="p-3 bg-white/5 rounded-xl hover:text-red-500 transition-colors">
             <LogOut />
           </button>
         </div>
 
+        <div className="flex gap-3 mb-8 justify-end">
+          <button
+            onClick={() => setActiveView('menu')}
+            className={cn(
+              "px-6 py-3 rounded-2xl font-black border transition-all",
+              activeView === 'menu' ? "bg-primary text-secondary border-primary" : "bg-white/5 text-white/50 border-white/10"
+            )}
+          >
+            إدارة القائمة
+          </button>
+          <button
+            onClick={() => setActiveView('orders')}
+            className={cn(
+              "px-6 py-3 rounded-2xl font-black border transition-all",
+              activeView === 'orders' ? "bg-primary text-secondary border-primary" : "bg-white/5 text-white/50 border-white/10"
+            )}
+          >
+            الطلبات
+          </button>
+        </div>
+
+        {activeView === 'menu' ? (
+          <MenuManagement />
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {orders.map(order => (
             <motion.div 
@@ -1243,7 +1734,7 @@ const StaffDashboard = () => {
                     {order.status}
                   </span>
                   <p className="text-xs text-white/20 mt-1">
-                    {order.createdAt?.toDate().toLocaleTimeString()}
+                    {formatOrderTime(order.createdAt)}
                   </p>
                 </div>
               </div>
@@ -1287,6 +1778,12 @@ const StaffDashboard = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] text-white/40 font-black uppercase mb-1">الإجمالي</p>
+                  {order.orderType === 'delivery' && (
+                    <p className="text-[10px] text-white/40 font-bold mb-1">
+                      التوصيل {order.deliveryFee ?? 0} SR
+                      {order.deliveryDistanceKm ? ` | ${order.deliveryDistanceKm} كم` : ''}
+                    </p>
+                  )}
                   <span className="text-2xl font-black text-primary">{order.total} SR</span>
                 </div>
               </div>
@@ -1315,6 +1812,7 @@ const StaffDashboard = () => {
             </motion.div>
           ))}
         </div>
+        )}
       </div>
     </div>
   );
