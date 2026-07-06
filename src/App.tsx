@@ -9,7 +9,6 @@ import {
   Routes, 
   Route, 
   Link, 
-  useNavigate 
 } from 'react-router-dom';
 import { 
   ShoppingBag, 
@@ -28,7 +27,6 @@ import {
   Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { cn } from './lib/utils';
 import { MenuItem, CartItem, Order, CATEGORIES, STAFF_WHATSAPP } from './types';
@@ -149,6 +147,8 @@ const generateWhatsAppLink = (order: Order) => {
 
   return `https://wa.me/${staffPhone}?text=${encodeURIComponent(message)}`;
 };
+
+const STAFF_PASSCODE = '200346272';
 
 // --- Components ---
 
@@ -1571,38 +1571,13 @@ const MenuManagement = () => {
 
 const StaffDashboard = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isStaffUnlocked, setIsStaffUnlocked] = useState(() => sessionStorage.getItem('makolaty_staff_unlocked') === 'true');
+  const [passcode, setPasscode] = useState('');
+  const [loginError, setLoginError] = useState('');
   const [activeView, setActiveView] = useState<'orders' | 'menu'>('orders');
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const syncUser = async (currentUser: SupabaseUser | null) => {
-      if (!currentUser) {
-        setUser(null);
-        return;
-      }
-
-      if (currentUser.email === 'helpooclassmate@gmail.com') {
-        setUser(currentUser);
-      } else {
-        alert('غير مصرح لك بالدخول');
-        await supabase.auth.signOut();
-        setUser(null);
-        navigate('/');
-      }
-    };
-
-    supabase.auth.getUser().then(({ data }) => syncUser(data.user));
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      syncUser(session?.user ?? null);
-    });
-
-    return () => authListener.subscription.unsubscribe();
-  }, [navigate]);
-
-  useEffect(() => {
-    if (!user) return;
+    if (!isStaffUnlocked) return;
     const path = 'orders';
 
     const loadOrders = async () => {
@@ -1629,16 +1604,25 @@ const StaffDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [isStaffUnlocked]);
 
-  const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/staff'
-      }
-    });
-    if (error) await handleSupabaseError(error, OperationType.GET, 'auth');
+  const handleLogin = () => {
+    if (passcode.trim() !== STAFF_PASSCODE) {
+      setLoginError('رمز الدخول غير صحيح');
+      return;
+    }
+
+    sessionStorage.setItem('makolaty_staff_unlocked', 'true');
+    setIsStaffUnlocked(true);
+    setPasscode('');
+    setLoginError('');
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('makolaty_staff_unlocked');
+    setIsStaffUnlocked(false);
+    setOrders([]);
+    setActiveView('orders');
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -1651,7 +1635,7 @@ const StaffDashboard = () => {
     }
   };
 
-  if (!user) {
+  if (!isStaffUnlocked) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="glass p-12 rounded-[3rem] text-center max-w-md w-full">
@@ -1659,12 +1643,28 @@ const StaffDashboard = () => {
             <User className="w-10 h-10 text-secondary" />
           </div>
           <h2 className="text-3xl font-black mb-2">دخول الموظفين</h2>
-          <p className="text-white/40 mb-8">يرجى تسجيل الدخول للوصول إلى لوحة الطلبات</p>
+          <p className="text-white/40 mb-8">أدخل رمز الموظفين للوصول إلى لوحة الإدارة</p>
+          <input
+            value={passcode}
+            onChange={e => {
+              setPasscode(e.target.value);
+              setLoginError('');
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleLogin();
+            }}
+            type="password"
+            inputMode="numeric"
+            autoFocus
+            placeholder="رمز الدخول"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-center font-black text-xl tracking-widest focus:outline-none focus:border-primary mb-4"
+          />
+          {loginError && <p className="text-red-400 font-bold text-sm mb-4">{loginError}</p>}
           <button 
             onClick={handleLogin}
             className="w-full py-4 bg-primary text-secondary font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-accent transition-all"
           >
-            تسجيل الدخول عبر قوقل
+            دخول لوحة الموظفين
           </button>
         </div>
       </div>
@@ -1679,7 +1679,7 @@ const StaffDashboard = () => {
             <h1 className="text-4xl font-black text-primary">لوحة الموظفين</h1>
             <p className="text-white/40">إدارة الطلبات وقائمة المطعم</p>
           </div>
-          <button onClick={() => supabase.auth.signOut()} className="p-3 bg-white/5 rounded-xl hover:text-red-500 transition-colors">
+          <button onClick={handleLogout} className="p-3 bg-white/5 rounded-xl hover:text-red-500 transition-colors">
             <LogOut />
           </button>
         </div>
