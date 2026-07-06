@@ -1693,7 +1693,7 @@ const StaffDashboard = () => {
   const [isStaffUnlocked, setIsStaffUnlocked] = useState(() => sessionStorage.getItem('makolaty_staff_unlocked') === 'true');
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [activeView, setActiveView] = useState<'orders' | 'menu'>('orders');
+  const [activeView, setActiveView] = useState<'orders' | 'menu'>('menu');
 
   useEffect(() => {
     if (!isStaffUnlocked) return;
@@ -1741,7 +1741,7 @@ const StaffDashboard = () => {
     sessionStorage.removeItem('makolaty_staff_unlocked');
     setIsStaffUnlocked(false);
     setOrders([]);
-    setActiveView('orders');
+    setActiveView('menu');
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -1796,31 +1796,10 @@ const StaffDashboard = () => {
         <div className="flex justify-between items-center mb-12">
           <div>
             <h1 className="text-4xl font-black text-primary">لوحة الموظفين</h1>
-            <p className="text-white/40">إدارة الطلبات وقائمة المطعم</p>
+            <p className="text-white/40">إدارة قائمة المطعم</p>
           </div>
           <button onClick={handleLogout} className="p-3 bg-white/5 rounded-xl hover:text-red-500 transition-colors">
             <LogOut />
-          </button>
-        </div>
-
-        <div className="flex gap-3 mb-8 justify-end">
-          <button
-            onClick={() => setActiveView('menu')}
-            className={cn(
-              "px-6 py-3 rounded-2xl font-black border transition-all",
-              activeView === 'menu' ? "bg-primary text-secondary border-primary" : "bg-white/5 text-white/50 border-white/10"
-            )}
-          >
-            إدارة القائمة
-          </button>
-          <button
-            onClick={() => setActiveView('orders')}
-            className={cn(
-              "px-6 py-3 rounded-2xl font-black border transition-all",
-              activeView === 'orders' ? "bg-primary text-secondary border-primary" : "bg-white/5 text-white/50 border-white/10"
-            )}
-          >
-            الطلبات
           </button>
         </div>
 
