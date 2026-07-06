@@ -1373,6 +1373,7 @@ const parseSizesInput = (value: string) => {
 const MenuManagement = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState('');
   const [form, setForm] = useState({
     nameAr: '',
@@ -1404,6 +1405,36 @@ const MenuManagement = () => {
   useEffect(() => {
     loadItems();
   }, []);
+
+  const importCurrentMenu = async () => {
+    setMessage('');
+    setIsImporting(true);
+
+    const now = new Date().toISOString();
+    const payload = INITIAL_MENU.map((item, index) => sanitizeForSupabase({
+      ...item,
+      isAvailable: true,
+      sortOrder: index,
+      createdAt: now,
+      updatedAt: now,
+    }));
+
+    try {
+      const { error } = await supabase
+        .from('menu_items')
+        .upsert(payload, { onConflict: 'id' });
+
+      if (error) throw error;
+
+      setMessage(`تم استيراد ${payload.length} صنف من القائمة الحالية.`);
+      await loadItems();
+    } catch (error) {
+      await handleSupabaseError(error, OperationType.CREATE, 'menu_items');
+      setMessage('تعذر استيراد القائمة الحالية. تأكد من صلاحيات جدول menu_items.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const addMenuItem = async () => {
     setMessage('');
@@ -1465,6 +1496,14 @@ const MenuManagement = () => {
       <div className="glass rounded-3xl p-6 text-right h-fit">
         <h2 className="text-2xl font-black text-primary mb-2">إضافة صنف جديد</h2>
         <p className="text-white/40 text-sm font-bold mb-6">أضف أي صنف جديد وسيظهر في قائمة العملاء.</p>
+
+        <button
+          onClick={importCurrentMenu}
+          disabled={isImporting}
+          className="w-full py-4 mb-6 bg-white/5 border border-primary/30 text-primary font-black rounded-2xl hover:bg-primary hover:text-secondary disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+        >
+          <Plus className="w-5 h-5" /> {isImporting ? 'جاري استيراد القائمة...' : 'استيراد القائمة الحالية'}
+        </button>
 
         <div className="space-y-4">
           <input
