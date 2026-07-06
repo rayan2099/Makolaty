@@ -1372,6 +1372,7 @@ const parseSizesInput = (value: string) => {
 
 const MenuManagement = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [activeMenuCategory, setActiveMenuCategory] = useState('all');
   const [isSaving, setIsSaving] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState('');
@@ -1405,6 +1406,35 @@ const MenuManagement = () => {
   useEffect(() => {
     loadItems();
   }, []);
+
+  const categoryCounts = items.reduce<Record<string, number>>((counts, item) => {
+    counts[item.category] = (counts[item.category] || 0) + 1;
+    counts.all = (counts.all || 0) + 1;
+    return counts;
+  }, { all: 0 });
+
+  const visibleItems = activeMenuCategory === 'all'
+    ? items
+    : items.filter(item => item.category === activeMenuCategory);
+
+  const categoryFallbackImages: Record<string, string> = {
+    all: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=800&q=80',
+    shawarma: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80',
+    rockets: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
+    burgers: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80',
+    sides: 'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=800&q=80',
+  };
+
+  const getCategoryImage = (categoryId: string) => {
+    if (categoryId === 'all') {
+      return items[0]?.image || INITIAL_MENU[0]?.image || categoryFallbackImages.all;
+    }
+
+    return items.find(item => item.category === categoryId)?.image
+      || INITIAL_MENU.find(item => item.category === categoryId)?.image
+      || categoryFallbackImages[categoryId]
+      || categoryFallbackImages.all;
+  };
 
   const importCurrentMenu = async () => {
     setMessage('');
@@ -1580,12 +1610,62 @@ const MenuManagement = () => {
       </div>
 
       <div className="glass rounded-3xl p-6 text-right">
-        <h2 className="text-2xl font-black text-primary mb-6">الأصناف المضافة</h2>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl font-black text-primary">الأصناف المضافة</h2>
+            <p className="text-white/40 text-sm font-bold">اعرض الأصناف حسب التصنيف بدلاً من قائمة واحدة طويلة.</p>
+          </div>
+          <span className="text-white/40 font-black text-sm">{visibleItems.length} صنف</span>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
+          {[{ id: 'all', nameAr: 'الكل' }, ...CATEGORIES].map(category => {
+            const isActive = activeMenuCategory === category.id;
+            const count = categoryCounts[category.id] || 0;
+
+            return (
+              <button
+                key={category.id}
+                onClick={() => setActiveMenuCategory(category.id)}
+                className={cn(
+                  "group relative min-h-[120px] overflow-hidden rounded-3xl border text-right transition-all focus:outline-none focus:ring-2 focus:ring-primary/70",
+                  isActive
+                    ? "border-primary shadow-[0_18px_40px_rgba(255,210,0,0.22)]"
+                    : "border-white/10 hover:border-primary/60"
+                )}
+              >
+                <img
+                  src={getCategoryImage(category.id)}
+                  alt={category.nameAr}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className={cn(
+                  "absolute inset-0 transition-colors",
+                  isActive
+                    ? "bg-gradient-to-t from-secondary via-secondary/60 to-primary/20"
+                    : "bg-gradient-to-t from-secondary via-secondary/65 to-black/15"
+                )} />
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <p className={cn(
+                    "text-lg font-black leading-tight",
+                    isActive ? "text-primary" : "text-white"
+                  )}>
+                    {category.nameAr}
+                  </p>
+                  <p className="mt-1 text-xs font-black text-white/55">{count} صنف</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
         {items.length === 0 ? (
           <p className="text-white/40 font-bold">لا توجد أصناف مضافة في Supabase حتى الآن.</p>
+        ) : visibleItems.length === 0 ? (
+          <p className="text-white/40 font-bold">لا توجد أصناف في هذا التصنيف.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {items.map(item => (
+            {visibleItems.map(item => (
               <div key={item.id} className="bg-white/5 rounded-2xl p-4 border border-white/10 flex gap-4 items-center">
                 <img src={item.image} alt={item.nameEn} className="w-16 h-16 rounded-xl object-cover" />
                 <div className="flex-1">
