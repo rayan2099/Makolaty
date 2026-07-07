@@ -141,6 +141,33 @@ const formatPhone = (phone: string) => {
   return cleaned;
 };
 
+const MenuItemImage = ({ item }: { item: MenuItem }) => {
+  const [hasImageError, setHasImageError] = useState(false);
+  const shouldShowFullArtwork = item.image.startsWith('/menu/');
+
+  if (!item.image || hasImageError) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#3a3028] via-secondary to-[#130707] px-6 text-center">
+        <span className="text-primary text-2xl font-black leading-tight">{item.nameAr}</span>
+        <span className="mt-2 text-white/45 text-[10px] font-bold uppercase tracking-widest">{item.nameEn}</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={item.image}
+      alt={item.nameAr}
+      className={cn(
+        "w-full h-full transition-transform duration-500",
+        shouldShowFullArtwork ? "object-contain p-1" : "object-cover group-hover:scale-110"
+      )}
+      referrerPolicy="no-referrer"
+      onError={() => setHasImageError(true)}
+    />
+  );
+};
+
 const generateWhatsAppLink = (order: Order) => {
   const staffPhone = formatPhone(STAFF_WHATSAPP);
   
@@ -304,15 +331,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
         "relative aspect-[4/3] overflow-hidden",
         shouldShowFullArtwork && "bg-[#f8f1e8]"
       )}>
-        <img
-          src={item.image}
-          alt={item.nameEn}
-          className={cn(
-            "w-full h-full transition-transform duration-500",
-            shouldShowFullArtwork ? "object-contain p-1" : "object-cover group-hover:scale-110"
-          )}
-          referrerPolicy="no-referrer"
-        />
+        <MenuItemImage item={item} />
         <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent opacity-60" />
         {item.calories && (
           <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold border border-white/10">
