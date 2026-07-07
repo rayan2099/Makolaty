@@ -378,159 +378,42 @@ export const INITIAL_MENU: MenuItem[] = [
     ]
   },
 
-  // --- Meals (الوجبات) ---
+  // --- Burgers (البرقر) ---
   {
     id: 'ml-1',
-    nameAr: 'وجبة برجر دجاج',
-    nameEn: 'Chicken Burger Meal',
-    category: 'meals',
-    price: 16,
-    calories: 300,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-2',
-    nameAr: 'وجبة برجر لحم مشوي دبل',
-    nameEn: 'Double Grilled Beef Burger Meal',
-    category: 'meals',
-    price: 33,
-    calories: 660,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-3',
-    nameAr: 'وجبة برجر دجاج مشوي دبل',
-    nameEn: 'Double Grilled Chicken Burger Meal',
-    category: 'meals',
-    price: 26,
-    calories: 470,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-4',
-    nameAr: 'وجبة برجر زنجر',
-    nameEn: 'Zinger Burger Meal',
-    category: 'meals',
-    price: 18,
-    calories: 850,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-5',
-    nameAr: 'وجبة فاھیتا دجاج',
-    nameEn: 'Chicken Fajita Meal',
-    category: 'meals',
-    price: 20,
-    calories: 850,
-    image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-6',
-    nameAr: 'وجبة روست دجاج',
-    nameEn: 'Roast Chicken Meal',
-    category: 'meals',
-    price: 18,
-    calories: 630,
-    image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-7',
-    nameAr: 'وجبة صاروخ دجاج',
-    nameEn: 'Chicken Rocket Meal',
-    category: 'meals',
-    price: 19,
-    calories: 850,
-    image: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-8',
-    nameAr: 'وجبة عربي دجاج',
-    nameEn: 'Arabic Chicken Meal',
-    category: 'meals',
-    price: 22,
-    calories: 850,
-    image: 'https://images.unsplash.com/photo-1561651823-34feb02250e4?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-9',
-    nameAr: 'وجبة كرسبي جامعو',
-    nameEn: 'Jumbo Crispy Meal',
-    category: 'meals',
-    price: 20,
-    calories: 2033,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-10',
-    nameAr: 'وجبة سندویش تورتیلا',
-    nameEn: 'Tortilla Sandwich Meal',
-    category: 'meals',
-    price: 20,
-    calories: 800,
-    image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-11',
-    nameAr: 'وجبة كلاسیك كرسبي',
-    nameEn: 'Classic Crispy Meal',
-    category: 'meals',
-    price: 23,
-    calories: 480,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-12',
-    nameAr: 'وجبة سبیشل كرسبي',
-    nameEn: 'Special Crispy Meal',
-    category: 'meals',
-    price: 23,
-    calories: 480,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-13',
-    nameAr: 'وجبة كلاسیك كرسبي حراق',
-    nameEn: 'Classic Spicy Crispy Meal',
-    category: 'meals',
-    price: 23,
-    calories: 480,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-14',
-    nameAr: 'وجبة برجر لحم مشوي',
-    nameEn: 'Grilled Beef Burger Meal',
-    category: 'meals',
-    price: 23,
-    calories: 465,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-15',
-    nameAr: 'وجبة برجر لحم كرامیل',
-    nameEn: 'Caramel Beef Burger Meal',
-    category: 'meals',
-    price: 23,
-    calories: 460,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-16',
-    nameAr: 'وجبة برجر لحم كراميل دبل',
-    nameEn: 'Double Caramel Beef Burger Meal',
-    category: 'meals',
-    price: 33,
-    calories: 720,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'ml-17',
-    nameAr: 'وجبة برجر دجاج مشوي',
-    nameEn: 'Grilled Chicken Burger Meal',
+    nameAr: 'دجاج مشوي',
+    nameEn: 'Grilled Chicken Burger',
     category: 'meals',
     price: 18,
     calories: 580,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
+    image: '/menu/burgers/grilled-chicken.jpeg'
+  },
+  {
+    id: 'ml-2',
+    nameAr: 'لحم مشوي',
+    nameEn: 'Grilled Beef Burger',
+    category: 'meals',
+    price: 23,
+    calories: 465,
+    image: '/menu/burgers/grilled-beef.jpeg'
+  },
+  {
+    id: 'ml-3',
+    nameAr: 'كرسبي',
+    nameEn: 'Crispy Burger',
+    category: 'meals',
+    price: 16,
+    calories: 480,
+    image: '/menu/burgers/crispy.jpeg'
+  },
+  {
+    id: 'ml-4',
+    nameAr: 'زنجر',
+    nameEn: 'Zinger Burger',
+    category: 'meals',
+    price: 18,
+    calories: 850,
+    image: '/menu/burgers/zinger.jpeg'
   },
 
   // --- Sandwiches (السندویشات) ---
