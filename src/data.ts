@@ -419,183 +419,30 @@ export const INITIAL_MENU: MenuItem[] = [
   // --- Sandwiches (السندویشات) ---
   {
     id: 'sw-1',
-    nameAr: 'برجر دجاج',
-    nameEn: 'Chicken Burger',
-    category: 'sandwiches',
-    price: 8,
-    calories: 300,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-2',
-    nameAr: 'برجر لحم مشوي دبل',
-    nameEn: 'Double Grilled Beef Burger',
-    category: 'sandwiches',
-    price: 25,
-    calories: 660,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-3',
-    nameAr: 'برجر دجاج مشوي دبل',
-    nameEn: 'Double Grilled Chicken Burger',
-    category: 'sandwiches',
-    price: 18,
-    calories: 470,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-4',
-    nameAr: 'برجر زنجر',
-    nameEn: 'Zinger Burger',
-    category: 'sandwiches',
-    price: 10,
-    calories: 650,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-5',
-    nameAr: 'فاھیتا دجاج',
-    nameEn: 'Chicken Fajita',
+    nameAr: 'فاهيتا',
+    nameEn: 'Fajita Sandwich',
     category: 'sandwiches',
     price: 12,
     calories: 850,
-    image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80'
+    image: '/menu/sandwiches/fajita.jpg'
   },
   {
-    id: 'sw-6',
+    id: 'sw-2',
     nameAr: 'روست دجاج',
-    nameEn: 'Roast Chicken',
+    nameEn: 'Roast Chicken Sandwich',
     category: 'sandwiches',
     price: 10,
     calories: 433,
-    image: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80'
+    image: '/menu/sandwiches/roast-chicken.jpg'
   },
   {
-    id: 'sw-7',
-    nameAr: 'بروست دجاج حراق',
-    nameEn: 'Chicken Broast (Spicy)',
-    category: 'sandwiches',
-    price: 18,
-    calories: 1647,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-8',
-    nameAr: 'بروست دجاج عادي',
-    nameEn: 'Chicken Broast (Normal)',
-    category: 'sandwiches',
-    price: 18,
-    calories: 1637,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-9',
-    nameAr: 'بروست سمك',
-    nameEn: 'Fish Broast',
-    category: 'sandwiches',
-    price: 18,
-    calories: 1400,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-10',
-    nameAr: 'مسحب دجاج حراق',
-    nameEn: 'Boneless Chicken (Spicy)',
-    category: 'sandwiches',
-    price: 18,
-    calories: 1660,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-11',
-    nameAr: 'مسحب دجاج عادي',
-    nameEn: 'Boneless Chicken (Normal)',
-    category: 'sandwiches',
-    price: 18,
-    calories: 1650,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-12',
+    id: 'sw-3',
     nameAr: 'كرسبي جامبو',
-    nameEn: 'Jumbo Crispy',
+    nameEn: 'Jumbo Crispy Sandwich',
     category: 'sandwiches',
     price: 12,
     calories: 2033,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-13',
-    nameAr: 'سندویش تورتیلا',
-    nameEn: 'Tortilla Sandwich',
-    category: 'sandwiches',
-    price: 12,
-    calories: 800,
-    image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-14',
-    nameAr: 'كلاسیك كرسبي',
-    nameEn: 'Classic Crispy',
-    category: 'sandwiches',
-    price: 15,
-    calories: 480,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-15',
-    nameAr: 'سبیشل كرسبي',
-    nameEn: 'Special Crispy',
-    category: 'sandwiches',
-    price: 15,
-    calories: 480,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-16',
-    nameAr: 'كلاسیك كرسبي حراق',
-    nameEn: 'Classic Crispy Spicy',
-    category: 'sandwiches',
-    price: 15,
-    calories: 480,
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-17',
-    nameAr: 'برجر لحم مشوي',
-    nameEn: 'Grilled Beef Burger',
-    category: 'sandwiches',
-    price: 15,
-    calories: 465,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-18',
-    nameAr: 'برجر لحم كرامیل',
-    nameEn: 'Caramel Beef Burger',
-    category: 'sandwiches',
-    price: 15,
-    calories: 352,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-19',
-    nameAr: 'برجر لحم كرامیل دبل',
-    nameEn: 'Double Caramel Beef Burger',
-    category: 'sandwiches',
-    price: 25,
-    calories: 555,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sw-20',
-    nameAr: 'برجر دجاج مشوي',
-    nameEn: 'Grilled Chicken Burger',
-    category: 'sandwiches',
-    price: 10,
-    calories: 580,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
+    image: '/menu/sandwiches/jumbo-crispy.jpg'
   },
 
   // --- Pizza (البیتزا) ---
