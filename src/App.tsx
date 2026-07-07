@@ -279,6 +279,7 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
 
 const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, size?: string) => void; key?: string }) => {
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
+  const shouldShowFullArtwork = item.image.startsWith('/menu/');
 
   return (
     <motion.div 
@@ -287,8 +288,19 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
       animate={{ opacity: 1, y: 0 }}
       className="glass rounded-3xl overflow-hidden flex flex-col group"
     >
-      <div className="relative aspect-[4/3] overflow-hidden">
-        <img src={item.image} alt={item.nameEn} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" referrerPolicy="no-referrer" />
+      <div className={cn(
+        "relative aspect-[4/3] overflow-hidden",
+        shouldShowFullArtwork && "bg-[#f8f1e8]"
+      )}>
+        <img
+          src={item.image}
+          alt={item.nameEn}
+          className={cn(
+            "w-full h-full transition-transform duration-500",
+            shouldShowFullArtwork ? "object-contain p-1" : "object-cover group-hover:scale-110"
+          )}
+          referrerPolicy="no-referrer"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent opacity-60" />
         {item.calories && (
           <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold border border-white/10">
