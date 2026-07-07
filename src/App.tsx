@@ -87,6 +87,26 @@ function sanitizeForSupabase(obj: any): any {
   return obj;
 }
 
+const BUILT_IN_MENU_OVERRIDES = new Map(
+  INITIAL_MENU
+    .filter(item => item.image.startsWith('/menu/'))
+    .map(item => [item.id, item])
+);
+
+const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
+  items.map(item => {
+    const override = BUILT_IN_MENU_OVERRIDES.get(item.id);
+    if (!override) return item;
+
+    return {
+      ...item,
+      nameAr: override.nameAr,
+      nameEn: override.nameEn,
+      image: override.image,
+    };
+  })
+);
+
 async function testConnection() {
   const { error } = await supabase.from('orders').select('id').limit(1);
   if (error) console.error('Please check your Supabase configuration.', error.message);
@@ -1112,11 +1132,11 @@ const Home = () => {
 
       if (error) {
         console.warn('Using local fallback menu because Supabase menu_items could not be loaded.', error.message);
-        setMenuItems(INITIAL_MENU);
+        setMenuItems(applyBuiltInMenuOverrides(INITIAL_MENU));
         return;
       }
 
-      setMenuItems(data && data.length > 0 ? data as MenuItem[] : INITIAL_MENU);
+      setMenuItems(applyBuiltInMenuOverrides(data && data.length > 0 ? data as MenuItem[] : INITIAL_MENU));
     };
 
     loadMenuItems();
@@ -1477,7 +1497,7 @@ const MenuManagement = () => {
       return;
     }
 
-    setItems((data || []) as MenuItem[]);
+    setItems(applyBuiltInMenuOverrides((data || []) as MenuItem[]));
   };
 
   useEffect(() => {
