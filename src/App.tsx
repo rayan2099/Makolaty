@@ -25,7 +25,8 @@ import {
   ExternalLink,
   LogOut,
   Trash2,
-  Upload
+  Upload,
+  Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './supabase';
@@ -105,6 +106,17 @@ const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
       image: override.image,
     };
   })
+);
+
+const normalizeSearchText = (value: string) => (
+  value
+    .toLowerCase()
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 );
 
 async function testConnection() {
@@ -1123,6 +1135,7 @@ const SuccessModal = ({
 
 const Home = () => {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [menuItems, setMenuItems] = useState<MenuItem[]>(INITIAL_MENU);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -1163,9 +1176,22 @@ const Home = () => {
     };
   }, []);
 
-  const filteredMenu = menuItems.filter(item => 
-    activeCategory === 'all' || item.category === activeCategory
-  );
+  const normalizedSearchQuery = normalizeSearchText(searchQuery);
+  const filteredMenu = menuItems.filter(item => {
+    const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
+    if (!matchesCategory) return false;
+    if (!normalizedSearchQuery) return true;
+
+    const category = CATEGORIES.find(cat => cat.id === item.category);
+    const searchableText = normalizeSearchText([
+      item.nameAr,
+      item.nameEn,
+      category?.nameAr,
+      category?.nameEn,
+    ].filter(Boolean).join(' '));
+
+    return searchableText.includes(normalizedSearchQuery);
+  });
 
   const addToCart = (item: MenuItem, size?: string) => {
     setCart(prev => {
@@ -1346,14 +1372,31 @@ const Home = () => {
             <CategoryBar active={activeCategory} onChange={setActiveCategory} />
           </div>
         </div>
-        
-        <div className="flex overflow-x-auto gap-6 md:gap-10 pb-12 no-scrollbar snap-x snap-mandatory px-4 md:px-8 cursor-grab active:cursor-grabbing scroll-smooth">
-          {filteredMenu.map(item => (
-            <div key={item.id} className="w-[280px] md:w-[350px] shrink-0 snap-start">
-              <MenuCard item={item} onAdd={addToCart} />
-            </div>
-          ))}
+
+        <div className="relative mb-8 max-w-2xl mx-auto md:mx-0 md:mr-auto">
+          <Search className="absolute right-5 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+          <input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="ابحث عن صنف..."
+            className="w-full rounded-3xl border border-white/10 bg-white/5 py-4 pl-5 pr-14 text-right font-black text-white placeholder:text-white/35 outline-none transition-all focus:border-primary focus:bg-white/10"
+          />
         </div>
+        
+        {filteredMenu.length === 0 ? (
+          <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-12 text-center">
+            <p className="text-xl font-black text-white">لا توجد نتائج</p>
+            <p className="mt-2 text-sm font-bold text-white/40">جرّب البحث باسم مختلف أو اختر تصنيف آخر.</p>
+          </div>
+        ) : (
+          <div className="flex overflow-x-auto gap-6 md:gap-10 pb-12 no-scrollbar snap-x snap-mandatory px-4 md:px-8 cursor-grab active:cursor-grabbing scroll-smooth">
+            {filteredMenu.map(item => (
+              <div key={item.id} className="w-[280px] md:w-[350px] shrink-0 snap-start">
+                <MenuCard item={item} onAdd={addToCart} />
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <CartDrawer 
