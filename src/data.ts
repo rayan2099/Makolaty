@@ -832,40 +832,40 @@ export const INITIAL_MENU: MenuItem[] = [
   // --- Pastries (الفطایر) ---
   {
     id: 'pt-1',
-    nameAr: 'لبنة بالعسل',
-    nameEn: 'Labaneh with Honey',
+    nameAr: 'سبانخ',
+    nameEn: 'Spinach Pastry',
     category: 'pastries',
-    price: 9,
-    calories: 654,
-    image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?auto=format&fit=crop&w=800&q=80',
+    price: 7,
+    calories: 428,
+    image: '/menu/pastries/spinach.jpg',
     sizes: [
-      { name: 'صغير', price: 9 },
-      { name: 'وسط', price: 16 },
-      { name: 'كبير', price: 22 }
+      { name: 'صغير', price: 7 },
+      { name: 'وسط', price: 11 },
+      { name: 'كبير', price: 17 }
     ]
   },
   {
     id: 'pt-2',
-    nameAr: 'لبنة بالزيتون',
-    nameEn: 'Labaneh with Olives',
+    nameAr: 'اللحم',
+    nameEn: 'Meat Pastry',
     category: 'pastries',
-    price: 9,
-    calories: 653,
-    image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?auto=format&fit=crop&w=800&q=80',
+    price: 10,
+    calories: 479,
+    image: '/menu/pastries/meat.jpg',
     sizes: [
-      { name: 'صغير', price: 9 },
+      { name: 'صغير', price: 10 },
       { name: 'وسط', price: 16 },
       { name: 'كبير', price: 22 }
     ]
   },
   {
     id: 'pt-3',
-    nameAr: 'جبن',
-    nameEn: 'Cheese',
+    nameAr: 'سائل الجبن',
+    nameEn: 'Liquid Cheese Pastry',
     category: 'pastries',
     price: 8,
     calories: 805,
-    image: 'https://images.unsplash.com/photo-1512152272829-e3139592d56f?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pastries/liquid-cheese.jpg',
     sizes: [
       { name: 'صغير', price: 8 },
       { name: 'وسط', price: 13 },
@@ -874,40 +874,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'pt-4',
-    nameAr: 'فطيرة لحم',
-    nameEn: 'Meat Pie',
-    category: 'pastries',
-    price: 10,
-    calories: 479,
-    image: 'https://images.unsplash.com/photo-1512152272829-e3139592d56f?auto=format&fit=crop&w=800&q=80',
-    sizes: [
-      { name: 'صغير', price: 10 },
-      { name: 'وسط', price: 16 },
-      { name: 'كبير', price: 22 }
-    ]
-  },
-  {
-    id: 'pt-5',
-    nameAr: 'محمرة',
-    nameEn: 'Muhammara',
-    category: 'pastries',
-    price: 7,
-    calories: 619,
-    image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?auto=format&fit=crop&w=800&q=80',
-    sizes: [
-      { name: 'صغير', price: 7 },
-      { name: 'وسط', price: 12 },
-      { name: 'كبير', price: 17 }
-    ]
-  },
-  {
-    id: 'pt-6',
     nameAr: 'عش البلبل',
     nameEn: "Nightingale's Nest",
     category: 'pastries',
     price: 9,
     calories: 927,
-    image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pastries/ash-albulbul.jpg',
     sizes: [
       { name: 'صغير', price: 9 },
       { name: 'وسط', price: 17 },
@@ -915,73 +887,13 @@ export const INITIAL_MENU: MenuItem[] = [
     ]
   },
   {
-    id: 'pt-7',
-    nameAr: 'فطيرة شاورما جنن',
-    nameEn: 'Shawarma and Cheese Pie',
-    category: 'pastries',
-    price: 15,
-    calories: 1074,
-    image: 'https://images.unsplash.com/photo-1512152272829-e3139592d56f?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'pt-8',
-    nameAr: 'فطيرة جبن عكاوي',
-    nameEn: 'Akkawi cheese pie',
-    category: 'pastries',
-    price: 8,
-    calories: 805,
-    image: 'https://images.unsplash.com/photo-1512152272829-e3139592d56f?auto=format&fit=crop&w=800&q=80',
-    sizes: [
-      { name: 'صغير', price: 8 },
-      { name: 'وسط', price: 13 },
-      { name: 'كبير', price: 18 }
-    ]
-  },
-  {
-    id: 'pt-9',
-    nameAr: 'صحن فطائر مشكل',
-    nameEn: 'Mixed Pastries Platter',
-    category: 'pastries',
-    price: 30,
-    calories: 2238,
-    image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'pt-10',
-    nameAr: 'دجاج',
-    nameEn: 'Chicken Pastry',
-    category: 'pastries',
-    price: 8,
-    calories: 709,
-    image: 'https://images.unsplash.com/photo-1512152272829-e3139592d56f?auto=format&fit=crop&w=800&q=80',
-    sizes: [
-      { name: 'صغير', price: 8 },
-      { name: 'وسط', price: 13 },
-      { name: 'كبير', price: 18 }
-    ]
-  },
-  {
-    id: 'pt-11',
-    nameAr: 'سبانخ',
-    nameEn: 'Spinach Pastry',
-    category: 'pastries',
-    price: 7,
-    calories: 428,
-    image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?auto=format&fit=crop&w=800&q=80',
-    sizes: [
-      { name: 'صغير', price: 7 },
-      { name: 'وسط', price: 11 },
-      { name: 'كبير', price: 17 }
-    ]
-  },
-  {
-    id: 'pt-12',
+    id: 'pt-5',
     nameAr: 'لبنة',
     nameEn: 'Labaneh Pastry',
     category: 'pastries',
     price: 8,
     calories: 578,
-    image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pastries/labneh.jpg',
     sizes: [
       { name: 'صغير', price: 8 },
       { name: 'وسط', price: 13 },
@@ -989,13 +901,27 @@ export const INITIAL_MENU: MenuItem[] = [
     ]
   },
   {
-    id: 'pt-13',
-    nameAr: 'لبنة بالزعتر',
-    nameEn: 'Labaneh with Thyme',
+    id: 'pt-6',
+    nameAr: 'الدجاج',
+    nameEn: 'Chicken Pastry',
+    category: 'pastries',
+    price: 8,
+    calories: 709,
+    image: '/menu/pastries/chicken.jpg',
+    sizes: [
+      { name: 'صغير', price: 8 },
+      { name: 'وسط', price: 13 },
+      { name: 'كبير', price: 18 }
+    ]
+  },
+  {
+    id: 'pt-7',
+    nameAr: 'لبنة زيتون',
+    nameEn: 'Labaneh Olive Pastry',
     category: 'pastries',
     price: 9,
-    calories: 623,
-    image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?auto=format&fit=crop&w=800&q=80',
+    calories: 653,
+    image: '/menu/pastries/labneh-olive.jpg',
     sizes: [
       { name: 'صغير', price: 9 },
       { name: 'وسط', price: 16 },
@@ -1003,13 +929,13 @@ export const INITIAL_MENU: MenuItem[] = [
     ]
   },
   {
-    id: 'pt-14',
-    nameAr: 'زعتر',
-    nameEn: 'Thyme Pastry',
+    id: 'pt-8',
+    nameAr: 'محمرة',
+    nameEn: 'Muhammara Pastry',
     category: 'pastries',
     price: 7,
-    calories: 500,
-    image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?auto=format&fit=crop&w=800&q=80',
+    calories: 619,
+    image: '/menu/pastries/muhammara.jpg',
     sizes: [
       { name: 'صغير', price: 7 },
       { name: 'وسط', price: 12 },
@@ -1017,27 +943,27 @@ export const INITIAL_MENU: MenuItem[] = [
     ]
   },
   {
-    id: 'pt-15',
-    nameAr: 'بيض بالجبن',
-    nameEn: 'Eggs with Cheese',
+    id: 'pt-9',
+    nameAr: 'زعتر',
+    nameEn: 'Zaatar Pastry',
     category: 'pastries',
-    price: 9,
-    calories: 676,
-    image: 'https://images.unsplash.com/photo-1512152272829-e3139592d56f?auto=format&fit=crop&w=800&q=80',
+    price: 7,
+    calories: 500,
+    image: '/menu/pastries/zaatar.jpg',
     sizes: [
-      { name: 'صغير', price: 9 },
-      { name: 'وسط', price: 16 },
-      { name: 'كبير', price: 22 }
+      { name: 'صغير', price: 7 },
+      { name: 'وسط', price: 12 },
+      { name: 'كبير', price: 17 }
     ]
   },
   {
-    id: 'pt-16',
-    nameAr: 'جبن عسل',
-    nameEn: 'Cheese and Honey',
+    id: 'pt-10',
+    nameAr: 'بيض بالجبن',
+    nameEn: 'Egg Cheese Pastry',
     category: 'pastries',
     price: 9,
-    calories: 803,
-    image: 'https://images.unsplash.com/photo-1512152272829-e3139592d56f?auto=format&fit=crop&w=800&q=80',
+    calories: 676,
+    image: '/menu/pastries/egg-cheese.jpg',
     sizes: [
       { name: 'صغير', price: 9 },
       { name: 'وسط', price: 16 },
