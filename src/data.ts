@@ -717,20 +717,6 @@ export const INITIAL_MENU: MenuItem[] = [
 
   // --- Pizza (البیتزا) ---
   {
-    id: 'pz-1',
-    nameAr: 'لحم',
-    nameEn: 'Meat Pizza',
-    category: 'pizza',
-    price: 10,
-    calories: 591,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
-    sizes: [
-      { name: 'صغير', price: 10 },
-      { name: 'وسط', price: 17 },
-      { name: 'كبير', price: 23 }
-    ]
-  },
-  {
     id: 'pz-2',
     nameAr: 'باربكيو',
     nameEn: 'Barbecue Pizza',
@@ -801,20 +787,6 @@ export const INITIAL_MENU: MenuItem[] = [
     ]
   },
   {
-    id: 'pz-7',
-    nameAr: 'شاورما سبيشل',
-    nameEn: 'Special Shawarma',
-    category: 'pizza',
-    price: 16,
-    calories: 709,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
-    sizes: [
-      { name: 'صغير', price: 16 },
-      { name: 'وسط', price: 27 },
-      { name: 'كبير', price: 32 }
-    ]
-  },
-  {
     id: 'pz-8',
     nameAr: 'خضار',
     nameEn: 'Vegetables Pizza',
@@ -840,34 +812,6 @@ export const INITIAL_MENU: MenuItem[] = [
       { name: 'صغير', price: 10 },
       { name: 'وسط', price: 17 },
       { name: 'كبير', price: 23 }
-    ]
-  },
-  {
-    id: 'pz-10',
-    nameAr: 'مشكل',
-    nameEn: 'Mixed Pizza',
-    category: 'pizza',
-    price: 10,
-    calories: 624,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
-    sizes: [
-      { name: 'صغير', price: 10 },
-      { name: 'وسط', price: 17 },
-      { name: 'كبير', price: 23 }
-    ]
-  },
-  {
-    id: 'pz-11',
-    nameAr: 'شاورما',
-    nameEn: 'Shawarma Pizza',
-    category: 'pizza',
-    price: 13,
-    calories: 744,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
-    sizes: [
-      { name: 'صغير', price: 13 },
-      { name: 'وسط', price: 24 },
-      { name: 'كبير', price: 29 }
     ]
   },
   {
