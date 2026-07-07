@@ -732,12 +732,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'pz-2',
-    nameAr: 'باربیكيو',
-    nameEn: 'Barbecue',
+    nameAr: 'باربكيو',
+    nameEn: 'Barbecue Pizza',
     category: 'pizza',
     price: 13,
     calories: 613,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pizza/barbecue.jpeg',
     sizes: [
       { name: 'صغير', price: 13 },
       { name: 'وسط', price: 24 },
@@ -746,12 +746,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'pz-3',
-    nameAr: 'جبن (مارجريتا)',
-    nameEn: 'Cheese (Margherita)',
+    nameAr: 'مارجريتا جبن',
+    nameEn: 'Margherita Cheese Pizza',
     category: 'pizza',
     price: 10,
     calories: 459,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pizza/margherita-cheese.jpeg',
     sizes: [
       { name: 'صغير', price: 10 },
       { name: 'وسط', price: 17 },
@@ -760,12 +760,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'pz-4',
-    nameAr: 'رنش بيتزا',
-    nameEn: 'Ranch Pizza',
+    nameAr: 'دجاج رانش',
+    nameEn: 'Chicken Ranch Pizza',
     category: 'pizza',
     price: 13,
     calories: 470,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pizza/chicken-ranch.jpeg',
     sizes: [
       { name: 'صغير', price: 13 },
       { name: 'وسط', price: 24 },
@@ -774,12 +774,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'pz-5',
-    nameAr: 'جمبري بيتزا',
+    nameAr: 'جمبري',
     nameEn: 'Shrimp Pizza',
     category: 'pizza',
     price: 15,
     calories: 709,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pizza/shrimp.jpeg',
     sizes: [
       { name: 'صغير', price: 15 },
       { name: 'وسط', price: 25 },
@@ -788,12 +788,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'pz-6',
-    nameAr: 'سبيشل مأكولاتي',
-    nameEn: 'My Special Food',
+    nameAr: 'سبيشل ماكولاتي',
+    nameEn: 'Makolaty Special Pizza',
     category: 'pizza',
     price: 13,
     calories: 693,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pizza/makolaty-special.jpeg',
     sizes: [
       { name: 'صغير', price: 13 },
       { name: 'وسط', price: 24 },
@@ -821,7 +821,7 @@ export const INITIAL_MENU: MenuItem[] = [
     category: 'pizza',
     price: 9,
     calories: 461,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pizza/vegetables.jpeg',
     sizes: [
       { name: 'صغير', price: 9 },
       { name: 'وسط', price: 16 },
@@ -835,7 +835,7 @@ export const INITIAL_MENU: MenuItem[] = [
     category: 'pizza',
     price: 10,
     calories: 576,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pizza/chicken.jpeg',
     sizes: [
       { name: 'صغير', price: 10 },
       { name: 'وسط', price: 17 },
@@ -877,7 +877,7 @@ export const INITIAL_MENU: MenuItem[] = [
     category: 'pizza',
     price: 13,
     calories: 428,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pizza/pepperoni.jpeg',
     sizes: [
       { name: 'صغير', price: 13 },
       { name: 'وسط', price: 24 },
