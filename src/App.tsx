@@ -344,7 +344,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
       </div>
       <div className={cn(
         "p-6 flex flex-col flex-grow relative bg-secondary/80 backdrop-blur-xl rounded-t-3xl border-t border-white/10",
-        shouldShowFullArtwork ? "-mt-3" : "-mt-8"
+        shouldShowFullArtwork ? "mt-0" : "-mt-8"
       )}>
         <div className="mb-4 text-right">
           <h3 className="font-black text-xl leading-tight text-primary mb-1">{item.nameAr}</h3>
