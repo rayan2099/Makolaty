@@ -4,129 +4,156 @@ export const INITIAL_MENU: MenuItem[] = [
   // --- Shawarma (شاورما) ---
   {
     id: 'sh-1',
-    nameAr: 'شاورما صغير صاج',
-    nameEn: 'Small Shawarma Saj',
-    category: 'shawarma',
-    price: 6,
-    calories: 300,
-    image: 'https://images.unsplash.com/photo-1561651823-34feb02250e4?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sh-2',
     nameAr: 'صاروخ مأكولاتي',
-    nameEn: 'My Food Rocket',
+    nameEn: 'Makolaty Rocket',
     category: 'shawarma',
     price: 11,
     calories: 660,
-    image: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80'
+    image: '/menu/shawarma/makolaty-rocket.jpeg'
+  },
+  {
+    id: 'sh-2',
+    nameAr: 'بازوكا شاورما',
+    nameEn: 'Shawarma Bazooka',
+    category: 'shawarma',
+    price: 13,
+    calories: 760,
+    image: '/menu/shawarma/bazooka-shawarma.jpeg'
   },
   {
     id: 'sh-3',
-    nameAr: 'جامبو دجاج',
-    nameEn: 'Chicken Jumbo',
+    nameAr: 'شاورما عربي تركي دبل',
+    nameEn: 'Double Turkish Arabic Shawarma',
     category: 'shawarma',
-    price: 10,
-    calories: 470,
-    image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=800&q=80'
+    price: 23,
+    calories: 1095,
+    image: '/menu/shawarma/arabic-turkish-double.jpeg'
   },
   {
     id: 'sh-4',
-    nameAr: 'صحن شاورما دجاج',
-    nameEn: 'Chicken Shawarma Plate',
+    nameAr: 'صحن شاورما عربي',
+    nameEn: 'Arabic Shawarma Plate',
     category: 'shawarma',
     price: 19,
     calories: 1311,
-    image: 'https://images.unsplash.com/photo-1561651823-34feb02250e4?auto=format&fit=crop&w=800&q=80'
+    image: '/menu/shawarma/arabic-shawarma-plate.jpeg'
   },
   {
     id: 'sh-5',
-    nameAr: 'صحن عربي دجاج',
-    nameEn: 'Arabic Chicken Plate',
-    category: 'shawarma',
-    price: 16,
-    calories: 1095,
-    image: 'https://images.unsplash.com/photo-1561651823-34feb02250e4?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sh-6',
     nameAr: 'صحن عربي قرصان',
     nameEn: 'Arabic Pirate Plate',
     category: 'shawarma',
     price: 17,
     calories: 900,
-    image: 'https://images.unsplash.com/photo-1561651823-34feb02250e4?auto=format&fit=crop&w=800&q=80'
+    image: '/menu/shawarma/arabic-pirate-plate.jpeg'
+  },
+  {
+    id: 'sh-6',
+    nameAr: 'شاورما دجاج',
+    nameEn: 'Chicken Shawarma',
+    category: 'shawarma',
+    price: 6,
+    calories: 300,
+    image: '/menu/shawarma/chicken-shawarma.jpeg'
   },
   {
     id: 'sh-7',
-    nameAr: 'لغاویص شاورما',
-    nameEn: 'Shawarma Ghwais',
+    nameAr: 'جامبو شاورما',
+    nameEn: 'Jumbo Shawarma',
     category: 'shawarma',
-    price: 13,
-    calories: 1311,
-    image: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80'
+    price: 10,
+    calories: 470,
+    image: '/menu/shawarma/jumbo-shawarma.jpeg'
   },
   {
     id: 'sh-8',
-    nameAr: 'صاروخ دجاج',
-    nameEn: 'Chicken Rocket',
+    nameAr: 'لغاويص شاورما',
+    nameEn: 'Laghawis Shawarma',
     category: 'shawarma',
-    price: 11,
-    calories: 650,
-    image: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80'
+    price: 13,
+    calories: 1311,
+    image: '/menu/shawarma/laghawis-shawarma.jpeg'
   },
   {
     id: 'sh-9',
-    nameAr: 'صاروخ أمریكي',
+    nameAr: 'شاورما مفرود',
+    nameEn: 'Mafrood Shawarma',
+    category: 'shawarma',
+    price: 5,
+    calories: 320,
+    image: '/menu/shawarma/mafrood-shawarma.jpeg'
+  },
+  {
+    id: 'sh-10',
+    nameAr: 'صاروخ أمريكي',
     nameEn: 'American Rocket',
     category: 'shawarma',
     price: 16,
     calories: 800,
-    image: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sh-10',
-    nameAr: 'صاروخ شامي',
-    nameEn: 'Levant Rocket',
-    category: 'shawarma',
-    price: 11,
-    calories: 720,
-    image: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80'
+    image: '/menu/shawarma/american-rocket.jpeg'
   },
   {
     id: 'sh-11',
-    nameAr: 'شاورما تورتیلا',
+    nameAr: 'شاورما صامولي',
+    nameEn: 'Samoli Shawarma',
+    category: 'shawarma',
+    price: 4,
+    calories: 378,
+    image: '/menu/shawarma/samoli-shawarma.jpeg'
+  },
+  {
+    id: 'sh-12',
+    nameAr: 'شاورما تورتيلا',
     nameEn: 'Tortilla Shawarma',
     category: 'shawarma',
     price: 12,
     calories: 740,
-    image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'sh-12',
-    nameAr: 'صامولي دجاج',
-    nameEn: 'Chicken Samoli',
-    category: 'shawarma',
-    price: 4,
-    calories: 378,
-    image: 'https://images.unsplash.com/photo-1561651823-34feb02250e4?auto=format&fit=crop&w=800&q=80'
+    image: '/menu/shawarma/tortilla-shawarma.jpeg'
   },
   {
     id: 'sh-13',
-    nameAr: 'مفرود دجاج',
-    nameEn: 'Chicken Mafrod',
+    nameAr: 'شاورما مفرود دجاج',
+    nameEn: 'Chicken Mafrood Shawarma',
     category: 'shawarma',
     price: 5,
     calories: 320,
-    image: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80'
+    image: '/menu/shawarma/mafrood-chicken.jpeg'
   },
   {
     id: 'sh-14',
-    nameAr: 'صاروخ قرصان دجاج',
-    nameEn: 'Chicken Pirate Rocket',
+    nameAr: 'شاورما صغير صاج',
+    nameEn: 'Small Saj Shawarma',
     category: 'shawarma',
-    price: 12,
-    calories: 580,
-    image: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80'
+    price: 6,
+    calories: 300,
+    image: '/menu/shawarma/small-saj.jpeg'
+  },
+  {
+    id: 'sh-15',
+    nameAr: 'صاروخ شامي',
+    nameEn: 'Shami Rocket',
+    category: 'shawarma',
+    price: 11,
+    calories: 720,
+    image: '/menu/shawarma/shami-rocket.jpeg'
+  },
+  {
+    id: 'sh-16',
+    nameAr: 'شاورما تبولة',
+    nameEn: 'Tabbouleh Shawarma',
+    category: 'shawarma',
+    price: 11,
+    calories: 620,
+    image: '/menu/shawarma/tabbouleh-shawarma.jpeg'
+  },
+  {
+    id: 'sh-17',
+    nameAr: 'وجبة عربي دبل',
+    nameEn: 'Double Arabic Meal',
+    category: 'shawarma',
+    price: 27,
+    calories: 1250,
+    image: '/menu/shawarma/double-arabic-meal.jpeg'
   },
 
   // --- Appetizers (مقبلات) ---
