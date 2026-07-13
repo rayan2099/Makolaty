@@ -442,6 +442,15 @@ export const INITIAL_MENU: MenuItem[] = [
     calories: 850,
     image: '/menu/burgers/zinger.jpeg'
   },
+  {
+    id: 'ml-5',
+    nameAr: 'دجاج مقلي',
+    nameEn: 'Fried Chicken Burger',
+    category: 'meals',
+    price: 16,
+    calories: 650,
+    image: '/menu/burgers/fried-chicken.jpeg'
+  },
 
   // --- Sandwiches (السندویشات) ---
   {

@@ -70,4 +70,18 @@ insert into public.menu_items (
     403,
     now(),
     now()
+  ),
+  (
+    'ml-5',
+    'دجاج مقلي',
+    'Fried Chicken Burger',
+    'meals',
+    16,
+    650,
+    '/menu/burgers/fried-chicken.jpeg',
+    null,
+    true,
+    404,
+    now(),
+    now()
   );
