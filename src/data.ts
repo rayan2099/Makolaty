@@ -668,12 +668,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'pt-3',
-    nameAr: 'سائل الجبن',
-    nameEn: 'Liquid Cheese Pastry',
+    nameAr: 'جبن كرافت سائل',
+    nameEn: 'Liquid Kraft Cheese Pastry',
     category: 'pastries',
     price: 8,
     calories: 805,
-    image: '/menu/pastries/liquid-cheese.jpg',
+    image: '/menu/pastries/kraft-liquid-cheese.jpg',
     sizes: [
       { name: 'صغير', price: 8 },
       { name: 'وسط', price: 13 },
@@ -766,7 +766,7 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'pt-10',
-    nameAr: 'بيض بالجبن',
+    nameAr: 'بيض جبن',
     nameEn: 'Egg Cheese Pastry',
     category: 'pastries',
     price: 9,
@@ -776,6 +776,57 @@ export const INITIAL_MENU: MenuItem[] = [
       { name: 'صغير', price: 9 },
       { name: 'وسط', price: 16 },
       { name: 'كبير', price: 22 }
+    ]
+  },
+  {
+    id: 'pt-11',
+    nameAr: 'لبنة زعتر',
+    nameEn: 'Labaneh Zaatar Pastry',
+    category: 'pastries',
+    price: 9,
+    calories: 650,
+    image: '/menu/pastries/labneh-zaatar.jpg',
+    sizes: [
+      { name: 'صغير', price: 9 },
+      { name: 'وسط', price: 16 },
+      { name: 'كبير', price: 22 }
+    ]
+  },
+  {
+    id: 'pt-12',
+    nameAr: 'صحن فطائر مشكل',
+    nameEn: 'Mixed Pastries Plate',
+    category: 'pastries',
+    price: 35,
+    calories: 1200,
+    image: '/menu/pastries/mixed-pastries-plate.jpg'
+  },
+  {
+    id: 'pt-13',
+    nameAr: 'جبن عكاوي',
+    nameEn: 'Akkawi Cheese Pastry',
+    category: 'pastries',
+    price: 9,
+    calories: 720,
+    image: '/menu/pastries/akkawi-cheese.jpg',
+    sizes: [
+      { name: 'صغير', price: 9 },
+      { name: 'وسط', price: 16 },
+      { name: 'كبير', price: 22 }
+    ]
+  },
+  {
+    id: 'pt-14',
+    nameAr: 'شاورما دجاج',
+    nameEn: 'Chicken Shawarma Pastry',
+    category: 'pastries',
+    price: 10,
+    calories: 760,
+    image: '/menu/pastries/chicken-shawarma.jpg',
+    sizes: [
+      { name: 'صغير', price: 10 },
+      { name: 'وسط', price: 17 },
+      { name: 'كبير', price: 23 }
     ]
   },
 
