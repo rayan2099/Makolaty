@@ -447,13 +447,27 @@ export const INITIAL_MENU: MenuItem[] = [
 
   // --- Pizza (البیتزا) ---
   {
-    id: 'pz-2',
-    nameAr: 'باربكيو',
-    nameEn: 'Barbecue Pizza',
+    id: 'pz-1',
+    nameAr: 'سبيشل شاورما',
+    nameEn: 'Special Shawarma Pizza',
     category: 'pizza',
     price: 13,
     calories: 613,
-    image: '/menu/pizza/barbecue.jpeg',
+    image: '/menu/pizza/special-shawarma.jpeg',
+    sizes: [
+      { name: 'صغير', price: 13 },
+      { name: 'وسط', price: 24 },
+      { name: 'كبير', price: 29 }
+    ]
+  },
+  {
+    id: 'pz-2',
+    nameAr: 'مشكل',
+    nameEn: 'Mixed Pizza',
+    category: 'pizza',
+    price: 13,
+    calories: 576,
+    image: '/menu/pizza/mixed.jpeg',
     sizes: [
       { name: 'صغير', price: 13 },
       { name: 'وسط', price: 24 },
@@ -462,26 +476,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'pz-3',
-    nameAr: 'مارجريتا جبن',
-    nameEn: 'Margherita Cheese Pizza',
-    category: 'pizza',
-    price: 10,
-    calories: 459,
-    image: '/menu/pizza/margherita-cheese.jpeg',
-    sizes: [
-      { name: 'صغير', price: 10 },
-      { name: 'وسط', price: 17 },
-      { name: 'كبير', price: 23 }
-    ]
-  },
-  {
-    id: 'pz-4',
-    nameAr: 'دجاج رانش',
-    nameEn: 'Chicken Ranch Pizza',
+    nameAr: 'شاورما',
+    nameEn: 'Shawarma Pizza',
     category: 'pizza',
     price: 13,
-    calories: 470,
-    image: '/menu/pizza/chicken-ranch.jpeg',
+    calories: 613,
+    image: '/menu/pizza/shawarma.jpeg',
     sizes: [
       { name: 'صغير', price: 13 },
       { name: 'وسط', price: 24 },
@@ -489,17 +489,31 @@ export const INITIAL_MENU: MenuItem[] = [
     ]
   },
   {
-    id: 'pz-5',
-    nameAr: 'جمبري',
-    nameEn: 'Shrimp Pizza',
+    id: 'pz-4',
+    nameAr: 'دجاج',
+    nameEn: 'Chicken Pizza',
     category: 'pizza',
-    price: 15,
-    calories: 709,
-    image: '/menu/pizza/shrimp.jpeg',
+    price: 10,
+    calories: 576,
+    image: '/menu/pizza/chicken.jpeg',
     sizes: [
-      { name: 'صغير', price: 15 },
-      { name: 'وسط', price: 25 },
-      { name: 'كبير', price: 30 }
+      { name: 'صغير', price: 10 },
+      { name: 'وسط', price: 17 },
+      { name: 'كبير', price: 23 }
+    ]
+  },
+  {
+    id: 'pz-5',
+    nameAr: 'خضار',
+    nameEn: 'Vegetables Pizza',
+    category: 'pizza',
+    price: 9,
+    calories: 461,
+    image: '/menu/pizza/vegetables.jpeg',
+    sizes: [
+      { name: 'صغير', price: 9 },
+      { name: 'وسط', price: 16 },
+      { name: 'كبير', price: 22 }
     ]
   },
   {
@@ -517,27 +531,55 @@ export const INITIAL_MENU: MenuItem[] = [
     ]
   },
   {
-    id: 'pz-8',
-    nameAr: 'خضار',
-    nameEn: 'Vegetables Pizza',
+    id: 'pz-7',
+    nameAr: 'ببروني',
+    nameEn: 'Pepperoni Pizza',
     category: 'pizza',
-    price: 9,
-    calories: 461,
-    image: '/menu/pizza/vegetables.jpeg',
+    price: 13,
+    calories: 428,
+    image: '/menu/pizza/pepperoni.jpeg',
     sizes: [
-      { name: 'صغير', price: 9 },
-      { name: 'وسط', price: 16 },
-      { name: 'كبير', price: 22 }
+      { name: 'صغير', price: 13 },
+      { name: 'وسط', price: 24 },
+      { name: 'كبير', price: 29 }
+    ]
+  },
+  {
+    id: 'pz-8',
+    nameAr: 'دجاج رانش',
+    nameEn: 'Chicken Ranch Pizza',
+    category: 'pizza',
+    price: 13,
+    calories: 470,
+    image: '/menu/pizza/chicken-ranch.jpeg',
+    sizes: [
+      { name: 'صغير', price: 13 },
+      { name: 'وسط', price: 24 },
+      { name: 'كبير', price: 29 }
     ]
   },
   {
     id: 'pz-9',
-    nameAr: 'دجاج',
-    nameEn: 'Chicken Pizza',
+    nameAr: 'جمبري',
+    nameEn: 'Shrimp Pizza',
+    category: 'pizza',
+    price: 15,
+    calories: 709,
+    image: '/menu/pizza/shrimp.jpeg',
+    sizes: [
+      { name: 'صغير', price: 15 },
+      { name: 'وسط', price: 25 },
+      { name: 'كبير', price: 30 }
+    ]
+  },
+  {
+    id: 'pz-10',
+    nameAr: 'مارجريتا جبن',
+    nameEn: 'Margherita Cheese Pizza',
     category: 'pizza',
     price: 10,
-    calories: 576,
-    image: '/menu/pizza/chicken.jpeg',
+    calories: 459,
+    image: '/menu/pizza/margherita-cheese.jpeg',
     sizes: [
       { name: 'صغير', price: 10 },
       { name: 'وسط', price: 17 },
@@ -545,13 +587,13 @@ export const INITIAL_MENU: MenuItem[] = [
     ]
   },
   {
-    id: 'pz-12',
-    nameAr: 'ببروني',
-    nameEn: 'Pepperoni Pizza',
+    id: 'pz-11',
+    nameAr: 'باربكيو',
+    nameEn: 'Barbecue Pizza',
     category: 'pizza',
     price: 13,
-    calories: 428,
-    image: '/menu/pizza/pepperoni.jpeg',
+    calories: 613,
+    image: '/menu/pizza/barbecue.jpeg',
     sizes: [
       { name: 'صغير', price: 13 },
       { name: 'وسط', price: 24 },
