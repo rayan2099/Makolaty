@@ -328,18 +328,24 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
       className="glass rounded-3xl overflow-hidden flex flex-col group"
     >
       <div className={cn(
-        "relative aspect-[4/3] overflow-hidden",
-        shouldShowFullArtwork && "bg-[#f8f1e8]"
+        "relative overflow-hidden",
+        shouldShowFullArtwork ? "aspect-[3/4] bg-[#f8f1e8]" : "aspect-[4/3]"
       )}>
         <MenuItemImage item={item} />
-        <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent opacity-60" />
+        <div className={cn(
+          "absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent",
+          shouldShowFullArtwork ? "opacity-25" : "opacity-60"
+        )} />
         {item.calories && (
           <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold border border-white/10">
             {item.calories} Kcal
           </div>
         )}
       </div>
-      <div className="p-6 flex flex-col flex-grow relative -mt-8 bg-secondary/80 backdrop-blur-xl rounded-t-3xl border-t border-white/10">
+      <div className={cn(
+        "p-6 flex flex-col flex-grow relative bg-secondary/80 backdrop-blur-xl rounded-t-3xl border-t border-white/10",
+        shouldShowFullArtwork ? "-mt-3" : "-mt-8"
+      )}>
         <div className="mb-4 text-right">
           <h3 className="font-black text-xl leading-tight text-primary mb-1">{item.nameAr}</h3>
           <p className="text-white/40 text-xs font-bold uppercase tracking-widest">{item.nameEn}</p>
