@@ -289,12 +289,12 @@ export const INITIAL_MENU: MenuItem[] = [
   // --- Pasta (باستا) ---
   {
     id: 'ps-1',
-    nameAr: 'باستا بالخضار',
-    nameEn: 'Pasta With Vegetables',
+    nameAr: 'باستا خضار',
+    nameEn: 'Vegetable Pasta',
     category: 'pasta',
     price: 10,
     calories: 330,
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pasta/vegetables.jpg',
     sizes: [
       { name: 'صغير', price: 10 },
       { name: 'كبير', price: 20 }
@@ -302,12 +302,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'ps-2',
-    nameAr: 'باستا الفریدو',
+    nameAr: 'باستا الفريدو',
     nameEn: 'Alfredo Pasta',
     category: 'pasta',
     price: 15,
     calories: 400,
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pasta/alfredo.jpg',
     sizes: [
       { name: 'صغير', price: 15 },
       { name: 'كبير', price: 25 }
@@ -315,12 +315,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'ps-3',
-    nameAr: 'بشامیل',
+    nameAr: 'مكرونة بشاميل',
     nameEn: 'Bechamel Pasta',
     category: 'pasta',
     price: 15,
     calories: 435,
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pasta/bechamel.jpg',
     sizes: [
       { name: 'صغير', price: 15 },
       { name: 'كبير', price: 25 }
@@ -333,7 +333,7 @@ export const INITIAL_MENU: MenuItem[] = [
     category: 'pasta',
     price: 20,
     calories: 460,
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pasta/shrimp.jpg',
     sizes: [
       { name: 'صغير', price: 20 },
       { name: 'كبير', price: 30 }
@@ -341,12 +341,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'ps-5',
-    nameAr: 'مكرونة بالجبن',
+    nameAr: 'باستا جبن',
     nameEn: 'Cheese Pasta',
     category: 'pasta',
     price: 10,
     calories: 450,
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pasta/cheese.jpg',
     sizes: [
       { name: 'صغير', price: 10 },
       { name: 'كبير', price: 20 }
@@ -354,12 +354,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'ps-6',
-    nameAr: 'باستا دجاج بالكریمة فیتوتشينی',
-    nameEn: 'Creamy Chicken Fettuccine',
+    nameAr: 'باستا فوتشيني',
+    nameEn: 'Fettuccine Pasta',
     category: 'pasta',
     price: 15,
     calories: 750,
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pasta/fettuccine.jpg',
     sizes: [
       { name: 'صغير', price: 15 },
       { name: 'كبير', price: 25 }
@@ -367,12 +367,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'ps-7',
-    nameAr: 'باستا بولینيس',
+    nameAr: 'باستا بولينيس',
     nameEn: 'Bolognese Pasta',
     category: 'pasta',
     price: 20,
     calories: 430,
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pasta/bolognese.jpg',
     sizes: [
       { name: 'صغير', price: 20 },
       { name: 'كبير', price: 31 }
@@ -380,12 +380,12 @@ export const INITIAL_MENU: MenuItem[] = [
   },
   {
     id: 'ps-8',
-    nameAr: 'مكرونة البیني',
+    nameAr: 'باستا البيني',
     nameEn: 'Penne Pasta',
     category: 'pasta',
     price: 10,
     calories: 320,
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pasta/penne.jpg',
     sizes: [
       { name: 'صغير', price: 10 },
       { name: 'كبير', price: 20 }
@@ -398,7 +398,7 @@ export const INITIAL_MENU: MenuItem[] = [
     category: 'pasta',
     price: 15,
     calories: 470,
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=800&q=80',
+    image: '/menu/pasta/lasagna.jpg',
     sizes: [
       { name: 'صغير', price: 15 },
       { name: 'كبير', price: 25 }
