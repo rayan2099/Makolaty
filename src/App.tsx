@@ -1633,6 +1633,7 @@ const MenuManagement = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [activeMenuCategory, setActiveMenuCategory] = useState('all');
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -1694,7 +1695,7 @@ const MenuManagement = () => {
     ? items.find(item => item.id === selectedItemId) || null
     : null;
   const isSuccessMessage = Boolean(message) && (
-    message.includes('بنجاح') || message.startsWith('تم استيراد')
+    message.includes('بنجاح') || message.includes('successfully') || message.startsWith('تم استيراد')
   );
 
   useEffect(() => {
@@ -1876,6 +1877,61 @@ const MenuManagement = () => {
     });
   };
 
+  const deleteSelectedItem = async () => {
+    if (!selectedItem) return;
+
+    const confirmed = window.confirm(t(
+      `هل تريد حذف ${selectedItem.nameAr} نهائياً؟ لا يمكن التراجع عن هذا الإجراء.`,
+      `Permanently delete ${selectedItem.nameEn}? This action cannot be undone.`
+    ));
+    if (!confirmed) return;
+
+    setMessage('');
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('menu_items')
+        .delete()
+        .eq('id', selectedItem.id);
+      if (error) throw error;
+
+      if (isFullArtworkImage(selectedItem.image) && selectedItem.image.includes('/menu-images/')) {
+        const { error: storageError } = await supabase.storage
+          .from(MENU_IMAGE_BUCKET)
+          .remove([`items/${selectedItem.id}.webp`]);
+        if (storageError) {
+          console.warn('The menu item was deleted, but its image could not be removed.', storageError);
+        }
+      }
+
+      const deletedName = language === 'ar' ? selectedItem.nameAr : selectedItem.nameEn;
+      setItems(currentItems => currentItems.filter(item => item.id !== selectedItem.id));
+      setSelectedItemId(null);
+      setSelectedImageFile(null);
+      setForm({
+        nameAr: '',
+        nameEn: '',
+        category: CATEGORIES[0]?.id || 'shawarma',
+        price: '',
+        calories: '',
+        sizes: [],
+        isAvailable: true,
+      });
+      setMessage(t(`تم حذف ${deletedName} بنجاح.`, `${deletedName} was deleted successfully.`));
+    } catch (error) {
+      await handleSupabaseError(error, OperationType.DELETE, 'menu_items');
+      const databaseError = error && typeof error === 'object' && 'message' in error
+        ? String(error.message)
+        : String(error);
+      setMessage(t(
+        `تعذر حذف الصنف: ${databaseError}`,
+        `Could not delete the item: ${databaseError}`
+      ));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <>
       <AnimatePresence>
@@ -1929,13 +1985,25 @@ const MenuManagement = () => {
         </p>
 
         {selectedItem ? (
-          <button
-            type="button"
-            onClick={resetItemForm}
-            className="w-full py-3 mb-4 border border-white/15 text-white/70 font-black rounded-2xl hover:border-primary hover:text-primary transition-all"
-          >
-            {t('إلغاء التعديل وإضافة صنف جديد', 'Cancel editing and add a new item')}
-          </button>
+          <div className="mb-4 grid grid-cols-[1fr_auto] gap-2">
+            <button
+              type="button"
+              onClick={resetItemForm}
+              disabled={isDeleting}
+              className="py-3 border border-white/15 text-white/70 font-black rounded-2xl hover:border-primary hover:text-primary disabled:opacity-50 transition-all"
+            >
+              {t('إلغاء التعديل', 'Cancel editing')}
+            </button>
+            <button
+              type="button"
+              onClick={deleteSelectedItem}
+              disabled={isDeleting || isSaving}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 font-black text-red-400 transition-all hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 className="h-5 w-5" />
+              {isDeleting ? t('جاري الحذف...', 'Deleting...') : t('حذف الصنف', 'Delete item')}
+            </button>
+          </div>
         ) : null}
 
         {!selectedItem ? <button
@@ -2105,7 +2173,7 @@ const MenuManagement = () => {
           ) : null}
           <button
             onClick={addMenuItem}
-            disabled={isSaving}
+            disabled={isSaving || isDeleting}
             className="w-full py-4 bg-primary text-secondary font-black rounded-2xl hover:bg-accent disabled:opacity-50 transition-all flex items-center justify-center gap-2"
           >
             {selectedItem ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
