@@ -830,6 +830,39 @@ export const INITIAL_MENU: MenuItem[] = [
     ]
   },
 
+  // --- Broast (بروست) ---
+  {
+    id: 'broast-chicken',
+    nameAr: 'بروست دجاج',
+    nameEn: 'Chicken Broast',
+    category: 'broast',
+    price: 20,
+    calories: 650,
+    image: '/menu/broast/chicken-broast.jpeg',
+    sizes: [
+      { name: 'عادي', price: 20 },
+      { name: 'كبير', price: 25 }
+    ]
+  },
+  {
+    id: 'broast-nuggets-regular',
+    nameAr: 'مسحب عادي',
+    nameEn: 'Regular Chicken Nuggets',
+    category: 'broast',
+    price: 20,
+    calories: 650,
+    image: '/menu/broast/chicken-nuggets.jpeg'
+  },
+  {
+    id: 'broast-nuggets-spicy',
+    nameAr: 'مسحب حراق',
+    nameEn: 'Spicy Chicken Nuggets',
+    category: 'broast',
+    price: 20,
+    calories: 650,
+    image: '/menu/broast/chicken-nuggets.jpeg'
+  },
+
   // --- Drinks (المشروبات) ---
   {
     id: 'dr-1',
