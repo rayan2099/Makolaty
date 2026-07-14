@@ -16,7 +16,7 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'بازوكا شاورما',
     nameEn: 'Shawarma Bazooka',
     category: 'shawarma',
-    price: 13,
+    price: 16,
     calories: 760,
     image: '/menu/shawarma/bazooka-shawarma.jpeg'
   },
@@ -25,7 +25,7 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'شاورما عربي تركي دبل',
     nameEn: 'Double Turkish Arabic Shawarma',
     category: 'shawarma',
-    price: 23,
+    price: 20,
     calories: 1095,
     image: '/menu/shawarma/arabic-turkish-double.jpeg'
   },
@@ -429,7 +429,7 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'كرسبي',
     nameEn: 'Crispy Burger',
     category: 'meals',
-    price: 16,
+    price: 23,
     calories: 480,
     image: '/menu/burgers/crispy.jpeg'
   },
@@ -487,13 +487,13 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'سبيشل شاورما',
     nameEn: 'Special Shawarma Pizza',
     category: 'pizza',
-    price: 13,
+    price: 16,
     calories: 613,
     image: '/menu/pizza/special-shawarma.jpeg',
     sizes: [
-      { name: 'صغير', price: 13 },
-      { name: 'وسط', price: 24 },
-      { name: 'كبير', price: 29 }
+      { name: 'صغير', price: 16 },
+      { name: 'وسط', price: 27 },
+      { name: 'كبير', price: 32 }
     ]
   },
   {
@@ -501,13 +501,13 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'مشكل',
     nameEn: 'Mixed Pizza',
     category: 'pizza',
-    price: 13,
+    price: 10,
     calories: 576,
     image: '/menu/pizza/mixed.jpeg',
     sizes: [
-      { name: 'صغير', price: 13 },
-      { name: 'وسط', price: 24 },
-      { name: 'كبير', price: 29 }
+      { name: 'صغير', price: 10 },
+      { name: 'وسط', price: 17 },
+      { name: 'كبير', price: 23 }
     ]
   },
   {
@@ -797,7 +797,7 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'صحن فطائر مشكل',
     nameEn: 'Mixed Pastries Plate',
     category: 'pastries',
-    price: 35,
+    price: 30,
     calories: 1200,
     image: '/menu/pastries/mixed-pastries-plate.jpg'
   },
@@ -806,13 +806,13 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'جبن عكاوي',
     nameEn: 'Akkawi Cheese Pastry',
     category: 'pastries',
-    price: 9,
+    price: 8,
     calories: 720,
     image: '/menu/pastries/akkawi-cheese.jpg',
     sizes: [
-      { name: 'صغير', price: 9 },
-      { name: 'وسط', price: 16 },
-      { name: 'كبير', price: 22 }
+      { name: 'صغير', price: 8 },
+      { name: 'وسط', price: 13 },
+      { name: 'كبير', price: 18 }
     ]
   },
   {
@@ -820,14 +820,9 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'شاورما دجاج',
     nameEn: 'Chicken Shawarma Pastry',
     category: 'pastries',
-    price: 10,
+    price: 15,
     calories: 760,
-    image: '/menu/pastries/chicken-shawarma.jpg',
-    sizes: [
-      { name: 'صغير', price: 10 },
-      { name: 'وسط', price: 17 },
-      { name: 'كبير', price: 23 }
-    ]
+    image: '/menu/pastries/chicken-shawarma.jpg'
   },
 
   // --- Broast (بروست) ---
@@ -836,12 +831,12 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'بروست دجاج',
     nameEn: 'Chicken Broast',
     category: 'broast',
-    price: 20,
+    price: 18,
     calories: 650,
     image: '/menu/broast/chicken-broast.jpeg',
     sizes: [
-      { name: 'عادي', price: 20 },
-      { name: 'كبير', price: 25 }
+      { name: 'عادي', price: 18 },
+      { name: 'حراق', price: 18 }
     ]
   },
   {
@@ -849,7 +844,7 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'مسحب عادي',
     nameEn: 'Regular Chicken Nuggets',
     category: 'broast',
-    price: 20,
+    price: 18,
     calories: 650,
     image: '/menu/broast/chicken-nuggets.jpeg'
   },
@@ -858,7 +853,7 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'مسحب حراق',
     nameEn: 'Spicy Chicken Nuggets',
     category: 'broast',
-    price: 20,
+    price: 18,
     calories: 650,
     image: '/menu/broast/chicken-nuggets.jpeg'
   },
