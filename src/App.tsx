@@ -1466,12 +1466,6 @@ const Home = () => {
             >
               🍽️ {t('تصفح القائمة', 'Browse menu')}
             </a>
-            <a 
-              href={`https://wa.me/${formatPhone(STAFF_WHATSAPP)}`}
-              className="px-8 md:px-12 py-4 md:py-5 glass text-white font-black rounded-2xl text-lg md:text-xl hover:bg-white/20 transition-all flex items-center justify-center gap-3"
-            >
-              📱 {t('اطلب عبر واتساب', 'Order via WhatsApp')}
-            </a>
           </div>
         </div>
       </section>
