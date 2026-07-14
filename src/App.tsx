@@ -196,10 +196,14 @@ const formatPhone = (phone: string) => {
   return cleaned;
 };
 
+const isFullArtworkImage = (imageUrl: string) => (
+  imageUrl.startsWith('/menu/') || imageUrl.includes('/menu-images/')
+);
+
 const MenuItemImage = ({ item }: { item: MenuItem }) => {
   const { language } = useLanguage();
   const [hasImageError, setHasImageError] = useState(false);
-  const shouldShowFullArtwork = item.image.startsWith('/menu/');
+  const shouldShowFullArtwork = isFullArtworkImage(item.image);
 
   if (!item.image || hasImageError) {
     return (
@@ -379,7 +383,7 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
 const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, size?: string) => void; key?: string }) => {
   const { language, t } = useLanguage();
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
-  const shouldShowFullArtwork = item.image.startsWith('/menu/');
+  const shouldShowFullArtwork = isFullArtworkImage(item.image);
   const isUnavailable = item.isAvailable === false;
 
   return (
@@ -1546,7 +1550,8 @@ const Home = () => {
 };
 
 const MENU_IMAGE_BUCKET = 'menu-images';
-const MENU_IMAGE_SIZE = 900;
+const MENU_IMAGE_WIDTH = 900;
+const MENU_IMAGE_HEIGHT = 1200;
 
 const resizeMenuImage = async (file: File) => {
   if (!file.type.startsWith('image/')) {
@@ -1564,28 +1569,31 @@ const resizeMenuImage = async (file: File) => {
   try {
     await image.decode();
     const canvas = document.createElement('canvas');
-    canvas.width = MENU_IMAGE_SIZE;
-    canvas.height = MENU_IMAGE_SIZE;
+    canvas.width = MENU_IMAGE_WIDTH;
+    canvas.height = MENU_IMAGE_HEIGHT;
 
     const context = canvas.getContext('2d');
     if (!context) throw new Error('image-processing-failed');
 
-    const sourceSize = Math.min(image.naturalWidth, image.naturalHeight);
-    const sourceX = (image.naturalWidth - sourceSize) / 2;
-    const sourceY = (image.naturalHeight - sourceSize) / 2;
+    const scale = Math.min(
+      MENU_IMAGE_WIDTH / image.naturalWidth,
+      MENU_IMAGE_HEIGHT / image.naturalHeight
+    );
+    const renderWidth = image.naturalWidth * scale;
+    const renderHeight = image.naturalHeight * scale;
+    const renderX = (MENU_IMAGE_WIDTH - renderWidth) / 2;
+    const renderY = (MENU_IMAGE_HEIGHT - renderHeight) / 2;
 
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
+    context.fillStyle = '#f8f1e8';
+    context.fillRect(0, 0, MENU_IMAGE_WIDTH, MENU_IMAGE_HEIGHT);
     context.drawImage(
       image,
-      sourceX,
-      sourceY,
-      sourceSize,
-      sourceSize,
-      0,
-      0,
-      MENU_IMAGE_SIZE,
-      MENU_IMAGE_SIZE
+      renderX,
+      renderY,
+      renderWidth,
+      renderHeight
     );
 
     return await new Promise<Blob>((resolve, reject) => {
@@ -1617,7 +1625,7 @@ const uploadMenuImage = async (file: File, itemId: string) => {
   if (error) throw error;
 
   const { data } = supabase.storage.from(MENU_IMAGE_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return `${data.publicUrl}?v=${Date.now()}`;
 };
 
 const MenuManagement = () => {
@@ -1995,7 +2003,7 @@ const MenuManagement = () => {
             <div className="flex items-center gap-4">
               <div className="h-20 w-20 overflow-hidden rounded-2xl border border-white/10 bg-secondary shrink-0">
                 {imagePreviewUrl ? (
-                  <img src={imagePreviewUrl} alt="معاينة صورة الصنف" className="h-full w-full object-cover" />
+                  <img src={imagePreviewUrl} alt="معاينة صورة الصنف" className="h-full w-full bg-[#f8f1e8] object-contain" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-primary">
                     <Upload className="h-7 w-7" />
@@ -2007,7 +2015,7 @@ const MenuManagement = () => {
                   {selectedImageFile ? selectedImageFile.name : t('رفع صورة الصنف', 'Upload item image')}
                 </p>
                 <p className="mt-1 text-xs font-bold leading-relaxed text-white/45">
-                  {t('PNG أو JPG أو WebP. سيتم ضبطها تلقائياً إلى مقاس موحد للقائمة.', 'PNG, JPG, or WebP. The image will be resized automatically.')}
+                  {t('PNG أو JPG أو WebP. سيتم عرض الصورة كاملة بمقاس 3:4 دون قص.', 'PNG, JPG, or WebP. The full image will fit a 3:4 card without cropping.')}
                 </p>
               </div>
             </div>
