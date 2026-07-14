@@ -20,6 +20,10 @@ to anon, authenticated
 using (true)
 with check (true);
 
+grant select, insert, update, delete
+on table public.menu_items
+to anon, authenticated;
+
 drop policy if exists "Anyone can read menu images" on storage.objects;
 create policy "Anyone can read menu images"
 on storage.objects

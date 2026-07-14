@@ -1796,9 +1796,17 @@ const MenuManagement = () => {
           'Image upload failed. Run supabase/menu_images_storage.sql in Supabase, then try again.'
         ));
       } else {
+        const databaseError = error && typeof error === 'object'
+          ? [
+              'message' in error ? String(error.message) : '',
+              'details' in error ? String(error.details) : '',
+              'hint' in error ? String(error.hint) : '',
+              'code' in error ? `(${String(error.code)})` : '',
+            ].filter(Boolean).join(' ')
+          : String(error);
         setMessage(t(
-          'تم رفع الصورة، لكن تعذر حفظ الصنف. شغّل ملف supabase/passcode_staff_policies.sql في Supabase ثم حاول مرة أخرى.',
-          'The image uploaded, but the item could not be saved. Run supabase/passcode_staff_policies.sql in Supabase, then try again.'
+          `تم رفع الصورة، لكن تعذر حفظ الصنف. خطأ قاعدة البيانات: ${databaseError}`,
+          `The image uploaded, but the item could not be saved. Database error: ${databaseError}`
         ));
       }
     } finally {
