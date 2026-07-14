@@ -1670,6 +1670,15 @@ const MenuManagement = () => {
   const selectedItem = selectedItemId
     ? items.find(item => item.id === selectedItemId) || null
     : null;
+  const isSuccessMessage = Boolean(message) && (
+    message.includes('بنجاح') || message.startsWith('تم استيراد')
+  );
+
+  useEffect(() => {
+    if (!isSuccessMessage) return;
+    const timeout = window.setTimeout(() => setMessage(''), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [isSuccessMessage, message]);
 
   const categoryFallbackImages: Record<string, string> = {
     all: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=800&q=80',
@@ -1845,6 +1854,44 @@ const MenuManagement = () => {
   };
 
   return (
+    <>
+      <AnimatePresence>
+        {isSuccessMessage ? (
+          <motion.div
+            initial={{ opacity: 0, y: -24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -18, scale: 0.96 }}
+            className="fixed inset-x-4 top-5 z-[200] mx-auto max-w-lg overflow-hidden rounded-3xl border border-emerald-400/30 bg-[#10271d]/95 p-5 shadow-2xl shadow-black/50 backdrop-blur-xl"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-400 text-[#10271d] shadow-lg shadow-emerald-400/20">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <div className="min-w-0 flex-1 text-right">
+                <p className="text-lg font-black text-white">{t('تم الحفظ بنجاح', 'Saved successfully')}</p>
+                <p className="mt-1 text-sm font-bold leading-relaxed text-emerald-100/70">{message}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMessage('')}
+                aria-label={t('إغلاق', 'Close')}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <motion.div
+              initial={{ scaleX: 1 }}
+              animate={{ scaleX: 0 }}
+              transition={{ duration: 5, ease: 'linear' }}
+              className="absolute inset-x-0 bottom-0 h-1 origin-left bg-emerald-400"
+            />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
     <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6">
       <div className="glass rounded-3xl p-6 text-right h-fit">
         <h2 className="text-2xl font-black text-primary mb-2">
@@ -2028,7 +2075,11 @@ const MenuManagement = () => {
               className="w-5 h-5 accent-primary"
             />
           </label>
-          {message && <p className="text-primary text-sm font-bold leading-relaxed">{message}</p>}
+          {message && !isSuccessMessage ? (
+            <div className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold leading-relaxed text-red-200" role="alert">
+              {message}
+            </div>
+          ) : null}
           <button
             onClick={addMenuItem}
             disabled={isSaving}
@@ -2129,6 +2180,7 @@ const MenuManagement = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
