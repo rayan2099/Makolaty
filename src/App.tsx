@@ -1816,23 +1816,29 @@ const MenuManagement = () => {
             ))}
           </select>
           <div className="grid grid-cols-2 gap-3">
-            <input
-              value={form.price}
-              onChange={e => setForm({ ...form, price: e.target.value })}
-              placeholder="السعر"
-              type="number"
-              min="0"
-              step="0.5"
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
-            />
-            <input
-              value={form.calories}
-              onChange={e => setForm({ ...form, calories: e.target.value })}
-              placeholder="السعرات"
-              type="number"
-              min="0"
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
-            />
+            <label className="block text-right text-sm font-black text-white/60">
+              السعر
+              <input
+                value={form.price}
+                onChange={e => setForm({ ...form, price: e.target.value })}
+                placeholder="أدخل السعر"
+                type="number"
+                min="0"
+                step="0.5"
+                className="mt-2 w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold text-white focus:outline-none focus:border-primary"
+              />
+            </label>
+            <label className="block text-right text-sm font-black text-white/60">
+              السعرات
+              <input
+                value={form.calories}
+                onChange={e => setForm({ ...form, calories: e.target.value })}
+                placeholder="أدخل السعرات"
+                type="number"
+                min="0"
+                className="mt-2 w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold text-white focus:outline-none focus:border-primary"
+              />
+            </label>
           </div>
           <label className="block cursor-pointer rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-4 transition-all hover:border-primary hover:bg-primary/10">
             <input
