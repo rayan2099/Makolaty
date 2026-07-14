@@ -1530,20 +1530,6 @@ const Home = () => {
   );
 };
 
-const parseSizesInput = (value: string) => {
-  if (!value.trim()) return undefined;
-
-  return value
-    .split(',')
-    .map(part => {
-      const [name, price] = part.split(':').map(item => item.trim());
-      const parsedPrice = Number(price);
-      if (!name || !Number.isFinite(parsedPrice) || parsedPrice < 0) return null;
-      return { name, price: parsedPrice };
-    })
-    .filter((size): size is { name: string; price: number } => Boolean(size));
-};
-
 const MENU_IMAGE_BUCKET = 'menu-images';
 const MENU_IMAGE_SIZE = 900;
 
@@ -1635,7 +1621,7 @@ const MenuManagement = () => {
     category: CATEGORIES[0]?.id || 'shawarma',
     price: '',
     calories: '',
-    sizes: '',
+    sizes: [] as { name: string; price: string }[],
     isAvailable: true,
   });
 
@@ -1739,26 +1725,32 @@ const MenuManagement = () => {
     setMessage('');
     const price = Number(form.price);
     const calories = form.calories ? Number(form.calories) : undefined;
-    const sizes = parseSizesInput(form.sizes);
+    const hasIncompleteSize = form.sizes.some(size => !size.name.trim() || !size.price.trim());
+    const sizes = form.sizes.map(size => ({
+      name: size.name.trim(),
+      price: Number(size.price),
+    }));
 
     if (!form.nameAr.trim() || !form.nameEn.trim() || !form.category || !Number.isFinite(price) || price <= 0) {
       setMessage('يرجى تعبئة الاسم والتصنيف والسعر بشكل صحيح.');
       return;
     }
 
-    if (form.sizes.trim() && (!sizes || sizes.length === 0)) {
-      setMessage('صيغة الأحجام غير صحيحة. مثال: صغير:6, كبير:12');
+    if (hasIncompleteSize || sizes.some(size => !Number.isFinite(size.price) || size.price < 0)) {
+      setMessage(t('أكمل اسم وسعر كل حجم أو احذف الصف الفارغ.', 'Complete the name and price for every size, or remove the empty row.'));
       return;
     }
 
     setIsSaving(true);
     const id = selectedItem?.id || `item-${Date.now()}`;
 
+    let saveStage: 'image' | 'item' = 'image';
     try {
       const uploadedImageUrl = selectedImageFile
         ? await uploadMenuImage(selectedImageFile, id)
         : selectedItem?.image || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';
 
+      saveStage = 'item';
       const payload = sanitizeForSupabase({
         id,
         nameAr: form.nameAr.trim(),
@@ -1767,7 +1759,7 @@ const MenuManagement = () => {
         price,
         calories: Number.isFinite(calories) ? calories : undefined,
         image: uploadedImageUrl,
-        sizes,
+        sizes: sizes.length ? sizes : null,
         isAvailable: form.isAvailable,
         sortOrder: selectedItem?.sortOrder ?? Date.now(),
         ...(selectedItem
@@ -1786,7 +1778,7 @@ const MenuManagement = () => {
         category: CATEGORIES[0]?.id || 'shawarma',
         price: '',
         calories: '',
-        sizes: '',
+        sizes: [],
         isAvailable: true,
       });
       setSelectedItemId(null);
@@ -1798,10 +1790,16 @@ const MenuManagement = () => {
         setMessage('نوع الصورة غير مدعوم. ارفع صورة بصيغة PNG أو JPG أو WebP.');
       } else if (error instanceof Error && error.message === 'image-too-large') {
         setMessage('حجم الصورة كبير جداً. اختر صورة أقل من 12MB.');
+      } else if (saveStage === 'image') {
+        setMessage(t(
+          'تعذر رفع الصورة. شغّل ملف supabase/menu_images_storage.sql في Supabase ثم حاول مرة أخرى.',
+          'Image upload failed. Run supabase/menu_images_storage.sql in Supabase, then try again.'
+        ));
       } else {
-        setMessage(selectedItem
-          ? 'تعذر تحديث الصنف. تأكد من صلاحيات تحديث جدول menu_items.'
-          : 'تعذر إضافة الصنف أو رفع الصورة. تأكد من إنشاء bucket باسم menu-images في Supabase.');
+        setMessage(t(
+          'تم رفع الصورة، لكن تعذر حفظ الصنف. شغّل ملف supabase/passcode_staff_policies.sql في Supabase ثم حاول مرة أخرى.',
+          'The image uploaded, but the item could not be saved. Run supabase/passcode_staff_policies.sql in Supabase, then try again.'
+        ));
       }
     } finally {
       setIsSaving(false);
@@ -1818,7 +1816,7 @@ const MenuManagement = () => {
       category: item.category,
       price: String(item.price),
       calories: item.calories === undefined ? '' : String(item.calories),
-      sizes: item.sizes?.map(size => `${size.name}:${size.price}`).join(', ') || '',
+      sizes: item.sizes?.map(size => ({ name: size.name, price: String(size.price) })) || [],
       isAvailable: item.isAvailable !== false,
     });
   };
@@ -1833,7 +1831,7 @@ const MenuManagement = () => {
       category: CATEGORIES[0]?.id || 'shawarma',
       price: '',
       calories: '',
-      sizes: '',
+      sizes: [],
       isAvailable: true,
     });
   };
@@ -1944,12 +1942,75 @@ const MenuManagement = () => {
               </div>
             </div>
           </label>
-          <input
-            value={form.sizes}
-            onChange={e => setForm({ ...form, sizes: e.target.value })}
-            placeholder={t('أحجام اختيارية: صغير:6, كبير:12', 'Optional sizes: Small:6, Large:12')}
-            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
-          />
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="text-right">
+                <p className="font-black text-white">{t('الأحجام والأسعار', 'Sizes and prices')}</p>
+                <p className="text-xs font-bold text-white/40">{t('اختياري — أضف صفاً لكل حجم', 'Optional — add one row per size')}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm(current => ({
+                  ...current,
+                  sizes: [...current.sizes, { name: '', price: '' }],
+                }))}
+                className="flex shrink-0 items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-xs font-black text-primary transition-all hover:bg-primary hover:text-secondary"
+              >
+                <Plus className="h-4 w-4" /> {t('إضافة حجم', 'Add size')}
+              </button>
+            </div>
+
+            {form.sizes.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-white/10 px-4 py-5 text-center text-xs font-bold text-white/30">
+                {t('لا توجد أحجام إضافية', 'No additional sizes')}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {form.sizes.map((size, index) => (
+                  <div key={index} className="grid grid-cols-[1fr_110px_42px] items-end gap-2 rounded-2xl bg-white/5 p-3">
+                    <label className="text-xs font-black text-white/50">
+                      {t('اسم الحجم', 'Size name')}
+                      <input
+                        value={size.name}
+                        onChange={event => setForm(current => ({
+                          ...current,
+                          sizes: current.sizes.map((row, rowIndex) => rowIndex === index ? { ...row, name: event.target.value } : row),
+                        }))}
+                        placeholder={t('مثال: كبير', 'e.g. Large')}
+                        className="mt-1.5 w-full rounded-xl border border-white/10 bg-secondary/60 px-3 py-2.5 font-bold text-white focus:border-primary focus:outline-none"
+                      />
+                    </label>
+                    <label className="text-xs font-black text-white/50">
+                      {t('السعر', 'Price')}
+                      <input
+                        value={size.price}
+                        onChange={event => setForm(current => ({
+                          ...current,
+                          sizes: current.sizes.map((row, rowIndex) => rowIndex === index ? { ...row, price: event.target.value } : row),
+                        }))}
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        placeholder="0"
+                        className="mt-1.5 w-full rounded-xl border border-white/10 bg-secondary/60 px-3 py-2.5 text-center font-black text-white focus:border-primary focus:outline-none"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setForm(current => ({
+                        ...current,
+                        sizes: current.sizes.filter((_, rowIndex) => rowIndex !== index),
+                      }))}
+                      aria-label={t('حذف الحجم', 'Remove size')}
+                      className="flex h-[42px] items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 transition-all hover:bg-red-500 hover:text-white"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <label className="flex items-center justify-end gap-3 text-white/60 font-bold">
             {t('متاح للعملاء', 'Available to customers')}
             <input
