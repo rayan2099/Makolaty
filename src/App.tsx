@@ -1555,6 +1555,7 @@ const MenuManagement = () => {
   const [message, setMessage] = useState('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [form, setForm] = useState({
     nameAr: '',
     nameEn: '',
@@ -1606,6 +1607,10 @@ const MenuManagement = () => {
   const visibleItems = activeMenuCategory === 'all'
     ? items
     : items.filter(item => item.category === activeMenuCategory);
+
+  const selectedItem = selectedItemId
+    ? items.find(item => item.id === selectedItemId) || null
+    : null;
 
   const categoryFallbackImages: Record<string, string> = {
     all: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=800&q=80',
@@ -1674,12 +1679,12 @@ const MenuManagement = () => {
     }
 
     setIsSaving(true);
-    const id = `item-${Date.now()}`;
+    const id = selectedItem?.id || `item-${Date.now()}`;
 
     try {
       const uploadedImageUrl = selectedImageFile
         ? await uploadMenuImage(selectedImageFile, id)
-        : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';
+        : selectedItem?.image || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';
 
       const payload = sanitizeForSupabase({
         id,
@@ -1691,13 +1696,17 @@ const MenuManagement = () => {
         image: uploadedImageUrl,
         sizes,
         isAvailable: form.isAvailable,
-        sortOrder: Date.now(),
-        createdAt: new Date().toISOString(),
+        sortOrder: selectedItem?.sortOrder ?? Date.now(),
+        ...(selectedItem
+          ? { updatedAt: new Date().toISOString() }
+          : { createdAt: new Date().toISOString() }),
       });
 
-      const { error } = await supabase.from('menu_items').insert(payload);
+      const { error } = selectedItem
+        ? await supabase.from('menu_items').update(payload).eq('id', selectedItem.id)
+        : await supabase.from('menu_items').insert(payload);
       if (error) throw error;
-      setMessage('تمت إضافة الصنف بنجاح.');
+      setMessage(selectedItem ? `تم تحديث ${selectedItem.nameAr} بنجاح.` : 'تمت إضافة الصنف بنجاح.');
       setForm({
         nameAr: '',
         nameEn: '',
@@ -1707,35 +1716,82 @@ const MenuManagement = () => {
         sizes: '',
         isAvailable: true,
       });
+      setSelectedItemId(null);
       setSelectedImageFile(null);
       await loadItems();
     } catch (error) {
-      await handleSupabaseError(error, OperationType.CREATE, 'menu_items');
+      await handleSupabaseError(error, selectedItem ? OperationType.UPDATE : OperationType.CREATE, 'menu_items');
       if (error instanceof Error && error.message === 'unsupported-image-type') {
         setMessage('نوع الصورة غير مدعوم. ارفع صورة بصيغة PNG أو JPG أو WebP.');
       } else if (error instanceof Error && error.message === 'image-too-large') {
         setMessage('حجم الصورة كبير جداً. اختر صورة أقل من 12MB.');
       } else {
-        setMessage('تعذر إضافة الصنف أو رفع الصورة. تأكد من إنشاء bucket باسم menu-images في Supabase.');
+        setMessage(selectedItem
+          ? 'تعذر تحديث الصنف. تأكد من صلاحيات تحديث جدول menu_items.'
+          : 'تعذر إضافة الصنف أو رفع الصورة. تأكد من إنشاء bucket باسم menu-images في Supabase.');
       }
     } finally {
       setIsSaving(false);
     }
   };
 
+  const selectItemForEditing = (item: MenuItem) => {
+    setMessage('');
+    setSelectedItemId(item.id);
+    setSelectedImageFile(null);
+    setForm({
+      nameAr: item.nameAr,
+      nameEn: item.nameEn,
+      category: item.category,
+      price: String(item.price),
+      calories: item.calories === undefined ? '' : String(item.calories),
+      sizes: item.sizes?.map(size => `${size.name}:${size.price}`).join(', ') || '',
+      isAvailable: item.isAvailable !== false,
+    });
+  };
+
+  const resetItemForm = () => {
+    setSelectedItemId(null);
+    setSelectedImageFile(null);
+    setMessage('');
+    setForm({
+      nameAr: '',
+      nameEn: '',
+      category: CATEGORIES[0]?.id || 'shawarma',
+      price: '',
+      calories: '',
+      sizes: '',
+      isAvailable: true,
+    });
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6">
       <div className="glass rounded-3xl p-6 text-right h-fit">
-        <h2 className="text-2xl font-black text-primary mb-2">إضافة صنف جديد</h2>
-        <p className="text-white/40 text-sm font-bold mb-6">أضف أي صنف جديد وسيظهر في قائمة العملاء.</p>
+        <h2 className="text-2xl font-black text-primary mb-2">
+          {selectedItem ? `تعديل ${selectedItem.nameAr}` : 'إضافة صنف جديد'}
+        </h2>
+        <p className="text-white/40 text-sm font-bold mb-6">
+          {selectedItem ? 'عدّل السعر أو تفاصيل الصنف ثم احفظ التغييرات.' : 'أضف أي صنف جديد وسيظهر في قائمة العملاء.'}
+        </p>
 
-        <button
+        {selectedItem ? (
+          <button
+            type="button"
+            onClick={resetItemForm}
+            className="w-full py-3 mb-4 border border-white/15 text-white/70 font-black rounded-2xl hover:border-primary hover:text-primary transition-all"
+          >
+            إلغاء التعديل وإضافة صنف جديد
+          </button>
+        ) : null}
+
+        {!selectedItem ? <button
           onClick={importCurrentMenu}
           disabled={isImporting}
           className="w-full py-4 mb-6 bg-white/5 border border-primary/30 text-primary font-black rounded-2xl hover:bg-primary hover:text-secondary disabled:opacity-50 transition-all flex items-center justify-center gap-2"
         >
           <Plus className="w-5 h-5" /> {isImporting ? 'جاري استيراد القائمة...' : 'استيراد القائمة الحالية'}
-        </button>
+        </button> : null}
 
         <div className="space-y-4">
           <input
@@ -1826,7 +1882,8 @@ const MenuManagement = () => {
             disabled={isSaving}
             className="w-full py-4 bg-primary text-secondary font-black rounded-2xl hover:bg-accent disabled:opacity-50 transition-all flex items-center justify-center gap-2"
           >
-            <Plus className="w-5 h-5" /> {isSaving ? 'جاري الحفظ...' : 'إضافة الصنف'}
+            {selectedItem ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+            {isSaving ? 'جاري الحفظ...' : selectedItem ? 'حفظ التغييرات' : 'إضافة الصنف'}
           </button>
         </div>
       </div>
@@ -1888,12 +1945,25 @@ const MenuManagement = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visibleItems.map(item => (
-              <div key={item.id} className="bg-white/5 rounded-2xl p-4 border border-white/10 flex gap-4 items-center">
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => selectItemForEditing(item)}
+                className={cn(
+                  "w-full bg-white/5 rounded-2xl p-4 border flex gap-4 items-center text-right transition-all hover:border-primary/60 hover:bg-primary/5",
+                  selectedItemId === item.id ? "border-primary ring-2 ring-primary/20" : "border-white/10"
+                )}
+              >
                 <img src={item.image} alt={item.nameEn} className="w-16 h-16 rounded-xl object-cover" />
                 <div className="flex-1">
                   <p className="font-black text-white">{item.nameAr}</p>
                   <p className="text-white/40 text-xs font-bold">{item.nameEn}</p>
                   <p className="text-primary font-black mt-1">{item.price} SR</p>
+                  {item.sizes?.length ? (
+                    <p className="mt-1 text-[11px] font-bold text-white/45">
+                      {item.sizes.map(size => `${size.name}: ${size.price} SR`).join(' • ')}
+                    </p>
+                  ) : null}
                 </div>
                 <span className={cn(
                   "text-[10px] px-2 py-1 rounded-full font-black",
@@ -1901,7 +1971,7 @@ const MenuManagement = () => {
                 )}>
                   {item.isAvailable ? 'متاح' : 'مخفي'}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         )}
