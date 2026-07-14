@@ -973,6 +973,7 @@ const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: stri
     sandwiches: '🥪',
     pastries: '🥟',
     meals: '🍔',
+    broast: '🍗',
     appetizers: '🥗',
     drinks: '🥤',
     sauces: '🍯',
@@ -1609,6 +1610,7 @@ const MenuManagement = () => {
   const categoryFallbackImages: Record<string, string> = {
     all: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=800&q=80',
     shawarma: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80',
+    broast: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80',
     rockets: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
     burgers: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80',
     sides: 'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=800&q=80',
