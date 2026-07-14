@@ -392,7 +392,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "glass relative rounded-3xl overflow-hidden flex flex-col group transition-all",
+        "glass relative h-full rounded-3xl overflow-hidden flex flex-col group transition-all",
         isUnavailable && "border-red-500/40 grayscale-[35%]"
       )}
     >
@@ -423,9 +423,9 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
         "p-6 flex flex-col flex-grow relative bg-secondary/80 backdrop-blur-xl rounded-t-3xl border-t border-white/10",
         shouldShowFullArtwork ? "mt-0" : "-mt-8"
       )}>
-        <div className="mb-4 text-right">
-          <h3 className="font-black text-xl leading-tight text-primary mb-1">{language === 'ar' ? item.nameAr : item.nameEn}</h3>
-          <p className="text-white/40 text-xs font-bold uppercase tracking-widest">{language === 'ar' ? item.nameEn : item.nameAr}</p>
+        <div className="mb-4 min-h-[58px] text-right">
+          <h3 className="line-clamp-2 font-black text-xl leading-tight text-primary mb-1">{language === 'ar' ? item.nameAr : item.nameEn}</h3>
+          <p className="truncate text-white/40 text-xs font-bold uppercase tracking-widest">{language === 'ar' ? item.nameEn : item.nameAr}</p>
         </div>
         
         {item.sizes && (
@@ -1508,7 +1508,7 @@ const Home = () => {
         ) : (
           <div className="flex overflow-x-auto gap-6 md:gap-10 pb-12 no-scrollbar snap-x snap-mandatory px-4 md:px-8 cursor-grab active:cursor-grabbing scroll-smooth">
             {filteredMenu.map(item => (
-              <div key={item.id} className="w-[280px] md:w-[350px] shrink-0 snap-start">
+              <div key={item.id} className="flex w-[280px] md:w-[350px] shrink-0 snap-start">
                 <MenuCard item={item} onAdd={addToCart} />
               </div>
             ))}
