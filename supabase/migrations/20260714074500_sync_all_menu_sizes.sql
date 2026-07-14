@@ -40,7 +40,10 @@ with authoritative_sizes (id, price, sizes) as (
     ('pt-9', 7::numeric, '[{"name":"صغير","price":7},{"name":"وسط","price":12},{"name":"كبير","price":17}]'::jsonb),
     ('pt-10', 9::numeric, '[{"name":"صغير","price":9},{"name":"وسط","price":16},{"name":"كبير","price":22}]'::jsonb),
     ('pt-11', 9::numeric, '[{"name":"صغير","price":9},{"name":"وسط","price":16},{"name":"كبير","price":22}]'::jsonb),
+    ('pt-12', 5::numeric, '[{"name":"الحبة","price":5},{"name":"صحن مشكل","price":30}]'::jsonb),
     ('pt-13', 8::numeric, '[{"name":"صغير","price":8},{"name":"وسط","price":13},{"name":"كبير","price":18}]'::jsonb),
+    ('pt-15', 9::numeric, '[{"name":"صغير","price":9},{"name":"وسط","price":16},{"name":"كبير","price":22}]'::jsonb),
+    ('pt-16', 9::numeric, '[{"name":"صغير","price":9},{"name":"وسط","price":16},{"name":"كبير","price":22}]'::jsonb),
 
     ('broast-chicken', 18::numeric, '[{"name":"عادي","price":18},{"name":"حراق","price":18}]'::jsonb)
 )
@@ -55,7 +58,6 @@ where menu.id = source.id;
 -- These printed-menu items have one fixed price and must not show size buttons.
 with fixed_price_items (id, price) as (
   values
-    ('pt-12', 30::numeric),
     ('pt-14', 15::numeric),
     ('broast-nuggets-regular', 18::numeric),
     ('broast-nuggets-spicy', 18::numeric)

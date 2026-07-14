@@ -797,9 +797,13 @@ export const INITIAL_MENU: MenuItem[] = [
     nameAr: 'صحن فطائر مشكل',
     nameEn: 'Mixed Pastries Plate',
     category: 'pastries',
-    price: 30,
+    price: 5,
     calories: 1200,
-    image: '/menu/pastries/mixed-pastries-plate.jpg'
+    image: '/menu/pastries/mixed-pastries-plate.jpg',
+    sizes: [
+      { name: 'الحبة', price: 5 },
+      { name: 'صحن مشكل', price: 30 }
+    ]
   },
   {
     id: 'pt-13',
@@ -823,6 +827,32 @@ export const INITIAL_MENU: MenuItem[] = [
     price: 15,
     calories: 760,
     image: '/menu/pastries/chicken-shawarma.jpg'
+  },
+  {
+    id: 'pt-15',
+    nameAr: 'جبن عسل',
+    nameEn: 'Cheese and Honey',
+    category: 'pastries',
+    price: 9,
+    image: '',
+    sizes: [
+      { name: 'صغير', price: 9 },
+      { name: 'وسط', price: 16 },
+      { name: 'كبير', price: 22 }
+    ]
+  },
+  {
+    id: 'pt-16',
+    nameAr: 'لبنة بالعسل',
+    nameEn: 'Labaneh with Honey',
+    category: 'pastries',
+    price: 9,
+    image: '',
+    sizes: [
+      { name: 'صغير', price: 9 },
+      { name: 'وسط', price: 16 },
+      { name: 'كبير', price: 22 }
+    ]
   },
 
   // --- Broast (بروست) ---
