@@ -377,17 +377,29 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
 };
 
 const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, size?: string) => void; key?: string }) => {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
   const shouldShowFullArtwork = item.image.startsWith('/menu/');
+  const isUnavailable = item.isAvailable === false;
 
   return (
     <motion.div 
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass rounded-3xl overflow-hidden flex flex-col group"
+      className={cn(
+        "glass relative rounded-3xl overflow-hidden flex flex-col group transition-all",
+        isUnavailable && "border-red-500/40 grayscale-[35%]"
+      )}
     >
+      {isUnavailable ? (
+        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center overflow-hidden bg-secondary/25">
+          <div className="absolute h-1.5 w-[145%] rotate-[-24deg] bg-red-500 shadow-[0_0_18px_rgba(239,68,68,0.75)]" />
+          <div className="relative rounded-2xl border border-red-400/40 bg-red-600/95 px-6 py-3 text-center shadow-2xl shadow-black/50">
+            <p className="text-lg font-black text-white">{t('غير متاح', 'Not available')}</p>
+          </div>
+        </div>
+      ) : null}
       <div className={cn(
         "relative overflow-hidden",
         shouldShowFullArtwork ? "aspect-[3/4] bg-[#f8f1e8]" : "aspect-[4/3]"
@@ -418,6 +430,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
               <button
                 key={s.name}
                 onClick={() => setSelectedSize(s.name)}
+                disabled={isUnavailable}
                 className={cn(
                   "flex-1 py-2 rounded-xl text-xs font-black transition-all border",
                   selectedSize === s.name ? "bg-primary text-secondary border-primary shadow-lg shadow-primary/20" : "bg-white/5 text-white/40 border-white/10"
@@ -438,7 +451,9 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
           </div>
           <button 
             onClick={() => onAdd(item, selectedSize)}
-            className="w-12 h-12 bg-primary text-secondary rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl shadow-primary/20"
+            disabled={isUnavailable}
+            aria-label={isUnavailable ? t('الصنف غير متاح', 'Item not available') : t('إضافة إلى السلة', 'Add to cart')}
+            className="w-12 h-12 bg-primary text-secondary rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl shadow-primary/20 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30 disabled:shadow-none disabled:hover:scale-100"
           >
             <Plus className="w-6 h-6" />
           </button>
@@ -1245,7 +1260,6 @@ const Home = () => {
       const { data, error } = await supabase
         .from('menu_items')
         .select('*')
-        .eq('isAvailable', true)
         .order('sortOrder', { ascending: true })
         .order('nameAr', { ascending: true });
 
@@ -1288,6 +1302,7 @@ const Home = () => {
   });
 
   const addToCart = (item: MenuItem, size?: string) => {
+    if (item.isAvailable === false) return;
     setCart(prev => {
       const existing = prev.find(i => i.id === item.id && i.selectedSize === size);
       const price = size ? item.sizes?.find(s => s.name === size)?.price || item.price : item.price;
