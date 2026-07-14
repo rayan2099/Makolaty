@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, Component } from 'react';
+import React, { useState, useEffect, Component, createContext, useContext } from 'react';
 import { 
   BrowserRouter as Router, 
   Routes, 
@@ -35,6 +35,61 @@ import { MenuItem, CartItem, Order, CATEGORIES, STAFF_WHATSAPP } from './types';
 import { INITIAL_MENU } from './data';
 import { extractCoordinatesFromMapsLink, getDeliveryQuote, isShortMapsLink, type DeliveryQuote } from './delivery';
 import { useResolveMapsLink } from './hooks/useResolveMapsLink';
+
+type Language = 'ar' | 'en';
+
+const LanguageContext = createContext<{
+  language: Language;
+  setLanguage: (language: Language) => void;
+  t: (arabic: string, english: string) => string;
+}>({ language: 'ar', setLanguage: () => undefined, t: arabic => arabic });
+
+const useLanguage = () => useContext(LanguageContext);
+
+const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
+  const [language, setLanguageState] = useState<Language>(() => (
+    localStorage.getItem('makolaty_language') === 'en' ? 'en' : 'ar'
+  ));
+
+  const setLanguage = (nextLanguage: Language) => {
+    localStorage.setItem('makolaty_language', nextLanguage);
+    setLanguageState(nextLanguage);
+  };
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+  }, [language]);
+
+  return (
+    <LanguageContext.Provider value={{
+      language,
+      setLanguage,
+      t: (arabic, english) => language === 'ar' ? arabic : english,
+    }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+const LanguageSwitch = () => {
+  const { language, setLanguage } = useLanguage();
+  return (
+    <button
+      type="button"
+      onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
+      className="rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-black text-primary transition-all hover:bg-primary hover:text-secondary"
+      aria-label={language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
+    >
+      {language === 'ar' ? 'English' : 'العربية'}
+    </button>
+  );
+};
+
+const localizedSize = (size: string, language: Language) => {
+  if (language === 'ar') return size;
+  return ({ صغير: 'Small', وسط: 'Medium', كبير: 'Large' } as Record<string, string>)[size] || size;
+};
 
 // --- Error Handling ---
 
@@ -142,14 +197,15 @@ const formatPhone = (phone: string) => {
 };
 
 const MenuItemImage = ({ item }: { item: MenuItem }) => {
+  const { language } = useLanguage();
   const [hasImageError, setHasImageError] = useState(false);
   const shouldShowFullArtwork = item.image.startsWith('/menu/');
 
   if (!item.image || hasImageError) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#3a3028] via-secondary to-[#130707] px-6 text-center">
-        <span className="text-primary text-2xl font-black leading-tight">{item.nameAr}</span>
-        <span className="mt-2 text-white/45 text-[10px] font-bold uppercase tracking-widest">{item.nameEn}</span>
+        <span className="text-primary text-2xl font-black leading-tight">{language === 'ar' ? item.nameAr : item.nameEn}</span>
+        <span className="mt-2 text-white/45 text-[10px] font-bold uppercase tracking-widest">{language === 'ar' ? item.nameEn : item.nameAr}</span>
       </div>
     );
   }
@@ -157,7 +213,7 @@ const MenuItemImage = ({ item }: { item: MenuItem }) => {
   return (
     <img
       src={item.image}
-      alt={item.nameAr}
+      alt={language === 'ar' ? item.nameAr : item.nameEn}
       className={cn(
         "w-full h-full transition-transform duration-500",
         shouldShowFullArtwork ? "object-contain p-1" : "object-cover group-hover:scale-110"
@@ -266,11 +322,14 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
-const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () => void }) => (
+const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () => void }) => {
+  const { t } = useLanguage();
+  return (
   <nav className="fixed top-0 left-0 right-0 z-50 bg-secondary/80 backdrop-blur-lg border-b border-white/5 px-4 py-3 md:py-4">
     <div className="max-w-7xl mx-auto flex justify-between items-center flex-row-reverse">
       {/* Cart on the Right */}
       <div className="flex items-center gap-4">
+        <LanguageSwitch />
         <button 
           onClick={onOpenCart}
           className="relative p-2.5 md:p-3 bg-primary rounded-xl hover:scale-105 transition-transform shadow-lg shadow-primary/20"
@@ -286,10 +345,10 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
 
       {/* Navigation Links (Desktop) */}
       <div className="hidden md:flex items-center gap-8 font-bold text-sm">
-        <Link to="/" className="text-white hover:text-primary transition-colors">الرئيسية</Link>
-        <a href="#menu" className="text-white/60 hover:text-primary transition-colors">القائمة</a>
-        <Link to="/staff" className="text-white/60 hover:text-primary transition-colors">لماذا مأكولاتي</Link>
-        <a href={`https://wa.me/${formatPhone(STAFF_WHATSAPP)}`} className="text-white/60 hover:text-primary transition-colors">تواصل معنا</a>
+        <Link to="/" className="text-white hover:text-primary transition-colors">{t('الرئيسية', 'Home')}</Link>
+        <a href="#menu" className="text-white/60 hover:text-primary transition-colors">{t('القائمة', 'Menu')}</a>
+        <Link to="/staff" className="text-white/60 hover:text-primary transition-colors">{t('الموظفون', 'Staff')}</Link>
+        <a href={`https://wa.me/${formatPhone(STAFF_WHATSAPP)}`} className="text-white/60 hover:text-primary transition-colors">{t('تواصل معنا', 'Contact us')}</a>
       </div>
 
       {/* Logo on the Left */}
@@ -297,7 +356,7 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
         <div className="w-10 h-10 md:w-14 md:h-14 flex items-center justify-center bg-primary rounded-xl overflow-hidden p-1 shadow-lg shadow-primary/20">
           <img 
             src="/logo.png" 
-            alt="مأكولاتي" 
+            alt={t('مأكولاتي', 'Makolaty')}
             className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
             onError={(e) => {
@@ -310,13 +369,15 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
             }}
           />
         </div>
-        <span className="font-black text-xl md:text-2xl tracking-tighter text-primary">مأكولاتي</span>
+        <span className="font-black text-xl md:text-2xl tracking-tighter text-primary">{t('مأكولاتي', 'Makolaty')}</span>
       </Link>
     </div>
   </nav>
-);
+  );
+};
 
 const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, size?: string) => void; key?: string }) => {
+  const { language } = useLanguage();
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
   const shouldShowFullArtwork = item.image.startsWith('/menu/');
 
@@ -347,8 +408,8 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
         shouldShowFullArtwork ? "mt-0" : "-mt-8"
       )}>
         <div className="mb-4 text-right">
-          <h3 className="font-black text-xl leading-tight text-primary mb-1">{item.nameAr}</h3>
-          <p className="text-white/40 text-xs font-bold uppercase tracking-widest">{item.nameEn}</p>
+          <h3 className="font-black text-xl leading-tight text-primary mb-1">{language === 'ar' ? item.nameAr : item.nameEn}</h3>
+          <p className="text-white/40 text-xs font-bold uppercase tracking-widest">{language === 'ar' ? item.nameEn : item.nameAr}</p>
         </div>
         
         {item.sizes && (
@@ -362,7 +423,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
                   selectedSize === s.name ? "bg-primary text-secondary border-primary shadow-lg shadow-primary/20" : "bg-white/5 text-white/40 border-white/10"
                 )}
               >
-                {s.name}
+                {localizedSize(s.name, language)}
               </button>
             ))}
           </div>
@@ -412,6 +473,7 @@ const CartDrawer = ({
   notes: string;
   onNotesChange: (val: string) => void;
 }) => {
+  const { language, t } = useLanguage();
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
   const total = items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
   
@@ -451,11 +513,11 @@ const CartDrawer = ({
                   </button>
                 )}
                 <h2 className="text-3xl font-black text-primary">
-                  {viewingCategory === 'drinks' ? 'المشروبات' : viewingCategory === 'sauces' ? 'الصوصات' : 'سلة الطلبات'}
+                  {viewingCategory === 'drinks' ? t('المشروبات', 'Drinks') : viewingCategory === 'sauces' ? t('الصوصات', 'Sauces') : t('سلة الطلبات', 'Your cart')}
                 </h2>
               </div>
               <button onClick={onClose} className="flex items-center gap-2 px-4 py-2 hover:bg-white/5 rounded-xl transition-colors text-white/60 font-bold">
-                <span>إغلاق</span>
+                <span>{t('إغلاق', 'Close')}</span>
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -478,7 +540,7 @@ const CartDrawer = ({
                           <p className="text-primary font-black">{addon.price} SR</p>
                           {items.find(i => i.id === addon.id) && (
                             <span className="bg-primary/20 text-primary text-[10px] px-2 py-0.5 rounded-full font-black">
-                              تم إضافة {items.find(i => i.id === addon.id)?.quantity}
+                              {t('تمت الإضافة', 'Added')} {items.find(i => i.id === addon.id)?.quantity}
                             </span>
                           )}
                         </div>
@@ -489,18 +551,18 @@ const CartDrawer = ({
                     </button>
                   ))}
                   { (viewingCategory === 'drinks' ? suggestedDrinks : suggestedSauces).length === 0 && (
-                    <p className="text-white/20 text-center py-10 font-bold">تم إضافة جميع الأصناف المتوفرة</p>
+                    <p className="text-white/20 text-center py-10 font-bold">{t('تمت إضافة جميع الأصناف المتوفرة', 'All available items have been added')}</p>
                   )}
                 </div>
               ) : items.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-white/10">
                   <ShoppingBag className="w-24 h-24 mb-6" />
-                  <p className="font-black text-xl mb-8">السلة فارغة حالياً</p>
+                  <p className="font-black text-xl mb-8">{t('السلة فارغة حالياً', 'Your cart is empty')}</p>
                   <button 
                     onClick={onClose}
                     className="px-8 py-4 bg-primary text-secondary font-black rounded-2xl hover:bg-accent transition-all flex items-center gap-2"
                   >
-                    <Plus className="w-5 h-5" /> تصفح القائمة
+                    <Plus className="w-5 h-5" /> {t('تصفح القائمة', 'Browse menu')}
                   </button>
                 </div>
               ) : (
@@ -529,9 +591,9 @@ const CartDrawer = ({
                           
                           <div className="flex flex-row flex-wrap gap-1 justify-start">
                             {[
-                              { label: 'سبايسي', key: 'spicy', level: item.spicyLevel || 0 },
-                              { label: 'مايونيز', key: 'mayo', level: item.mayoLevel || 0 },
-                              { label: 'كاتشب', key: 'ketchup', level: item.ketchupLevel || 0 }
+                              { label: t('سبايسي', 'Spicy'), key: 'spicy', level: item.spicyLevel || 0 },
+                              { label: t('مايونيز', 'Mayo'), key: 'mayo', level: item.mayoLevel || 0 },
+                              { label: t('كاتشب', 'Ketchup'), key: 'ketchup', level: item.ketchupLevel || 0 }
                             ].map(opt => (
                               <div key={opt.key} className="flex items-center gap-0.5">
                                 {opt.level > 0 && (
@@ -551,7 +613,7 @@ const CartDrawer = ({
                                       : "bg-white/5 border-white/10 text-white/30"
                                   )}
                                 >
-                                  {opt.level === 2 && <span className="text-[7px] bg-secondary/10 px-0.5 rounded">اكسترا</span>}
+                                  {opt.level === 2 && <span className="text-[7px] bg-secondary/10 px-0.5 rounded">{t('اكسترا', 'Extra')}</span>}
                                   {opt.label}
                                 </button>
                               </div>
@@ -580,11 +642,11 @@ const CartDrawer = ({
                     onClick={onClose}
                     className="w-full py-3 border border-dashed border-white/10 text-white/40 font-bold rounded-xl hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2 mt-4 text-sm"
                   >
-                    <Plus className="w-3.5 h-3.5" /> إضافة المزيد من الأصناف
+                    <Plus className="w-3.5 h-3.5" /> {t('إضافة المزيد من الأصناف', 'Add more items')}
                   </button>
 
                   <div className="mt-8">
-                    <h3 className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-4 text-right">إضافات مقترحة</h3>
+                    <h3 className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-4 text-right">{t('إضافات مقترحة', 'Suggested add-ons')}</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => setViewingCategory('drinks')}
@@ -594,7 +656,7 @@ const CartDrawer = ({
                           <Plus className="w-3 h-3" />
                         </div>
                         <span className="text-3xl">🥤</span>
-                        <span className="text-white font-black text-sm">مشروبات</span>
+                        <span className="text-white font-black text-sm">{t('مشروبات', 'Drinks')}</span>
                       </button>
 
                       <button
@@ -605,7 +667,7 @@ const CartDrawer = ({
                           <Plus className="w-3 h-3" />
                         </div>
                         <span className="text-3xl">🍯</span>
-                        <span className="text-white font-black text-sm">صوصات</span>
+                        <span className="text-white font-black text-sm">{t('صوصات', 'Sauces')}</span>
                       </button>
                     </div>
                   </div>
@@ -613,12 +675,12 @@ const CartDrawer = ({
                   {/* Notes Section */}
                   <div className="mt-6 px-2 text-right">
                     <label className="text-xs text-white/40 block mb-2 font-bold">
-                      ملاحظات إضافية (اختياري)
+                      {t('ملاحظات إضافية (اختياري)', 'Additional notes (optional)')}
                     </label>
                     <textarea
                       value={notes}
                       onChange={(e) => onNotesChange(e.target.value)}
-                      placeholder="مثال: بدون بصل، صوص زيادة..."
+                      placeholder={t('مثال: بدون بصل، صوص زيادة...', 'Example: no onions, extra sauce...')}
                       dir="rtl"
                       rows={1}
                       className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 text-white font-bold placeholder:text-white/10 focus:outline-none focus:border-primary/30 transition-all resize-none text-sm"
@@ -635,7 +697,7 @@ const CartDrawer = ({
             {items.length > 0 && (
               <div className="p-4 border-t border-white/10 bg-white/5 backdrop-blur-xl shrink-0">
                 <div className="flex justify-between items-center mb-2 px-2">
-                  <span className="text-white/40 font-black text-sm">المجموع الكلي</span>
+                  <span className="text-white/40 font-black text-sm">{t('المجموع الكلي', 'Total')}</span>
                   <span className="text-2xl font-black text-primary">{total} SR</span>
                 </div>
                 {viewingCategory ? (
@@ -643,14 +705,14 @@ const CartDrawer = ({
                     onClick={() => setViewingCategory(null)}
                     className="w-full py-4 bg-primary text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
                   >
-                    تأكيد الإضافات <CheckCircle2 className="w-6 h-6" />
+                    {t('تأكيد الإضافات', 'Confirm add-ons')} <CheckCircle2 className="w-6 h-6" />
                   </button>
                 ) : (
                   <button 
                     onClick={onCheckout}
                     className="w-full py-4 bg-primary text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
                   >
-                    إتمام الطلب <ChevronRight className="w-6 h-6" />
+                    {t('إتمام الطلب', 'Checkout')} <ChevronRight className="w-6 h-6" />
                   </button>
                 )}
               </div>
@@ -675,6 +737,7 @@ const CheckoutModal = ({
   isSubmitting: boolean;
   orderSubtotal: number;
 }) => {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -762,25 +825,25 @@ const CheckoutModal = ({
         className="relative w-full max-w-lg glass rounded-[3rem] p-10 flex flex-col max-h-[90vh] border border-white/10 shadow-2xl"
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl -z-10" />
-        <h2 className="text-4xl font-black text-primary mb-8 text-right shrink-0">بيانات العميل</h2>
+        <h2 className="text-4xl font-black text-primary mb-8 text-right shrink-0">{t('بيانات العميل', 'Customer details')}</h2>
         
         <div className="space-y-8 text-right overflow-y-auto pr-2 no-scrollbar">
           <div className="space-y-3">
             <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
-              الاسم الكامل <User className="w-3 h-3" />
+              {t('الاسم الكامل', 'Full name')} <User className="w-3 h-3" />
             </label>
             <input 
               type="text" 
               value={form.name}
               onChange={e => setForm({...form, name: e.target.value})}
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary transition-all text-right font-bold text-lg"
-              placeholder="أدخل اسمك هنا..."
+              placeholder={t('أدخل اسمك هنا...', 'Enter your name...')}
             />
           </div>
 
           <div className="space-y-3">
             <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
-              رقم الجوال (واتساب) <Phone className="w-3 h-3" />
+              {t('رقم الجوال (واتساب)', 'Mobile number (WhatsApp)')} <Phone className="w-3 h-3" />
             </label>
             <input 
               type="tel" 
@@ -792,7 +855,7 @@ const CheckoutModal = ({
           </div>
 
           <div className="space-y-3">
-            <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] text-right block">نوع الطلب</label>
+            <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] text-right block">{t('نوع الطلب', 'Order type')}</label>
             <div className="flex gap-4">
               <button 
                 onClick={() => setForm({...form, type: 'pickup'})}
@@ -801,7 +864,7 @@ const CheckoutModal = ({
                   form.type === 'pickup' ? "bg-primary text-secondary border-primary shadow-lg shadow-primary/20" : "bg-white/5 border-white/10 text-white/40"
                 )}
               >
-                استلام من الفرع
+                {t('استلام من الفرع', 'Pickup')}
               </button>
               <button 
                 onClick={() => setForm({...form, type: 'delivery'})}
@@ -810,7 +873,7 @@ const CheckoutModal = ({
                   form.type === 'delivery' ? "bg-primary text-secondary border-primary shadow-lg shadow-primary/20" : "bg-white/5 border-white/10 text-white/40"
                 )}
               >
-                توصيل للمنزل
+                {t('توصيل للمنزل', 'Delivery')}
               </button>
             </div>
           </div>
@@ -818,7 +881,7 @@ const CheckoutModal = ({
           {form.type === 'delivery' && (
             <div className="space-y-3">
               <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
-                موقع التوصيل <MapPin className="w-3 h-3" />
+                {t('موقع التوصيل', 'Delivery location')} <MapPin className="w-3 h-3" />
               </label>
               <button
                 type="button"
@@ -933,17 +996,17 @@ const CheckoutModal = ({
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4 text-right space-y-2">
             <div className="flex justify-between text-sm font-bold text-white/50">
               <span>{orderSubtotal} SR</span>
-              <span>قيمة الطلب</span>
+              <span>{t('قيمة الطلب', 'Order subtotal')}</span>
             </div>
             {form.type === 'delivery' && deliveryQuote?.isAllowed && (
               <div className="flex justify-between text-sm font-bold text-white/50">
                 <span>{deliveryQuote.fee} SR</span>
-                <span>رسوم التوصيل</span>
+                <span>{t('رسوم التوصيل', 'Delivery fee')}</span>
               </div>
             )}
             <div className="flex justify-between text-xl font-black text-primary pt-2 border-t border-white/10">
               <span>{finalTotal} SR</span>
-              <span>الإجمالي</span>
+              <span>{t('الإجمالي', 'Total')}</span>
             </div>
           </div>
           <button 
@@ -956,7 +1019,7 @@ const CheckoutModal = ({
                 <Clock className="w-6 h-6 animate-spin" /> جاري الإرسال...
               </>
             ) : (
-              'تأكيد وإرسال الطلب'
+              t('تأكيد وإرسال الطلب', 'Confirm and send order')
             )}
           </button>
         </div>
@@ -966,6 +1029,7 @@ const CheckoutModal = ({
 };
 
 const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: string) => void }) => {
+  const { language, t } = useLanguage();
   const icons: Record<string, string> = {
     shawarma: '🌯',
     pizza: '🍕',
@@ -982,7 +1046,7 @@ const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: stri
 
   return (
     <div className="flex gap-6 md:gap-8 overflow-x-auto pb-10 no-scrollbar px-8 snap-x snap-mandatory cursor-grab active:cursor-grabbing">
-      {[{ id: 'all', nameAr: 'الكل' }, ...CATEGORIES].map((cat) => (
+      {[{ id: 'all', nameAr: 'الكل', nameEn: 'All' }, ...CATEGORIES].map((cat) => (
         <button
           key={cat.id}
           onClick={() => onChange(cat.id)}
@@ -998,7 +1062,7 @@ const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: stri
             "text-xs md:text-sm font-bold transition-colors",
             active === cat.id ? "text-primary" : "text-white/40"
           )}>
-            {cat.nameAr}
+            {cat.id === 'all' ? t('الكل', 'All') : language === 'ar' ? cat.nameAr : cat.nameEn}
           </span>
         </button>
       ))}
@@ -1018,7 +1082,9 @@ const SuccessModal = ({
   onWhatsApp: () => void;
   order: Order | null;
   isWhatsAppClicked: boolean;
-}) => (
+}) => {
+  const { t } = useLanguage();
+  return (
   <AnimatePresence>
     {isOpen && order && (
       <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
@@ -1040,15 +1106,15 @@ const SuccessModal = ({
               <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-8">
                 <CheckCircle2 className="w-12 h-12 text-primary" />
               </div>
-              <h2 className="text-3xl font-black text-white mb-4">شكراً لك!</h2>
+              <h2 className="text-3xl font-black text-white mb-4">{t('شكراً لك!', 'Thank you!')}</h2>
               <p className="text-white/60 font-bold leading-relaxed text-lg">
-                نحن بانتظار رسالتك الآن في الواتساب لتجهيز طلبك.
+                {t('نحن بانتظار رسالتك الآن في الواتساب لتجهيز طلبك.', 'We are waiting for your WhatsApp message to prepare your order.')}
               </p>
               <button 
                 onClick={onClose}
                 className="mt-10 w-full py-4 bg-white/5 text-white font-black rounded-2xl hover:bg-white/10 transition-all"
               >
-                إغلاق
+                {t('إغلاق', 'Close')}
               </button>
             </div>
           ) : (
@@ -1057,13 +1123,13 @@ const SuccessModal = ({
                 <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <ShoppingBag className="w-10 h-10 text-primary" />
                 </div>
-                <h2 className="text-3xl font-black text-white mb-2">تم تسجيل طلبك!</h2>
-                <p className="text-primary font-bold">خطوة واحدة وتستمتع بوجبتك!</p>
+                <h2 className="text-3xl font-black text-white mb-2">{t('تم تسجيل طلبك!', 'Your order is recorded!')}</h2>
+                <p className="text-primary font-bold">{t('خطوة واحدة وتستمتع بوجبتك!', 'One more step to enjoy your meal!')}</p>
               </div>
 
               {/* Order Summary Card */}
               <div className="bg-white/5 rounded-3xl p-6 border border-white/10 mb-8 text-right">
-                <h3 className="text-white/40 text-xs font-black uppercase tracking-widest mb-4">ملخص الطلب</h3>
+                <h3 className="text-white/40 text-xs font-black uppercase tracking-widest mb-4">{t('ملخص الطلب', 'Order summary')}</h3>
                 <div className="space-y-4 mb-6">
                   {order.items.map((item, idx) => {
                     const options = [];
@@ -1105,24 +1171,24 @@ const SuccessModal = ({
                     )}
                     <span className="text-2xl font-black text-primary">{order.total} SR</span>
                   </div>
-                  <span className="text-white font-black">الإجمالي النهائي</span>
+                  <span className="text-white font-black">{t('الإجمالي النهائي', 'Final total')}</span>
                 </div>
               </div>
 
               {/* Customer Data */}
               <div className="grid grid-cols-2 gap-4 mb-8 text-right">
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <p className="text-white/40 text-base font-black mb-1">نوع الطلب</p>
-                  <p className="text-white font-bold">{order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}</p>
+                  <p className="text-white/40 text-base font-black mb-1">{t('نوع الطلب', 'Order type')}</p>
+                  <p className="text-white font-bold">{order.orderType === 'delivery' ? t('توصيل للمنزل', 'Delivery') : t('استلام من الفرع', 'Pickup')}</p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <p className="text-white/40 text-base font-black mb-1">اسم العميل</p>
+                  <p className="text-white/40 text-base font-black mb-1">{t('اسم العميل', 'Customer name')}</p>
                   <p className="text-white font-bold truncate">{order.customerName}</p>
                 </div>
               </div>
 
               <p className="text-white/60 text-center mb-8 font-bold leading-relaxed">
-                يرجى الضغط على الزر أدناه لإرسال طلبك عبر الواتساب وتأكيده مع فريقنا.
+                {t('يرجى الضغط على الزر أدناه لإرسال طلبك عبر الواتساب وتأكيده مع فريقنا.', 'Use the button below to send and confirm your order on WhatsApp.')}
               </p>
 
               {/* Sticky confirm button — always visible */}
@@ -1131,7 +1197,7 @@ const SuccessModal = ({
                   onClick={onWhatsApp}
                   className="w-full py-5 bg-[#25D366] text-white rounded-2xl font-bold text-xl flex items-center justify-center gap-3 active:scale-95 transition-transform shadow-2xl shadow-[#25D366]/40"
                 >
-                  <span>تأكيد الطلب عبر واتساب</span>
+                  <span>{t('تأكيد الطلب عبر واتساب', 'Confirm order on WhatsApp')}</span>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.86L.054 23.05a.75.75 0 00.916.916l5.19-1.478A11.948 11.948 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.692-.518-5.22-1.42l-.374-.22-3.88 1.105 1.107-3.797-.243-.393A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
@@ -1149,7 +1215,7 @@ const SuccessModal = ({
                 onClick={onClose}
                 className="mt-8 w-full text-white/20 font-bold hover:text-white transition-colors text-sm"
               >
-                إلغاء
+                {t('إلغاء', 'Cancel')}
               </button>
             </>
           )}
@@ -1157,9 +1223,11 @@ const SuccessModal = ({
       </div>
     )}
   </AnimatePresence>
-);
+  );
+};
 
 const Home = () => {
+  const { language, t } = useLanguage();
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [menuItems, setMenuItems] = useState<MenuItem[]>(INITIAL_MENU);
@@ -1348,7 +1416,7 @@ const Home = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="inline-block px-4 py-1.5 rounded-full bg-primary/20 text-primary text-xs font-black mb-8 border border-primary/20"
           >
-            مرحباً بكم في مأكولاتي
+            {t('مرحباً بكم في مأكولاتي', 'Welcome to Makolaty')}
           </motion.div>
           
           <motion.h1 
@@ -1356,8 +1424,8 @@ const Home = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl sm:text-7xl md:text-9xl font-black mb-6 md:mb-10 leading-tight tracking-normal px-2"
           >
-            ذوق أصيل<br />
-            <span className="text-primary">تجربة لا تُنسى</span>
+            {t('ذوق أصيل', 'Authentic taste')}<br />
+            <span className="text-primary">{t('تجربة لا تُنسى', 'An unforgettable experience')}</span>
           </motion.h1>
 
           <motion.p 
@@ -1366,7 +1434,10 @@ const Home = () => {
             transition={{ delay: 0.2 }}
             className="text-base sm:text-lg md:text-xl font-bold text-white/60 mb-10 md:mb-16 max-w-3xl mx-auto tracking-wide leading-relaxed px-4 text-center"
           >
-            شاورما | بيتزا | باستا | برجر | فطاير | مشروبات | صوصات <br className="md:hidden" /> كلها بنكهة ماكولاتي المميزة
+            {t(
+              'شاورما | بيتزا | باستا | برجر | فطاير | مشروبات | صوصات — كلها بنكهة مأكولاتي المميزة',
+              'Shawarma | Pizza | Pasta | Burgers | Pastries | Drinks | Sauces — all with the special Makolaty flavor'
+            )}
           </motion.p>
 
           <div className="flex flex-col md:flex-row gap-4 justify-center items-stretch md:items-center max-w-[320px] sm:max-w-md md:max-w-none mx-auto px-4">
@@ -1374,13 +1445,13 @@ const Home = () => {
               href="#menu"
               className="px-8 md:px-12 py-4 md:py-5 bg-primary text-secondary font-black rounded-2xl text-lg md:text-xl shadow-2xl shadow-primary/40 hover:scale-105 transition-transform flex items-center justify-center gap-3"
             >
-              🍽️ تصفح القائمة
+              🍽️ {t('تصفح القائمة', 'Browse menu')}
             </a>
             <a 
               href={`https://wa.me/${formatPhone(STAFF_WHATSAPP)}`}
               className="px-8 md:px-12 py-4 md:py-5 glass text-white font-black rounded-2xl text-lg md:text-xl hover:bg-white/20 transition-all flex items-center justify-center gap-3"
             >
-              📱 اطلب عبر واتساب
+              📱 {t('اطلب عبر واتساب', 'Order via WhatsApp')}
             </a>
           </div>
         </div>
@@ -1390,8 +1461,8 @@ const Home = () => {
       <section id="menu" className="max-w-7xl mx-auto px-4 py-20">
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-12 gap-8">
           <div className="text-center md:text-right">
-            <h2 className="text-4xl font-black text-primary">قائمة الطعام</h2>
-            <p className="text-white/40 font-bold">اختر وجبتك المفضلة من أصنافنا المتنوعة</p>
+            <h2 className="text-4xl font-black text-primary">{t('قائمة الطعام', 'Our menu')}</h2>
+            <p className="text-white/40 font-bold">{t('اختر وجبتك المفضلة من أصنافنا المتنوعة', 'Choose your favorite from our selection')}</p>
           </div>
           
           <div className="w-full md:w-auto">
@@ -1404,15 +1475,16 @@ const Home = () => {
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="ابحث عن صنف..."
-            className="w-full rounded-3xl border border-white/10 bg-white/5 py-4 pl-5 pr-14 text-right font-black text-white placeholder:text-white/35 outline-none transition-all focus:border-primary focus:bg-white/10"
+            placeholder={t('ابحث عن صنف...', 'Search menu...')}
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            className="w-full rounded-3xl border border-white/10 bg-white/5 py-4 px-14 font-black text-white placeholder:text-white/35 outline-none transition-all focus:border-primary focus:bg-white/10"
           />
         </div>
         
         {filteredMenu.length === 0 ? (
           <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-12 text-center">
-            <p className="text-xl font-black text-white">لا توجد نتائج</p>
-            <p className="mt-2 text-sm font-bold text-white/40">جرّب البحث باسم مختلف أو اختر تصنيف آخر.</p>
+            <p className="text-xl font-black text-white">{t('لا توجد نتائج', 'No results')}</p>
+            <p className="mt-2 text-sm font-bold text-white/40">{t('جرّب البحث باسم مختلف أو اختر تصنيف آخر.', 'Try another search or choose a different category.')}</p>
           </div>
         ) : (
           <div className="flex overflow-x-auto gap-6 md:gap-10 pb-12 no-scrollbar snap-x snap-mandatory px-4 md:px-8 cursor-grab active:cursor-grabbing scroll-smooth">
@@ -1548,6 +1620,7 @@ const uploadMenuImage = async (file: File, itemId: string) => {
 };
 
 const MenuManagement = () => {
+  const { language, t } = useLanguage();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [activeMenuCategory, setActiveMenuCategory] = useState('all');
   const [isSaving, setIsSaving] = useState(false);
@@ -1769,10 +1842,14 @@ const MenuManagement = () => {
     <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6">
       <div className="glass rounded-3xl p-6 text-right h-fit">
         <h2 className="text-2xl font-black text-primary mb-2">
-          {selectedItem ? `تعديل ${selectedItem.nameAr}` : 'إضافة صنف جديد'}
+          {selectedItem
+            ? t(`تعديل ${selectedItem.nameAr}`, `Edit ${selectedItem.nameEn}`)
+            : t('إضافة صنف جديد', 'Add new item')}
         </h2>
         <p className="text-white/40 text-sm font-bold mb-6">
-          {selectedItem ? 'عدّل السعر أو تفاصيل الصنف ثم احفظ التغييرات.' : 'أضف أي صنف جديد وسيظهر في قائمة العملاء.'}
+          {selectedItem
+            ? t('عدّل السعر أو تفاصيل الصنف ثم احفظ التغييرات.', 'Change the price or item details, then save.')
+            : t('أضف أي صنف جديد وسيظهر في قائمة العملاء.', 'Add a new item and it will appear on the customer menu.')}
         </p>
 
         {selectedItem ? (
@@ -1781,7 +1858,7 @@ const MenuManagement = () => {
             onClick={resetItemForm}
             className="w-full py-3 mb-4 border border-white/15 text-white/70 font-black rounded-2xl hover:border-primary hover:text-primary transition-all"
           >
-            إلغاء التعديل وإضافة صنف جديد
+            {t('إلغاء التعديل وإضافة صنف جديد', 'Cancel editing and add a new item')}
           </button>
         ) : null}
 
@@ -1790,20 +1867,20 @@ const MenuManagement = () => {
           disabled={isImporting}
           className="w-full py-4 mb-6 bg-white/5 border border-primary/30 text-primary font-black rounded-2xl hover:bg-primary hover:text-secondary disabled:opacity-50 transition-all flex items-center justify-center gap-2"
         >
-          <Plus className="w-5 h-5" /> {isImporting ? 'جاري استيراد القائمة...' : 'استيراد القائمة الحالية'}
+          <Plus className="w-5 h-5" /> {isImporting ? t('جاري استيراد القائمة...', 'Importing menu...') : t('استيراد القائمة الحالية', 'Import current menu')}
         </button> : null}
 
         <div className="space-y-4">
           <input
             value={form.nameAr}
             onChange={e => setForm({ ...form, nameAr: e.target.value })}
-            placeholder="اسم الصنف بالعربي"
+            placeholder={t('اسم الصنف بالعربي', 'Item name in Arabic')}
             className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
           />
           <input
             value={form.nameEn}
             onChange={e => setForm({ ...form, nameEn: e.target.value })}
-            placeholder="اسم الصنف بالإنجليزي"
+            placeholder={t('اسم الصنف بالإنجليزي', 'Item name in English')}
             className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
           />
           <select
@@ -1817,11 +1894,11 @@ const MenuManagement = () => {
           </select>
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-right text-sm font-black text-white/60">
-              السعر
+              {t('السعر', 'Price')}
               <input
                 value={form.price}
                 onChange={e => setForm({ ...form, price: e.target.value })}
-                placeholder="أدخل السعر"
+                placeholder={t('أدخل السعر', 'Enter price')}
                 type="number"
                 min="0"
                 step="0.5"
@@ -1829,11 +1906,11 @@ const MenuManagement = () => {
               />
             </label>
             <label className="block text-right text-sm font-black text-white/60">
-              السعرات
+              {t('السعرات', 'Calories')}
               <input
                 value={form.calories}
                 onChange={e => setForm({ ...form, calories: e.target.value })}
-                placeholder="أدخل السعرات"
+                placeholder={t('أدخل السعرات', 'Enter calories')}
                 type="number"
                 min="0"
                 className="mt-2 w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold text-white focus:outline-none focus:border-primary"
@@ -1859,10 +1936,10 @@ const MenuManagement = () => {
               </div>
               <div className="flex-1 text-right">
                 <p className="font-black text-white">
-                  {selectedImageFile ? selectedImageFile.name : 'رفع صورة الصنف'}
+                  {selectedImageFile ? selectedImageFile.name : t('رفع صورة الصنف', 'Upload item image')}
                 </p>
                 <p className="mt-1 text-xs font-bold leading-relaxed text-white/45">
-                  PNG أو JPG أو WebP. سيتم ضبطها تلقائياً إلى مقاس موحد للقائمة.
+                  {t('PNG أو JPG أو WebP. سيتم ضبطها تلقائياً إلى مقاس موحد للقائمة.', 'PNG, JPG, or WebP. The image will be resized automatically.')}
                 </p>
               </div>
             </div>
@@ -1870,11 +1947,11 @@ const MenuManagement = () => {
           <input
             value={form.sizes}
             onChange={e => setForm({ ...form, sizes: e.target.value })}
-            placeholder="أحجام اختيارية: صغير:6, كبير:12"
+            placeholder={t('أحجام اختيارية: صغير:6, كبير:12', 'Optional sizes: Small:6, Large:12')}
             className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right font-bold focus:outline-none focus:border-primary"
           />
           <label className="flex items-center justify-end gap-3 text-white/60 font-bold">
-            متاح للعملاء
+            {t('متاح للعملاء', 'Available to customers')}
             <input
               type="checkbox"
               checked={form.isAvailable}
@@ -1889,7 +1966,7 @@ const MenuManagement = () => {
             className="w-full py-4 bg-primary text-secondary font-black rounded-2xl hover:bg-accent disabled:opacity-50 transition-all flex items-center justify-center gap-2"
           >
             {selectedItem ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-            {isSaving ? 'جاري الحفظ...' : selectedItem ? 'حفظ التغييرات' : 'إضافة الصنف'}
+            {isSaving ? t('جاري الحفظ...', 'Saving...') : selectedItem ? t('حفظ التغييرات', 'Save changes') : t('إضافة الصنف', 'Add item')}
           </button>
         </div>
       </div>
@@ -1897,14 +1974,14 @@ const MenuManagement = () => {
       <div className="glass rounded-3xl p-6 text-right">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-black text-primary">الأصناف المضافة</h2>
-            <p className="text-white/40 text-sm font-bold">اعرض الأصناف حسب التصنيف بدلاً من قائمة واحدة طويلة.</p>
+            <h2 className="text-2xl font-black text-primary">{t('الأصناف المضافة', 'Menu items')}</h2>
+            <p className="text-white/40 text-sm font-bold">{t('اعرض الأصناف حسب التصنيف بدلاً من قائمة واحدة طويلة.', 'Browse items by category.')}</p>
           </div>
-          <span className="text-white/40 font-black text-sm">{visibleItems.length} صنف</span>
+          <span className="text-white/40 font-black text-sm">{visibleItems.length} {t('صنف', 'items')}</span>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
-          {[{ id: 'all', nameAr: 'الكل' }, ...CATEGORIES].map(category => {
+          {[{ id: 'all', nameAr: 'الكل', nameEn: 'All' }, ...CATEGORIES].map(category => {
             const isActive = activeMenuCategory === category.id;
             const count = categoryCounts[category.id] || 0;
 
@@ -1935,9 +2012,9 @@ const MenuManagement = () => {
                     "text-lg font-black leading-tight",
                     isActive ? "text-primary" : "text-white"
                   )}>
-                    {category.nameAr}
+                    {language === 'ar' ? category.nameAr : category.nameEn}
                   </p>
-                  <p className="mt-1 text-xs font-black text-white/55">{count} صنف</p>
+                  <p className="mt-1 text-xs font-black text-white/55">{count} {t('صنف', 'items')}</p>
                 </div>
               </button>
             );
@@ -1945,9 +2022,9 @@ const MenuManagement = () => {
         </div>
 
         {items.length === 0 ? (
-          <p className="text-white/40 font-bold">لا توجد أصناف مضافة في Supabase حتى الآن.</p>
+          <p className="text-white/40 font-bold">{t('لا توجد أصناف مضافة حتى الآن.', 'No menu items have been added yet.')}</p>
         ) : visibleItems.length === 0 ? (
-          <p className="text-white/40 font-bold">لا توجد أصناف في هذا التصنيف.</p>
+          <p className="text-white/40 font-bold">{t('لا توجد أصناف في هذا التصنيف.', 'There are no items in this category.')}</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visibleItems.map(item => (
@@ -1962,8 +2039,8 @@ const MenuManagement = () => {
               >
                 <img src={item.image} alt={item.nameEn} className="w-16 h-16 rounded-xl object-cover" />
                 <div className="flex-1">
-                  <p className="font-black text-white">{item.nameAr}</p>
-                  <p className="text-white/40 text-xs font-bold">{item.nameEn}</p>
+                  <p className="font-black text-white">{language === 'ar' ? item.nameAr : item.nameEn}</p>
+                  <p className="text-white/40 text-xs font-bold">{language === 'ar' ? item.nameEn : item.nameAr}</p>
                   <p className="text-primary font-black mt-1">{item.price} SR</p>
                   {item.sizes?.length ? (
                     <p className="mt-1 text-[11px] font-bold text-white/45">
@@ -1975,7 +2052,7 @@ const MenuManagement = () => {
                   "text-[10px] px-2 py-1 rounded-full font-black",
                   item.isAvailable ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
                 )}>
-                  {item.isAvailable ? 'متاح' : 'مخفي'}
+                  {item.isAvailable ? t('متاح', 'Available') : t('مخفي', 'Hidden')}
                 </span>
               </button>
             ))}
@@ -1987,6 +2064,7 @@ const MenuManagement = () => {
 };
 
 const StaffDashboard = () => {
+  const { t } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isStaffUnlocked, setIsStaffUnlocked] = useState(() => sessionStorage.getItem('makolaty_staff_unlocked') === 'true');
   const [passcode, setPasscode] = useState('');
@@ -2025,7 +2103,7 @@ const StaffDashboard = () => {
 
   const handleLogin = () => {
     if (passcode.trim() !== STAFF_PASSCODE) {
-      setLoginError('رمز الدخول غير صحيح');
+      setLoginError(t('رمز الدخول غير صحيح', 'Incorrect access code'));
       return;
     }
 
@@ -2056,11 +2134,12 @@ const StaffDashboard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="glass p-12 rounded-[3rem] text-center max-w-md w-full">
+          <div className="mb-6 flex justify-end"><LanguageSwitch /></div>
           <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center mx-auto mb-6">
             <User className="w-10 h-10 text-secondary" />
           </div>
-          <h2 className="text-3xl font-black mb-2">دخول الموظفين</h2>
-          <p className="text-white/40 mb-8">أدخل رمز الموظفين للوصول إلى لوحة الإدارة</p>
+          <h2 className="text-3xl font-black mb-2">{t('دخول الموظفين', 'Staff login')}</h2>
+          <p className="text-white/40 mb-8">{t('أدخل رمز الموظفين للوصول إلى لوحة الإدارة', 'Enter the staff access code to open the dashboard')}</p>
           <input
             value={passcode}
             onChange={e => {
@@ -2073,7 +2152,7 @@ const StaffDashboard = () => {
             type="password"
             inputMode="numeric"
             autoFocus
-            placeholder="رمز الدخول"
+            placeholder={t('رمز الدخول', 'Access code')}
             className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-center font-black text-xl tracking-widest focus:outline-none focus:border-primary mb-4"
           />
           {loginError && <p className="text-red-400 font-bold text-sm mb-4">{loginError}</p>}
@@ -2081,7 +2160,7 @@ const StaffDashboard = () => {
             onClick={handleLogin}
             className="w-full py-4 bg-primary text-secondary font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-accent transition-all"
           >
-            دخول لوحة الموظفين
+            {t('دخول لوحة الموظفين', 'Open staff dashboard')}
           </button>
         </div>
       </div>
@@ -2093,12 +2172,15 @@ const StaffDashboard = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-12">
           <div>
-            <h1 className="text-4xl font-black text-primary">لوحة الموظفين</h1>
-            <p className="text-white/40">إدارة قائمة المطعم</p>
+            <h1 className="text-4xl font-black text-primary">{t('لوحة الموظفين', 'Staff dashboard')}</h1>
+            <p className="text-white/40">{t('إدارة قائمة المطعم', 'Manage the restaurant menu')}</p>
           </div>
-          <button onClick={handleLogout} className="p-3 bg-white/5 rounded-xl hover:text-red-500 transition-colors">
-            <LogOut />
-          </button>
+          <div className="flex items-center gap-3">
+            <LanguageSwitch />
+            <button onClick={handleLogout} aria-label={t('تسجيل الخروج', 'Log out')} className="p-3 bg-white/5 rounded-xl hover:text-red-500 transition-colors">
+              <LogOut />
+            </button>
+          </div>
         </div>
 
         {activeView === 'menu' ? (
@@ -2216,13 +2298,15 @@ const StaffDashboard = () => {
 
 export default function App() {
   return (
-    <Router>
-      <ErrorBoundary>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/staff" element={<StaffDashboard />} />
-        </Routes>
-      </ErrorBoundary>
-    </Router>
+    <LanguageProvider>
+      <Router>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/staff" element={<StaffDashboard />} />
+          </Routes>
+        </ErrorBoundary>
+      </Router>
+    </LanguageProvider>
   );
 }
