@@ -1960,7 +1960,13 @@ const MenuManagement = () => {
           await new Promise(resolve => window.setTimeout(resolve, 600 * (attempt + 1)));
         }
       }
-      if (updateError) throw updateError;
+      if (updateError) {
+        const { error: rpcError } = await supabase.rpc('update_menu_item_image', {
+          item_id: selectedItem.id,
+          image_url: uploadedImageUrl,
+        });
+        if (rpcError) throw rpcError;
+      }
 
       setItems(currentItems => currentItems.map(item => (
         item.id === selectedItem.id ? { ...item, image: uploadedImageUrl } : item
