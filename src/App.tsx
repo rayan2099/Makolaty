@@ -1795,10 +1795,37 @@ const MenuManagement = () => {
           : { createdAt: new Date().toISOString() }),
       });
 
-      const { error } = selectedItem
-        ? await supabase.from('menu_items').update(payload).eq('id', selectedItem.id)
-        : await supabase.from('menu_items').insert(payload);
-      if (error) throw error;
+      if (selectedItem) {
+        let directUpdateError: unknown = null;
+        try {
+          const { error } = await supabase
+            .from('menu_items')
+            .update(payload)
+            .eq('id', selectedItem.id);
+          directUpdateError = error;
+        } catch (error) {
+          directUpdateError = error;
+        }
+
+        if (directUpdateError) {
+          const { error: rpcError } = await supabase.rpc('update_menu_item_details', {
+            item_id: selectedItem.id,
+            item_name_ar: form.nameAr.trim(),
+            item_name_en: form.nameEn.trim(),
+            item_category: form.category,
+            item_price: price,
+            item_calories: Number.isFinite(calories) ? calories : null,
+            item_image: uploadedImageUrl,
+            item_sizes: sizes.length ? sizes : null,
+            item_is_available: form.isAvailable,
+            item_sort_order: selectedItem.sortOrder ?? 0,
+          });
+          if (rpcError) throw rpcError;
+        }
+      } else {
+        const { error } = await supabase.from('menu_items').insert(payload);
+        if (error) throw error;
+      }
       setMessage(selectedItem ? `تم تحديث ${selectedItem.nameAr} بنجاح.` : 'تمت إضافة الصنف بنجاح.');
       setForm({
         nameAr: '',
