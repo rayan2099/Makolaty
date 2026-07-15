@@ -245,10 +245,14 @@ const isSquareArtworkItem = (item: MenuItem) => (
   item.category === 'appetizers' || item.category === 'sauces'
 );
 
+const shouldUseFullArtworkItem = (item: MenuItem) => (
+  item.category !== 'drinks' && isFullArtworkImage(item.image)
+);
+
 const MenuItemImage = ({ item }: { item: MenuItem }) => {
   const { language } = useLanguage();
   const [hasImageError, setHasImageError] = useState(false);
-  const shouldShowFullArtwork = isFullArtworkImage(item.image);
+  const shouldShowFullArtwork = shouldUseFullArtworkItem(item);
   const shouldUseSquareFrame = isSquareArtworkItem(item);
 
   if (!item.image || hasImageError) {
@@ -431,7 +435,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
   const selectedOption = item.sizes?.find(size => size.name === selectedSize);
   const displayedCalories = selectedOption?.calories ?? item.calories;
-  const shouldShowFullArtwork = isFullArtworkImage(item.image);
+  const shouldShowFullArtwork = shouldUseFullArtworkItem(item);
   const shouldUseSquareArtwork = isSquareArtworkItem(item);
   const isUnavailable = item.isAvailable === false;
 
