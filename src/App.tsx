@@ -169,7 +169,7 @@ const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
     const isLocalBundledImage = currentImage.startsWith('/menu/');
     const shouldUseOverrideImage = (
       !currentImage
-      || (!isSupabaseUploadedImage && !isLocalBundledImage && overrideImage.startsWith('/menu/'))
+      || (!isSupabaseUploadedImage && overrideImage.startsWith('/menu/') && (override.category === 'drinks' || !isLocalBundledImage))
     );
 
     return {
@@ -245,6 +245,10 @@ const isSquareArtworkItem = (item: MenuItem) => (
   item.category === 'appetizers' || item.category === 'sauces'
 );
 
+const isDrinkItem = (item: MenuItem) => (
+  item.category === 'drinks'
+);
+
 const shouldUseFullArtworkItem = (item: MenuItem) => (
   item.category !== 'drinks' && isFullArtworkImage(item.image)
 );
@@ -254,6 +258,7 @@ const MenuItemImage = ({ item }: { item: MenuItem }) => {
   const [hasImageError, setHasImageError] = useState(false);
   const shouldShowFullArtwork = shouldUseFullArtworkItem(item);
   const shouldUseSquareFrame = isSquareArtworkItem(item);
+  const shouldUseDrinkFrame = isDrinkItem(item);
 
   if (!item.image || hasImageError) {
     return (
@@ -270,7 +275,13 @@ const MenuItemImage = ({ item }: { item: MenuItem }) => {
       alt={language === 'ar' ? item.nameAr : item.nameEn}
       className={cn(
         "w-full h-full transition-transform duration-500",
-        shouldShowFullArtwork ? "object-contain" : shouldUseSquareFrame ? "object-cover" : "object-cover group-hover:scale-110"
+        shouldShowFullArtwork
+          ? "object-contain"
+          : shouldUseSquareFrame
+            ? "object-cover"
+            : shouldUseDrinkFrame
+              ? "object-contain p-4"
+              : "object-cover group-hover:scale-110"
       )}
       referrerPolicy="no-referrer"
       onError={() => setHasImageError(true)}
@@ -437,6 +448,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
   const displayedCalories = selectedOption?.calories ?? item.calories;
   const shouldShowFullArtwork = shouldUseFullArtworkItem(item);
   const shouldUseSquareArtwork = isSquareArtworkItem(item);
+  const shouldUseDrinkFrame = isDrinkItem(item);
   const isUnavailable = item.isAvailable === false;
 
   return (
@@ -459,10 +471,16 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
       ) : null}
       <div className={cn(
         "relative overflow-hidden",
-        shouldUseSquareArtwork ? "aspect-square bg-[#f8f1e8]" : shouldShowFullArtwork ? "aspect-[3/4] bg-[#f8f1e8]" : "aspect-[4/3]"
+        shouldUseSquareArtwork
+          ? "aspect-square bg-[#f8f1e8]"
+          : shouldShowFullArtwork
+            ? "aspect-[3/4] bg-[#f8f1e8]"
+            : shouldUseDrinkFrame
+              ? "aspect-[4/3] bg-[#f8f1e8]"
+              : "aspect-[4/3]"
       )}>
         <MenuItemImage item={item} />
-        {!shouldShowFullArtwork && !shouldUseSquareArtwork && (
+        {!shouldShowFullArtwork && !shouldUseSquareArtwork && !shouldUseDrinkFrame && (
           <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent opacity-60" />
         )}
         {displayedCalories !== undefined && (
