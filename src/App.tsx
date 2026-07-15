@@ -122,6 +122,17 @@ const addOnConfigurationKey = (addOns: SelectedAddOn[] = []) => (
   addOns.map(addOn => addOn.id).sort().join(',')
 );
 
+type ItemFlavorOptions = Pick<CartItem, 'spicyLevel' | 'mayoLevel' | 'ketchupLevel'>;
+
+const cartConfigurationKey = ({ addOns, spicyLevel, mayoLevel, ketchupLevel }: ItemFlavorOptions & { addOns?: SelectedAddOn[] }) => (
+  [
+    addOnConfigurationKey(addOns),
+    `spicy:${spicyLevel || 0}`,
+    `mayo:${mayoLevel || 0}`,
+    `ketchup:${ketchupLevel || 0}`,
+  ].join('|')
+);
+
 // --- Error Handling ---
 
 enum OperationType {
@@ -472,10 +483,11 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
   );
 };
 
-const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, size?: string, addOns?: SelectedAddOn[]) => void; key?: string }) => {
+const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, size?: string, addOns?: SelectedAddOn[], options?: ItemFlavorOptions) => void; key?: string }) => {
   const { language, t } = useLanguage();
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
   const [isAddOnSelected, setIsAddOnSelected] = useState(false);
+  const [flavorOptions, setFlavorOptions] = useState<ItemFlavorOptions>({});
   const selectedOption = item.sizes?.find(size => size.name === selectedSize);
   const displayedCalories = selectedOption?.calories ?? item.calories;
   const shouldShowFullArtwork = shouldUseFullArtworkItem(item);
@@ -593,6 +605,44 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
           </button>
         )}
 
+        <div className="mb-5 rounded-2xl border border-white/10 bg-white/[0.025] p-3">
+          <p className="mb-2 text-start text-[10px] font-black uppercase tracking-wider text-white/35">
+            {t('خصص طلبك', 'Customize')}
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { key: 'spicyLevel' as const, labelAr: 'سبايسي', labelEn: 'Spicy' },
+              { key: 'mayoLevel' as const, labelAr: 'مايونيز', labelEn: 'Mayo' },
+              { key: 'ketchupLevel' as const, labelAr: 'كاتشب', labelEn: 'Ketchup' },
+            ].map(option => {
+              const isSelected = (flavorOptions[option.key] || 0) > 0;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  disabled={isUnavailable}
+                  onClick={() => setFlavorOptions(current => ({
+                    ...current,
+                    [option.key]: isSelected ? 0 : 1,
+                  }))}
+                  className={cn(
+                    "flex min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-[11px] font-black transition-all",
+                    isSelected
+                      ? "border-primary bg-primary text-secondary shadow-lg shadow-primary/15"
+                      : "border-white/10 bg-white/5 text-white/45 hover:border-primary/40 hover:text-white"
+                  )}
+                >
+                  <span className={cn(
+                    "text-sm leading-none",
+                    isSelected ? "text-secondary" : "text-primary"
+                  )}>+</span>
+                  <span className="truncate">{language === 'ar' ? option.labelAr : option.labelEn}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-primary font-black text-2xl">
@@ -601,7 +651,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
             </span>
           </div>
           <button 
-            onClick={() => onAdd(item, selectedSize, isAddOnSelected && availableAddOn ? [availableAddOn] : [])}
+            onClick={() => onAdd(item, selectedSize, isAddOnSelected && availableAddOn ? [availableAddOn] : [], flavorOptions)}
             disabled={isUnavailable}
             aria-label={isUnavailable ? t('الصنف غير متاح', 'Item not available') : t('إضافة إلى السلة', 'Add to cart')}
             className="w-12 h-12 bg-primary text-secondary rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl shadow-primary/20 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30 disabled:shadow-none disabled:hover:scale-100"
@@ -746,7 +796,7 @@ const CartDrawer = ({
                           <div className="flex items-center justify-start gap-2 mb-1">
                             <h4 className="font-bold text-sm text-white">{bilingualName(item.nameAr, item.nameEn, language)}</h4>
                             <button 
-                              onClick={() => onRemove(item.id, item.selectedSize, addOnConfigurationKey(item.addOns))}
+                              onClick={() => onRemove(item.id, item.selectedSize, cartConfigurationKey(item))}
                               className="text-white/20 hover:text-red-500 transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -769,14 +819,14 @@ const CartDrawer = ({
                               <div key={opt.key} className="flex items-center gap-0.5">
                                 {opt.level > 0 && (
                                   <button
-                                    onClick={() => onUpdateOption(item.id, item.selectedSize, addOnConfigurationKey(item.addOns), opt.key as any, opt.level === 2 ? 1 : 2)}
+                                    onClick={() => onUpdateOption(item.id, item.selectedSize, cartConfigurationKey(item), opt.key as any, opt.level === 2 ? 1 : 2)}
                                     className="w-4 h-4 rounded-full bg-primary text-secondary flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-md"
                                   >
                                     {opt.level === 2 ? <Minus className="w-2.5 h-2.5" /> : <Plus className="w-2.5 h-2.5" />}
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => onUpdateOption(item.id, item.selectedSize, addOnConfigurationKey(item.addOns), opt.key as any, opt.level === 0 ? 1 : 0)}
+                                  onClick={() => onUpdateOption(item.id, item.selectedSize, cartConfigurationKey(item), opt.key as any, opt.level === 0 ? 1 : 0)}
                                   className={cn(
                                     "px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all flex items-center gap-1",
                                     opt.level > 0 
@@ -795,11 +845,11 @@ const CartDrawer = ({
                         {/* Far Left: Quantity stepper and price */}
                         <div className="flex flex-col items-center gap-2 min-w-[70px] shrink-0">
                           <div className="flex items-center gap-2.5 bg-white/5 rounded-lg px-3 py-1.5 border border-white/10 shadow-lg">
-                            <button onClick={() => onUpdateQty(item.id, item.selectedSize, addOnConfigurationKey(item.addOns), 1)} className="hover:text-primary transition-colors">
+                            <button onClick={() => onUpdateQty(item.id, item.selectedSize, cartConfigurationKey(item), 1)} className="hover:text-primary transition-colors">
                               <Plus className="w-3.5 h-3.5" />
                             </button>
                             <span className="font-black text-base w-5 text-center text-white">{item.quantity}</span>
-                            <button onClick={() => onUpdateQty(item.id, item.selectedSize, addOnConfigurationKey(item.addOns), -1)} className="hover:text-primary transition-colors">
+                            <button onClick={() => onUpdateQty(item.id, item.selectedSize, cartConfigurationKey(item), -1)} className="hover:text-primary transition-colors">
                               <Minus className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -1494,29 +1544,29 @@ const Home = () => {
     return searchableText.includes(normalizedSearchQuery);
   });
 
-  const addToCart = (item: MenuItem, size?: string, addOns: SelectedAddOn[] = []) => {
+  const addToCart = (item: MenuItem, size?: string, addOns: SelectedAddOn[] = [], options: ItemFlavorOptions = {}) => {
     if (item.isAvailable === false) return;
     setCart(prev => {
-      const addOnKey = addOnConfigurationKey(addOns);
-      const existing = prev.find(i => i.id === item.id && i.selectedSize === size && addOnConfigurationKey(i.addOns) === addOnKey);
+      const configurationKey = cartConfigurationKey({ addOns, ...options });
+      const existing = prev.find(i => i.id === item.id && i.selectedSize === size && cartConfigurationKey(i) === configurationKey);
       const basePrice = size ? item.sizes?.find(s => s.name === size)?.price || item.price : item.price;
       const price = basePrice + addOns.reduce((sum, addOn) => sum + addOn.price, 0);
       
       if (existing) {
         return prev.map(i => 
-          (i.id === item.id && i.selectedSize === size && addOnConfigurationKey(i.addOns) === addOnKey)
+          (i.id === item.id && i.selectedSize === size && cartConfigurationKey(i) === configurationKey)
             ? { ...i, quantity: i.quantity + 1 } 
             : i
         );
       }
-      return [...prev, { ...item, quantity: 1, selectedSize: size, basePrice, addOns, finalPrice: price }];
+      return [...prev, { ...item, ...options, quantity: 1, selectedSize: size, basePrice, addOns, finalPrice: price }];
     });
     setIsCartOpen(true);
   };
 
   const updateQty = (id: string, size: string | undefined, addOnKey: string, delta: number) => {
     setCart(prev => prev.map(i => {
-      if (i.id === id && i.selectedSize === size && addOnConfigurationKey(i.addOns) === addOnKey) {
+      if (i.id === id && i.selectedSize === size && cartConfigurationKey(i) === addOnKey) {
         const newQty = Math.max(0, i.quantity + delta);
         return { ...i, quantity: newQty };
       }
@@ -1525,12 +1575,12 @@ const Home = () => {
   };
 
   const removeFromCart = (id: string, size: string | undefined, addOnKey: string) => {
-    setCart(prev => prev.filter(i => !(i.id === id && i.selectedSize === size && addOnConfigurationKey(i.addOns) === addOnKey)));
+    setCart(prev => prev.filter(i => !(i.id === id && i.selectedSize === size && cartConfigurationKey(i) === addOnKey)));
   };
 
   const updateOption = (id: string, size: string | undefined, addOnKey: string, option: 'ketchup' | 'mayo' | 'spicy', level: number) => {
     setCart(prev => prev.map(item => {
-      if (item.id === id && item.selectedSize === size && addOnConfigurationKey(item.addOns) === addOnKey) {
+      if (item.id === id && item.selectedSize === size && cartConfigurationKey(item) === addOnKey) {
         return { ...item, [`${option}Level`]: level };
       }
       return item;
