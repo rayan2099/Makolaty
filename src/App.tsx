@@ -158,7 +158,7 @@ const BUILT_IN_MENU_OVERRIDES = new Map(
     .map(item => [item.id, item])
 );
 const CANONICAL_MENU_IDS = new Set(INITIAL_MENU.map(item => item.id));
-const LOCKED_BUILT_IN_IMAGE_IDS = new Set(['ap-9']);
+const LOCKED_BUILT_IN_IMAGE_IDS = new Set(['ap-9', 'broast-nuggets-regular']);
 
 const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
   items.map(item => {

@@ -114,7 +114,7 @@ const RAW_INITIAL_MENU: MenuItem[] = [
     id: 'broast-chicken', nameAr: 'بروست دجاج', nameEn: 'Chicken Broast', category: 'broast', price: 18, calories: 1647,
     image: '/menu/broast/chicken-broast.jpeg', sizes: sizes(['عادي', 18, 1647], ['حراق', 18, 1637]),
   },
-  { id: 'broast-nuggets-regular', nameAr: 'مسحب عادي', nameEn: 'Regular Chicken Nuggets', category: 'broast', price: 18, calories: 1642, image: '/menu/broast/chicken-nuggets.jpeg' },
+  { id: 'broast-nuggets-regular', nameAr: 'مسحب عادي', nameEn: 'Regular Chicken Nuggets', category: 'broast', price: 18, calories: 1642, image: '/menu/broast/chicken-nuggets-regular.png' },
   { id: 'broast-nuggets-spicy', nameAr: 'مسحب حراق', nameEn: 'Spicy Chicken Nuggets', category: 'broast', price: 18, calories: 1630, image: '/menu/broast/chicken-nuggets.jpeg' },
 
   // Pasta.
