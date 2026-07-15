@@ -418,7 +418,7 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
 
       {/* Logo on the Left */}
       <Link to="/" className="flex items-center gap-2 md:gap-3">
-        <div className="w-10 h-10 md:w-14 md:h-14 flex items-center justify-center bg-primary rounded-xl overflow-hidden p-1 shadow-lg shadow-primary/20">
+        <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-primary rounded-xl overflow-hidden p-1 shadow-lg shadow-primary/20">
           <img 
             src="/logo.jpeg" 
             alt={t('مأكولاتي', 'Makolaty')}
