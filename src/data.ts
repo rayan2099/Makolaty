@@ -146,7 +146,7 @@ const RAW_INITIAL_MENU: MenuItem[] = [
   { id: 'sc-7', nameAr: 'جبنة شيدر', nameEn: 'Cheddar Cheese Sauce', category: 'sauces', price: 2, calories: 160, image: '/menu/sauces/cheese-sauce.jpeg' },
 
   // Drinks shown on the printed menu.
-  { id: 'dr-1', nameAr: 'بيبسي', nameEn: 'Pepsi', category: 'drinks', price: 3, calories: 150, image: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=800&q=80' },
+  { id: 'dr-1', nameAr: 'بيبسي', nameEn: 'Pepsi', category: 'drinks', price: 3, calories: 150, sizes: sizes(['صغير', 3, 150], ['وسط', 5], ['كبير', 9]), image: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=800&q=80' },
   { id: 'dr-2', nameAr: 'الربيع', nameEn: 'Rabeea Juice', category: 'drinks', price: 2, calories: 135, image: '' },
   { id: 'dr-3', nameAr: 'ماء', nameEn: 'Water', category: 'drinks', price: 1, calories: 0, image: 'https://images.unsplash.com/photo-1548964856-ac521ad29d83?auto=format&fit=crop&w=800&q=80' },
 ];
