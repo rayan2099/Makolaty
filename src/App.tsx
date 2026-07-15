@@ -556,12 +556,40 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
             onClick={() => setIsAddOnSelected(value => !value)}
             disabled={isUnavailable}
             className={cn(
-              "mb-5 flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-black transition-all",
-              isAddOnSelected ? "border-primary bg-primary/15 text-primary" : "border-white/10 bg-white/5 text-white/60"
+              "mb-5 flex w-full items-center gap-3 rounded-2xl border p-3 text-start transition-all",
+              isAddOnSelected
+                ? "border-primary/70 bg-primary/10 shadow-[0_8px_24px_rgba(255,210,0,0.10)]"
+                : "border-white/10 bg-white/[0.035] hover:border-primary/40 hover:bg-white/[0.06]"
             )}
           >
-            <span>{bilingualName(availableAddOn.nameAr, availableAddOn.nameEn, language)}</span>
-            <span dir="ltr">+{availableAddOn.price} SR</span>
+            <span className={cn(
+              "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all",
+              isAddOnSelected
+                ? "border-primary bg-primary text-secondary"
+                : "border-white/20 bg-white/5 text-transparent"
+            )}>
+              <Check className="h-4 w-4" strokeWidth={3} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className={cn(
+                "block truncate text-sm font-black",
+                isAddOnSelected ? "text-primary" : "text-white"
+              )}>
+                {language === 'ar' ? availableAddOn.nameAr : availableAddOn.nameEn}
+              </span>
+              <span className="block truncate text-[10px] font-bold uppercase tracking-wide text-white/35">
+                {language === 'ar' ? availableAddOn.nameEn : availableAddOn.nameAr}
+              </span>
+            </span>
+            <span
+              dir="ltr"
+              className={cn(
+                "shrink-0 rounded-xl px-2.5 py-1.5 text-xs font-black",
+                isAddOnSelected ? "bg-primary text-secondary" : "bg-white/10 text-primary"
+              )}
+            >
+              +{availableAddOn.price} SR
+            </span>
           </button>
         )}
 
