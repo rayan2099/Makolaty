@@ -31,7 +31,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './supabase';
 import { cn } from './lib/utils';
-import { MenuItem, CartItem, Order, CATEGORIES, STAFF_WHATSAPP } from './types';
+import { MenuItem, CartItem, Order, SelectedAddOn, CATEGORIES, STAFF_WHATSAPP } from './types';
 import { INITIAL_MENU } from './data';
 import { extractCoordinatesFromMapsLink, getDeliveryQuote, isShortMapsLink, type DeliveryQuote } from './delivery';
 import { useResolveMapsLink } from './hooks/useResolveMapsLink';
@@ -99,6 +99,28 @@ const localizedSize = (size: string, language: Language) => {
     'صحن مشكل': 'Mixed plate',
   } as Record<string, string>)[size] || size;
 };
+
+const getAvailableAddOn = (item: MenuItem, selectedSize?: string): SelectedAddOn | null => {
+  if (item.category === 'pizza') {
+    const prices: Record<string, number> = { 'صغير': 3, 'وسط': 5, 'كبير': 7 };
+    return { id: 'extra-cheese', nameAr: 'زيادة جبن', nameEn: 'Extra Cheese', price: prices[selectedSize || ''] ?? 3 };
+  }
+  if (item.category === 'pasta') {
+    return { id: 'extra-chicken', nameAr: 'اكسترا دجاج', nameEn: 'Extra Chicken', price: 5 };
+  }
+  if (item.category === 'shawarma') {
+    return { id: 'shawarma-extra-cheese', nameAr: 'جبن اكسترا', nameEn: 'Extra Cheese', price: 1 };
+  }
+  return null;
+};
+
+const bilingualName = (nameAr: string, nameEn: string, language: Language) => (
+  language === 'ar' ? `${nameAr} (${nameEn})` : `${nameEn} (${nameAr})`
+);
+
+const addOnConfigurationKey = (addOns: SelectedAddOn[] = []) => (
+  addOns.map(addOn => addOn.id).sort().join(',')
+);
 
 // --- Error Handling ---
 
@@ -304,7 +326,7 @@ const generateWhatsAppLink = (order: Order) => {
   const itemsList = order.items
     .map(i => {
       const sizeStr = i.selectedSize ? ` (${i.selectedSize})` : '';
-      const options = [];
+      const options = i.addOns?.map(addOn => `${addOn.nameAr} (${addOn.nameEn}) +${addOn.price} SR`) || [];
       if (i.ketchupLevel === 1) options.push('كاتشب');
       if (i.ketchupLevel === 2) options.push('كاتشب اكسترا');
       if (i.mayoLevel === 1) options.push('مايونيز');
@@ -313,7 +335,7 @@ const generateWhatsAppLink = (order: Order) => {
       if (i.spicyLevel === 2) options.push('حراق اكسترا');
       const optionsStr = options.length > 0 ? ` [${options.join(' + ')}]` : '';
       
-      return `• ${i.quantity} ${i.nameAr}${sizeStr}${optionsStr}`;
+      return `• ${i.quantity} ${i.nameAr} (${i.nameEn})${sizeStr}${optionsStr}\n  ${i.basePrice ?? i.finalPrice} SR + إضافات ${(i.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0)} SR = ${i.finalPrice} SR للحبة`;
     })
     .join('\n');
 
@@ -450,15 +472,18 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
   );
 };
 
-const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, size?: string) => void; key?: string }) => {
+const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, size?: string, addOns?: SelectedAddOn[]) => void; key?: string }) => {
   const { language, t } = useLanguage();
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
+  const [isAddOnSelected, setIsAddOnSelected] = useState(false);
   const selectedOption = item.sizes?.find(size => size.name === selectedSize);
   const displayedCalories = selectedOption?.calories ?? item.calories;
   const shouldShowFullArtwork = shouldUseFullArtworkItem(item);
   const shouldUseSquareArtwork = isSquareArtworkItem(item);
   const shouldUseDrinkFrame = isDrinkItem(item);
   const isUnavailable = item.isAvailable === false;
+  const availableAddOn = getAvailableAddOn(item, selectedSize);
+  const displayedPrice = (selectedOption?.price ?? item.price) + (isAddOnSelected ? availableAddOn?.price ?? 0 : 0);
 
   return (
     <motion.div 
@@ -525,15 +550,30 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
           </div>
         )}
 
+        {availableAddOn && (
+          <button
+            type="button"
+            onClick={() => setIsAddOnSelected(value => !value)}
+            disabled={isUnavailable}
+            className={cn(
+              "mb-5 flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-black transition-all",
+              isAddOnSelected ? "border-primary bg-primary/15 text-primary" : "border-white/10 bg-white/5 text-white/60"
+            )}
+          >
+            <span>{bilingualName(availableAddOn.nameAr, availableAddOn.nameEn, language)}</span>
+            <span dir="ltr">+{availableAddOn.price} SR</span>
+          </button>
+        )}
+
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-primary font-black text-2xl">
-              {selectedOption?.price ?? item.price}
+              {displayedPrice}
               <span className="text-xs mr-1 font-bold">SR</span>
             </span>
           </div>
           <button 
-            onClick={() => onAdd(item, selectedSize)}
+            onClick={() => onAdd(item, selectedSize, isAddOnSelected && availableAddOn ? [availableAddOn] : [])}
             disabled={isUnavailable}
             aria-label={isUnavailable ? t('الصنف غير متاح', 'Item not available') : t('إضافة إلى السلة', 'Add to cart')}
             className="w-12 h-12 bg-primary text-secondary rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl shadow-primary/20 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30 disabled:shadow-none disabled:hover:scale-100"
@@ -563,9 +603,9 @@ const CartDrawer = ({
   onClose: () => void; 
   items: CartItem[]; 
   menuItems: MenuItem[];
-  onUpdateQty: (id: string, size: string | undefined, delta: number) => void;
-  onRemove: (id: string, size: string | undefined) => void;
-  onUpdateOption: (id: string, size: string | undefined, option: 'ketchup' | 'mayo' | 'spicy', level: number) => void;
+  onUpdateQty: (id: string, size: string | undefined, addOnKey: string, delta: number) => void;
+  onRemove: (id: string, size: string | undefined, addOnKey: string) => void;
+  onUpdateOption: (id: string, size: string | undefined, addOnKey: string, option: 'ketchup' | 'mayo' | 'spicy', level: number) => void;
   onAdd: (item: MenuItem) => void;
   onCheckout: () => void;
   notes: string;
@@ -676,16 +716,21 @@ const CartDrawer = ({
                         {/* Right-Center: Name + Options (Right next to image) */}
                         <div className="text-right flex-1">
                           <div className="flex items-center justify-start gap-2 mb-1">
-                            <h4 className="font-bold text-sm text-white">{item.nameAr}</h4>
+                            <h4 className="font-bold text-sm text-white">{bilingualName(item.nameAr, item.nameEn, language)}</h4>
                             <button 
-                              onClick={() => onRemove(item.id, item.selectedSize)}
+                              onClick={() => onRemove(item.id, item.selectedSize, addOnConfigurationKey(item.addOns))}
                               className="text-white/20 hover:text-red-500 transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
 
-                          {item.selectedSize && <p className="text-[10px] text-primary font-bold mb-1">{item.selectedSize}</p>}
+                          {item.selectedSize && <p className="text-[10px] text-primary font-bold mb-1">{t('الحجم', 'Size')}: {localizedSize(item.selectedSize, language)}</p>}
+                          {item.addOns?.map(addOn => (
+                            <p key={addOn.id} className="mb-1 text-[10px] font-bold text-emerald-300">
+                              {bilingualName(addOn.nameAr, addOn.nameEn, language)} <span dir="ltr">+{addOn.price} SR</span>
+                            </p>
+                          ))}
                           
                           <div className="flex flex-row flex-wrap gap-1 justify-start">
                             {[
@@ -696,14 +741,14 @@ const CartDrawer = ({
                               <div key={opt.key} className="flex items-center gap-0.5">
                                 {opt.level > 0 && (
                                   <button
-                                    onClick={() => onUpdateOption(item.id, item.selectedSize, opt.key as any, opt.level === 2 ? 1 : 2)}
+                                    onClick={() => onUpdateOption(item.id, item.selectedSize, addOnConfigurationKey(item.addOns), opt.key as any, opt.level === 2 ? 1 : 2)}
                                     className="w-4 h-4 rounded-full bg-primary text-secondary flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-md"
                                   >
                                     {opt.level === 2 ? <Minus className="w-2.5 h-2.5" /> : <Plus className="w-2.5 h-2.5" />}
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => onUpdateOption(item.id, item.selectedSize, opt.key as any, opt.level === 0 ? 1 : 0)}
+                                  onClick={() => onUpdateOption(item.id, item.selectedSize, addOnConfigurationKey(item.addOns), opt.key as any, opt.level === 0 ? 1 : 0)}
                                   className={cn(
                                     "px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all flex items-center gap-1",
                                     opt.level > 0 
@@ -722,15 +767,18 @@ const CartDrawer = ({
                         {/* Far Left: Quantity stepper and price */}
                         <div className="flex flex-col items-center gap-2 min-w-[70px] shrink-0">
                           <div className="flex items-center gap-2.5 bg-white/5 rounded-lg px-3 py-1.5 border border-white/10 shadow-lg">
-                            <button onClick={() => onUpdateQty(item.id, item.selectedSize, 1)} className="hover:text-primary transition-colors">
+                            <button onClick={() => onUpdateQty(item.id, item.selectedSize, addOnConfigurationKey(item.addOns), 1)} className="hover:text-primary transition-colors">
                               <Plus className="w-3.5 h-3.5" />
                             </button>
                             <span className="font-black text-base w-5 text-center text-white">{item.quantity}</span>
-                            <button onClick={() => onUpdateQty(item.id, item.selectedSize, -1)} className="hover:text-primary transition-colors">
+                            <button onClick={() => onUpdateQty(item.id, item.selectedSize, addOnConfigurationKey(item.addOns), -1)} className="hover:text-primary transition-colors">
                               <Minus className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <span className="font-black text-base text-primary">{item.finalPrice * item.quantity} SR</span>
+                          <span className="font-black text-base text-primary" dir="ltr">{item.finalPrice * item.quantity} SR</span>
+                          <span className="text-[9px] font-bold text-white/35" dir="ltr">
+                            {item.basePrice} + {(item.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0)} SR
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -827,15 +875,17 @@ const CheckoutModal = ({
   onClose, 
   onSubmit,
   isSubmitting,
-  orderSubtotal
+  orderSubtotal,
+  items
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
   onSubmit: (data: any) => void;
   isSubmitting: boolean;
   orderSubtotal: number;
+  items: CartItem[];
 }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -1091,6 +1141,26 @@ const CheckoutModal = ({
         </div>
 
         <div className="pt-8 shrink-0">
+          <div className="mb-4 max-h-52 space-y-3 overflow-y-auto rounded-2xl border border-white/10 bg-white/5 p-4 text-right">
+            <p className="text-xs font-black uppercase tracking-widest text-white/40">{t('ملخص الطلب', 'Order summary')}</p>
+            {items.map((item, index) => (
+              <div key={`${item.id}-${item.selectedSize}-${index}`} className="border-t border-white/5 pt-3 first:border-0 first:pt-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-black text-white">{item.quantity} × {bilingualName(item.nameAr, item.nameEn, language)}</p>
+                    {item.selectedSize && <p className="text-xs font-bold text-primary">{t('الحجم', 'Size')}: {localizedSize(item.selectedSize, language)}</p>}
+                  </div>
+                  <span className="shrink-0 font-black text-primary" dir="ltr">{item.finalPrice * item.quantity} SR</span>
+                </div>
+                <p className="mt-1 text-[11px] font-bold text-white/40" dir="ltr">{t('سعر المنتج', 'Item')}: {item.basePrice} SR</p>
+                {item.addOns?.map(addOn => (
+                  <p key={addOn.id} className="text-[11px] font-bold text-emerald-300">
+                    {bilingualName(addOn.nameAr, addOn.nameEn, language)} <span dir="ltr">+{addOn.price} SR</span>
+                  </p>
+                ))}
+              </div>
+            ))}
+          </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4 text-right space-y-2">
             <div className="flex justify-between text-sm font-bold text-white/50">
               <span>{orderSubtotal} SR</span>
@@ -1127,7 +1197,7 @@ const CheckoutModal = ({
 };
 
 const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: string) => void }) => {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
   const icons: Record<string, string> = {
     shawarma: '🌯',
     pizza: '🍕',
@@ -1138,13 +1208,12 @@ const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: stri
     broast: '🍗',
     appetizers: '🥗',
     drinks: '🥤',
-    sauces: '🍯',
-    all: '🍽️'
+    sauces: '🍯'
   };
 
   return (
     <div className="flex gap-6 md:gap-8 overflow-x-auto pb-10 no-scrollbar px-8 snap-x snap-mandatory cursor-grab active:cursor-grabbing">
-      {[{ id: 'all', nameAr: 'الكل', nameEn: 'All' }, ...CATEGORIES].map((cat) => (
+      {CATEGORIES.map((cat) => (
         <button
           key={cat.id}
           onClick={() => onChange(cat.id)}
@@ -1160,7 +1229,7 @@ const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: stri
             "text-xs md:text-sm font-bold transition-colors",
             active === cat.id ? "text-primary" : "text-white/40"
           )}>
-            {cat.id === 'all' ? t('الكل', 'All') : language === 'ar' ? cat.nameAr : cat.nameEn}
+            {language === 'ar' ? cat.nameAr : cat.nameEn}
           </span>
         </button>
       ))}
@@ -1181,7 +1250,7 @@ const SuccessModal = ({
   order: Order | null;
   isWhatsAppClicked: boolean;
 }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   return (
   <AnimatePresence>
     {isOpen && order && (
@@ -1230,7 +1299,7 @@ const SuccessModal = ({
                 <h3 className="text-white/40 text-xs font-black uppercase tracking-widest mb-4">{t('ملخص الطلب', 'Order summary')}</h3>
                 <div className="space-y-4 mb-6">
                   {order.items.map((item, idx) => {
-                    const options = [];
+                    const options = item.addOns?.map(addOn => bilingualName(addOn.nameAr, addOn.nameEn, language)) || [];
                     if (item.ketchupLevel === 1) options.push('كاتشب');
                     if (item.ketchupLevel === 2) options.push('كاتشب اكسترا');
                     if (item.mayoLevel === 1) options.push('مايونيز');
@@ -1243,10 +1312,19 @@ const SuccessModal = ({
                       <div key={idx} className="text-right py-1">
                         <p className="text-white font-bold">
                           <span className="text-primary ml-1">{item.quantity}</span>
-                          {item.nameAr}
-                          {item.selectedSize && <span className="text-primary text-xs mr-1">({item.selectedSize})</span>}
+                          {bilingualName(item.nameAr, item.nameEn, language)}
+                          {item.selectedSize && <span className="text-primary text-xs mr-1">({localizedSize(item.selectedSize, language)})</span>}
                         </p>
                         {optionsStr && <p className="text-white/40 text-[10px] mt-0.5">{optionsStr}</p>}
+                        <div className="mt-1 space-y-0.5 text-[11px] font-bold text-white/45">
+                          <p dir="ltr">{t('سعر المنتج', 'Item')}: {item.basePrice ?? item.finalPrice} SR × {item.quantity}</p>
+                          {item.addOns?.map(addOn => (
+                            <p key={addOn.id} className="text-emerald-300">
+                              {bilingualName(addOn.nameAr, addOn.nameEn, language)} <span dir="ltr">+{addOn.price} SR</span>
+                            </p>
+                          ))}
+                          <p className="text-primary" dir="ltr">{t('الإجمالي', 'Total')}: {item.finalPrice * item.quantity} SR</p>
+                        </div>
                       </div>
                     );
                   })}
@@ -1326,7 +1404,7 @@ const SuccessModal = ({
 
 const Home = () => {
   const { language, t } = useLanguage();
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]?.id || 'shawarma');
   const [searchQuery, setSearchQuery] = useState('');
   const [menuItems, setMenuItems] = useState<MenuItem[]>(INITIAL_MENU);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -1369,7 +1447,7 @@ const Home = () => {
 
   const normalizedSearchQuery = normalizeSearchText(searchQuery);
   const filteredMenu = menuItems.filter(item => {
-    const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
+    const matchesCategory = item.category === activeCategory;
     if (!matchesCategory) return false;
     if (!normalizedSearchQuery) return true;
 
@@ -1384,27 +1462,29 @@ const Home = () => {
     return searchableText.includes(normalizedSearchQuery);
   });
 
-  const addToCart = (item: MenuItem, size?: string) => {
+  const addToCart = (item: MenuItem, size?: string, addOns: SelectedAddOn[] = []) => {
     if (item.isAvailable === false) return;
     setCart(prev => {
-      const existing = prev.find(i => i.id === item.id && i.selectedSize === size);
-      const price = size ? item.sizes?.find(s => s.name === size)?.price || item.price : item.price;
+      const addOnKey = addOnConfigurationKey(addOns);
+      const existing = prev.find(i => i.id === item.id && i.selectedSize === size && addOnConfigurationKey(i.addOns) === addOnKey);
+      const basePrice = size ? item.sizes?.find(s => s.name === size)?.price || item.price : item.price;
+      const price = basePrice + addOns.reduce((sum, addOn) => sum + addOn.price, 0);
       
       if (existing) {
         return prev.map(i => 
-          (i.id === item.id && i.selectedSize === size) 
+          (i.id === item.id && i.selectedSize === size && addOnConfigurationKey(i.addOns) === addOnKey)
             ? { ...i, quantity: i.quantity + 1 } 
             : i
         );
       }
-      return [...prev, { ...item, quantity: 1, selectedSize: size, finalPrice: price }];
+      return [...prev, { ...item, quantity: 1, selectedSize: size, basePrice, addOns, finalPrice: price }];
     });
     setIsCartOpen(true);
   };
 
-  const updateQty = (id: string, size: string | undefined, delta: number) => {
+  const updateQty = (id: string, size: string | undefined, addOnKey: string, delta: number) => {
     setCart(prev => prev.map(i => {
-      if (i.id === id && i.selectedSize === size) {
+      if (i.id === id && i.selectedSize === size && addOnConfigurationKey(i.addOns) === addOnKey) {
         const newQty = Math.max(0, i.quantity + delta);
         return { ...i, quantity: newQty };
       }
@@ -1412,13 +1492,13 @@ const Home = () => {
     }).filter(i => i.quantity > 0));
   };
 
-  const removeFromCart = (id: string, size: string | undefined) => {
-    setCart(prev => prev.filter(i => !(i.id === id && i.selectedSize === size)));
+  const removeFromCart = (id: string, size: string | undefined, addOnKey: string) => {
+    setCart(prev => prev.filter(i => !(i.id === id && i.selectedSize === size && addOnConfigurationKey(i.addOns) === addOnKey)));
   };
 
-  const updateOption = (id: string, size: string | undefined, option: 'ketchup' | 'mayo' | 'spicy', level: number) => {
+  const updateOption = (id: string, size: string | undefined, addOnKey: string, option: 'ketchup' | 'mayo' | 'spicy', level: number) => {
     setCart(prev => prev.map(item => {
-      if (item.id === id && item.selectedSize === size) {
+      if (item.id === id && item.selectedSize === size && addOnConfigurationKey(item.addOns) === addOnKey) {
         return { ...item, [`${option}Level`]: level };
       }
       return item;
@@ -1609,6 +1689,7 @@ const Home = () => {
         onSubmit={handleCheckout} 
         isSubmitting={isSubmitting}
         orderSubtotal={cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0)}
+        items={cart}
       />
 
       {/* Floating Chat */}
@@ -1704,7 +1785,7 @@ const uploadMenuImage = async (file: File, itemId: string) => {
 const MenuManagement = () => {
   const { language, t } = useLanguage();
   const [items, setItems] = useState<MenuItem[]>([]);
-  const [activeMenuCategory, setActiveMenuCategory] = useState('all');
+  const [activeMenuCategory, setActiveMenuCategory] = useState(CATEGORIES[0]?.id || 'shawarma');
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingImage, setIsUpdatingImage] = useState(false);
@@ -1757,13 +1838,10 @@ const MenuManagement = () => {
 
   const categoryCounts = items.reduce<Record<string, number>>((counts, item) => {
     counts[item.category] = (counts[item.category] || 0) + 1;
-    counts.all = (counts.all || 0) + 1;
     return counts;
-  }, { all: 0 });
+  }, {});
 
-  const visibleItems = activeMenuCategory === 'all'
-    ? items
-    : items.filter(item => item.category === activeMenuCategory);
+  const visibleItems = items.filter(item => item.category === activeMenuCategory);
 
   const selectedItem = selectedItemId
     ? items.find(item => item.id === selectedItemId) || null
@@ -1779,7 +1857,7 @@ const MenuManagement = () => {
   }, [isSuccessMessage, message]);
 
   const categoryFallbackImages: Record<string, string> = {
-    all: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=800&q=80',
+    fallback: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=800&q=80',
     shawarma: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80',
     broast: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80',
     rockets: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
@@ -1788,14 +1866,10 @@ const MenuManagement = () => {
   };
 
   const getCategoryImage = (categoryId: string) => {
-    if (categoryId === 'all') {
-      return items[0]?.image || INITIAL_MENU[0]?.image || categoryFallbackImages.all;
-    }
-
     return items.find(item => item.category === categoryId)?.image
       || INITIAL_MENU.find(item => item.category === categoryId)?.image
       || categoryFallbackImages[categoryId]
-      || categoryFallbackImages.all;
+      || categoryFallbackImages.fallback;
   };
 
   const importCurrentMenu = async () => {
@@ -2387,7 +2461,7 @@ const MenuManagement = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
-          {[{ id: 'all', nameAr: 'الكل', nameEn: 'All' }, ...CATEGORIES].map(category => {
+          {CATEGORIES.map(category => {
             const isActive = activeMenuCategory === category.id;
             const count = categoryCounts[category.id] || 0;
 
@@ -2635,8 +2709,12 @@ const StaffDashboard = () => {
                       {item.quantity}
                     </span>
                     <div className="text-right flex-1">
-                      <p className="font-black text-sm text-white">{item.nameAr}</p>
-                      {item.selectedSize && <p className="text-[10px] text-primary font-black">{item.selectedSize}</p>}
+                      <p className="font-black text-sm text-white">{item.nameAr} ({item.nameEn})</p>
+                      {item.selectedSize && <p className="text-[10px] text-primary font-black">{item.selectedSize} ({localizedSize(item.selectedSize, 'en')})</p>}
+                      <p className="text-[10px] font-bold text-white/40" dir="ltr">{item.basePrice ?? item.finalPrice} SR + {(item.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0)} SR = {item.finalPrice} SR</p>
+                      {item.addOns?.map(addOn => (
+                        <p key={addOn.id} className="text-[10px] font-bold text-emerald-300">{addOn.nameAr} ({addOn.nameEn}) +{addOn.price} SR</p>
+                      ))}
                       <div className="flex flex-wrap gap-1 mt-1 justify-end">
                         {item.spicyLevel === 1 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px] font-bold">حراق</span>}
                         {item.spicyLevel === 2 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px] font-bold">حراق اكسترا</span>}

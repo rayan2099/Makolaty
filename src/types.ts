@@ -17,10 +17,19 @@ export interface MenuItem {
   sortOrder?: number;
 }
 
+export interface SelectedAddOn {
+  id: 'extra-cheese' | 'extra-chicken' | 'shawarma-extra-cheese';
+  nameAr: string;
+  nameEn: string;
+  price: number;
+}
+
 export interface CartItem extends MenuItem {
   quantity: number;
   selectedSize?: string;
   finalPrice: number;
+  basePrice: number;
+  addOns?: SelectedAddOn[];
   ketchupLevel?: number; // 0=none, 1=regular, 2=extra
   mayoLevel?: number;    // 0=none, 1=regular, 2=extra
   spicyLevel?: number;   // 0=none, 1=regular, 2=extra
