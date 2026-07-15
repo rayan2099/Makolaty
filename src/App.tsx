@@ -154,7 +154,7 @@ function sanitizeForSupabase(obj: any): any {
 
 const BUILT_IN_MENU_OVERRIDES = new Map(
   INITIAL_MENU
-    .filter(item => item.image.startsWith('/menu/'))
+    .filter(item => item.image.trim().length > 0)
     .map(item => [item.id, item])
 );
 const CANONICAL_MENU_IDS = new Set(INITIAL_MENU.map(item => item.id));
@@ -163,12 +163,20 @@ const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
   items.map(item => {
     const override = BUILT_IN_MENU_OVERRIDES.get(item.id);
     if (!override) return item;
+    const currentImage = item.image?.trim() ?? '';
+    const overrideImage = override.image?.trim() ?? '';
+    const isSupabaseUploadedImage = currentImage.includes('/menu-images/');
+    const isLocalBundledImage = currentImage.startsWith('/menu/');
+    const shouldUseOverrideImage = (
+      !currentImage
+      || (!isSupabaseUploadedImage && !isLocalBundledImage && overrideImage.startsWith('/menu/'))
+    );
 
     return {
       ...item,
       nameAr: override.nameAr,
       nameEn: override.nameEn,
-      image: override.image,
+      image: shouldUseOverrideImage ? override.image : item.image,
     };
   })
 );
