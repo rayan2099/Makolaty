@@ -253,6 +253,13 @@ const shouldUseFullArtworkItem = (item: MenuItem) => (
   item.category !== 'drinks' && isFullArtworkImage(item.image)
 );
 
+const getDrinkImageClass = (item: MenuItem) => {
+  if (item.id === 'dr-2') return 'object-contain scale-[1.18] p-0';
+  if (item.id === 'dr-7') return 'object-contain scale-[1.15] p-0';
+  if (item.id === 'dr-1') return 'object-contain scale-[1.08] p-0';
+  return 'object-contain p-1';
+};
+
 const MenuItemImage = ({ item }: { item: MenuItem }) => {
   const { language } = useLanguage();
   const [hasImageError, setHasImageError] = useState(false);
@@ -280,7 +287,7 @@ const MenuItemImage = ({ item }: { item: MenuItem }) => {
           : shouldUseSquareFrame
             ? "object-cover"
             : shouldUseDrinkFrame
-              ? "object-contain p-1"
+              ? getDrinkImageClass(item)
               : "object-cover group-hover:scale-110"
       )}
       referrerPolicy="no-referrer"

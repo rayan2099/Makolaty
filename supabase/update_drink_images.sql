@@ -1,6 +1,6 @@
 update public.menu_items
 set
-  image = '/menu/drinks/pepsi-bottle-v2.png',
+  image = '/menu/drinks/pepsi-can.png',
   price = 3,
   calories = 150,
   sizes = jsonb_build_array(
