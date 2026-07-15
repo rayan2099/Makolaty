@@ -158,6 +158,7 @@ const BUILT_IN_MENU_OVERRIDES = new Map(
     .map(item => [item.id, item])
 );
 const CANONICAL_MENU_IDS = new Set(INITIAL_MENU.map(item => item.id));
+const LOCKED_BUILT_IN_IMAGE_IDS = new Set(['ap-9']);
 
 const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
   items.map(item => {
@@ -169,6 +170,7 @@ const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
     const isLocalBundledImage = currentImage.startsWith('/menu/');
     const shouldUseOverrideImage = (
       !currentImage
+      || (LOCKED_BUILT_IN_IMAGE_IDS.has(item.id) && !isSupabaseUploadedImage)
       || (!isSupabaseUploadedImage && overrideImage.startsWith('/menu/') && (override.category === 'drinks' || !isLocalBundledImage))
     );
 
