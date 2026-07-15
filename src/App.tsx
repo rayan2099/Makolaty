@@ -233,14 +233,15 @@ const isFullArtworkImage = (imageUrl: string) => (
   imageUrl.startsWith('/menu/') || imageUrl.includes('/menu-images/')
 );
 
-const isSquareArtworkImage = (imageUrl: string) => (
-  imageUrl.startsWith('/menu/appetizers/') || imageUrl.startsWith('/menu/sauces/')
+const isSquareArtworkItem = (item: MenuItem) => (
+  item.category === 'appetizers' || item.category === 'sauces'
 );
 
 const MenuItemImage = ({ item }: { item: MenuItem }) => {
   const { language } = useLanguage();
   const [hasImageError, setHasImageError] = useState(false);
   const shouldShowFullArtwork = isFullArtworkImage(item.image);
+  const shouldUseSquareFrame = isSquareArtworkItem(item);
 
   if (!item.image || hasImageError) {
     return (
@@ -257,7 +258,7 @@ const MenuItemImage = ({ item }: { item: MenuItem }) => {
       alt={language === 'ar' ? item.nameAr : item.nameEn}
       className={cn(
         "w-full h-full transition-transform duration-500",
-        shouldShowFullArtwork ? "object-contain" : "object-cover group-hover:scale-110"
+        shouldShowFullArtwork ? "object-contain" : shouldUseSquareFrame ? "object-cover" : "object-cover group-hover:scale-110"
       )}
       referrerPolicy="no-referrer"
       onError={() => setHasImageError(true)}
@@ -423,7 +424,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
   const selectedOption = item.sizes?.find(size => size.name === selectedSize);
   const displayedCalories = selectedOption?.calories ?? item.calories;
   const shouldShowFullArtwork = isFullArtworkImage(item.image);
-  const shouldUseSquareArtwork = isSquareArtworkImage(item.image);
+  const shouldUseSquareArtwork = isSquareArtworkItem(item);
   const isUnavailable = item.isAvailable === false;
 
   return (
@@ -449,7 +450,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
         shouldUseSquareArtwork ? "aspect-square bg-[#f8f1e8]" : shouldShowFullArtwork ? "aspect-[3/4] bg-[#f8f1e8]" : "aspect-[4/3]"
       )}>
         <MenuItemImage item={item} />
-        {!shouldShowFullArtwork && (
+        {!shouldShowFullArtwork && !shouldUseSquareArtwork && (
           <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent opacity-60" />
         )}
         {displayedCalories !== undefined && (
@@ -460,7 +461,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
       </div>
       <div className={cn(
         "p-6 flex flex-col flex-grow relative bg-secondary/80 backdrop-blur-xl rounded-t-3xl border-t border-white/10",
-        shouldShowFullArtwork ? "mt-0" : "-mt-8"
+        shouldShowFullArtwork || shouldUseSquareArtwork ? "mt-0" : "-mt-8"
       )}>
         <div className="mb-4 min-h-[58px] text-right">
           <h3 className="line-clamp-2 font-black text-xl leading-tight text-primary mb-1">{language === 'ar' ? item.nameAr : item.nameEn}</h3>

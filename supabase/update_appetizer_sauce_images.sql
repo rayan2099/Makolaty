@@ -15,8 +15,10 @@ set
     else "nameEn"
   end,
   image = case id
+    when 'ap-2' then '/menu/appetizers/french-fries.png'
     when 'ap-8' then '/menu/appetizers/mixed-appetizers.jpeg'
     when 'ap-5' then '/menu/appetizers/vine-leaves.jpeg'
+    when 'ap-7' then '/menu/appetizers/mixed-appetizers.jpeg'
     when 'sc-1' then '/menu/sauces/cocktail-sauce.jpeg'
     when 'sc-2' then '/menu/sauces/hot-garlic-sauce.jpeg'
     when 'sc-3' then '/menu/sauces/garlic-sauce.jpeg'
@@ -27,4 +29,4 @@ set
     else image
   end,
   "updatedAt" = now()
-where id in ('ap-8', 'ap-5', 'sc-1', 'sc-2', 'sc-3', 'sc-4', 'sc-5', 'sc-6', 'sc-7');
+where id in ('ap-2', 'ap-8', 'ap-7', 'ap-5', 'sc-1', 'sc-2', 'sc-3', 'sc-4', 'sc-5', 'sc-6', 'sc-7');

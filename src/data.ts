@@ -130,9 +130,9 @@ const RAW_INITIAL_MENU: MenuItem[] = [
 
   // Appetizers.
   { id: 'ap-1', nameAr: 'بطاطس جبن', nameEn: 'Potatoes and Cheese', category: 'appetizers', price: 10, calories: 350, image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80' },
-  { id: 'ap-2', nameAr: 'بطاطس', nameEn: 'Potatoes', category: 'appetizers', price: 6, calories: 311, image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80', sizes: sizes(['صغير', 6, 311], ['وسط', 8, 540], ['كبير', 14, 630]) },
+  { id: 'ap-2', nameAr: 'بطاطس', nameEn: 'Potatoes', category: 'appetizers', price: 6, calories: 311, image: '/menu/appetizers/french-fries.png', sizes: sizes(['صغير', 6, 311], ['وسط', 8, 540], ['كبير', 14, 630]) },
   { id: 'ap-5', nameAr: 'ورق عنب', nameEn: 'Vine Leaves', category: 'appetizers', price: 6, calories: 433, image: '/menu/appetizers/vine-leaves.jpeg', sizes: sizes(['صغير', 6, 433], ['كبير', 15, 650]) },
-  { id: 'ap-7', nameAr: 'حمص', nameEn: 'Hummus', category: 'appetizers', price: 7, calories: 210, image: 'https://images.unsplash.com/photo-1577906030551-59758a51244f?auto=format&fit=crop&w=800&q=80' },
+  { id: 'ap-7', nameAr: 'حمص', nameEn: 'Hummus', category: 'appetizers', price: 7, calories: 210, image: '/menu/appetizers/mixed-appetizers.jpeg' },
   { id: 'ap-8', nameAr: 'مقبلات مشكلة', nameEn: 'Mixed Appetizers', category: 'appetizers', price: 7, calories: 349, image: '/menu/appetizers/mixed-appetizers.jpeg' },
   { id: 'ap-9', nameAr: 'حلقات بصل', nameEn: 'Onion Rings', category: 'appetizers', price: 6, calories: 279, image: 'https://images.unsplash.com/photo-1639024471283-035188835118?auto=format&fit=crop&w=800&q=80' },
 
