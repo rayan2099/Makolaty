@@ -420,12 +420,12 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
       <Link to="/" className="flex items-center gap-2 md:gap-3">
         <div className="w-10 h-10 md:w-14 md:h-14 flex items-center justify-center bg-primary rounded-xl overflow-hidden p-1 shadow-lg shadow-primary/20">
           <img 
-            src="/logo.png" 
+            src="/logo.jpeg" 
             alt={t('مأكولاتي', 'Makolaty')}
             className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
             onError={(e) => {
-              // Fallback to a high-quality SVG if logo.png is missing
+              // Fallback to SVG if the uploaded logo file is missing
               e.currentTarget.style.display = 'none';
               const parent = e.currentTarget.parentElement;
               if (parent) {
