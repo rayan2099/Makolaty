@@ -814,9 +814,12 @@ const CartDrawer = ({
                   
                   <button 
                     onClick={onClose}
-                    className="w-full py-3 border border-dashed border-white/10 text-white/40 font-bold rounded-xl hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2 mt-4 text-sm"
+                    className="group mt-4 flex w-full items-center justify-center gap-3 rounded-2xl border border-dashed border-primary/35 bg-primary/[0.035] py-3.5 text-sm font-black text-white/60 transition-all hover:border-primary/70 hover:bg-primary/[0.08] hover:text-white"
                   >
-                    <Plus className="w-3.5 h-3.5" /> {t('إضافة المزيد من الأصناف', 'Add more items')}
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-secondary shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
+                      <Plus className="h-4 w-4" strokeWidth={3} />
+                    </span>
+                    {t('إضافة المزيد من الأصناف', 'Add more items')}
                   </button>
 
                   <div className="mt-8">
@@ -847,8 +850,9 @@ const CartDrawer = ({
                   </div>
 
                   {/* Notes Section */}
-                  <div className="mt-6 px-2 text-right">
-                    <label className="text-xs text-white/40 block mb-2 font-bold">
+                  <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/[0.025] p-3 text-right transition-colors focus-within:border-primary/55 focus-within:bg-primary/[0.05]">
+                    <label className="mb-2 flex items-center gap-2 text-xs font-black text-white/55">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,210,0,0.8)]" />
                       {t('ملاحظات إضافية (اختياري)', 'Additional notes (optional)')}
                     </label>
                     <textarea
@@ -857,7 +861,7 @@ const CartDrawer = ({
                       placeholder={t('مثال: بدون بصل، صوص زيادة...', 'Example: no onions, extra sauce...')}
                       dir="rtl"
                       rows={1}
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 text-white font-bold placeholder:text-white/10 focus:outline-none focus:border-primary/30 transition-all resize-none text-sm"
+                      className="w-full resize-none rounded-xl border border-primary/15 bg-black/15 p-3 text-sm font-bold text-white placeholder:text-white/20 transition-all focus:border-primary/45 focus:bg-black/25 focus:outline-none"
                       maxLength={200}
                     />
                     <div className="flex justify-between mt-1">
