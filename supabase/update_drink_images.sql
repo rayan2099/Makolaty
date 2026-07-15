@@ -1,6 +1,13 @@
 update public.menu_items
 set
-  image = '/menu/drinks/pepsi-can.png',
+  image = '/menu/drinks/pepsi-bottle.png',
+  price = 3,
+  calories = 150,
+  sizes = jsonb_build_array(
+    jsonb_build_object('name', 'صغير', 'price', 3, 'calories', 150),
+    jsonb_build_object('name', 'وسط', 'price', 5),
+    jsonb_build_object('name', 'كبير', 'price', 9)
+  ),
   "updatedAt" = now()
 where id = 'dr-1';
 
@@ -12,6 +19,6 @@ where id = 'dr-2';
 
 update public.menu_items
 set
-  image = '/menu/drinks/water.svg',
+  image = '/menu/drinks/water-bottle.png',
   "updatedAt" = now()
 where id = 'dr-3';

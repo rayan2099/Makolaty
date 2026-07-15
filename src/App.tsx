@@ -280,7 +280,7 @@ const MenuItemImage = ({ item }: { item: MenuItem }) => {
           : shouldUseSquareFrame
             ? "object-cover"
             : shouldUseDrinkFrame
-              ? "object-contain p-4"
+              ? "object-contain p-2"
               : "object-cover group-hover:scale-110"
       )}
       referrerPolicy="no-referrer"
