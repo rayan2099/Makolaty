@@ -88,7 +88,16 @@ const LanguageSwitch = () => {
 
 const localizedSize = (size: string, language: Language) => {
   if (language === 'ar') return size;
-  return ({ صغير: 'Small', وسط: 'Medium', كبير: 'Large' } as Record<string, string>)[size] || size;
+  return ({
+    صغير: 'Small',
+    وسط: 'Medium',
+    كبير: 'Large',
+    عادي: 'Regular',
+    حراق: 'Spicy',
+    بازوكا: 'Bazooka',
+    الحبة: 'Piece',
+    'صحن مشكل': 'Mixed plate',
+  } as Record<string, string>)[size] || size;
 };
 
 // --- Error Handling ---
@@ -148,6 +157,7 @@ const BUILT_IN_MENU_OVERRIDES = new Map(
     .filter(item => item.image.startsWith('/menu/'))
     .map(item => [item.id, item])
 );
+const CANONICAL_MENU_IDS = new Set(INITIAL_MENU.map(item => item.id));
 
 const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
   items.map(item => {
@@ -172,6 +182,29 @@ const normalizeSearchText = (value: string) => (
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+);
+
+const deduplicateMenuItems = (items: MenuItem[]) => {
+  const uniqueItems = new Map<string, MenuItem>();
+
+  items.forEach(item => {
+    const key = [
+      item.category,
+      normalizeSearchText(item.nameAr),
+      normalizeSearchText(item.nameEn),
+    ].join(':');
+    const existing = uniqueItems.get(key);
+
+    if (!existing || CANONICAL_MENU_IDS.has(item.id)) {
+      uniqueItems.set(key, item);
+    }
+  });
+
+  return Array.from(uniqueItems.values());
+};
+
+const prepareMenuItems = (items: MenuItem[]) => (
+  deduplicateMenuItems(applyBuiltInMenuOverrides(items))
 );
 
 async function testConnection() {
@@ -200,6 +233,10 @@ const isFullArtworkImage = (imageUrl: string) => (
   imageUrl.startsWith('/menu/') || imageUrl.includes('/menu-images/')
 );
 
+const isSquareArtworkImage = (imageUrl: string) => (
+  imageUrl.startsWith('/menu/appetizers/') || imageUrl.startsWith('/menu/sauces/')
+);
+
 const MenuItemImage = ({ item }: { item: MenuItem }) => {
   const { language } = useLanguage();
   const [hasImageError, setHasImageError] = useState(false);
@@ -220,7 +257,7 @@ const MenuItemImage = ({ item }: { item: MenuItem }) => {
       alt={language === 'ar' ? item.nameAr : item.nameEn}
       className={cn(
         "w-full h-full transition-transform duration-500",
-        shouldShowFullArtwork ? "object-contain p-1" : "object-cover group-hover:scale-110"
+        shouldShowFullArtwork ? "object-contain" : "object-cover group-hover:scale-110"
       )}
       referrerPolicy="no-referrer"
       onError={() => setHasImageError(true)}
@@ -383,7 +420,10 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
 const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, size?: string) => void; key?: string }) => {
   const { language, t } = useLanguage();
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
+  const selectedOption = item.sizes?.find(size => size.name === selectedSize);
+  const displayedCalories = selectedOption?.calories ?? item.calories;
   const shouldShowFullArtwork = isFullArtworkImage(item.image);
+  const shouldUseSquareArtwork = isSquareArtworkImage(item.image);
   const isUnavailable = item.isAvailable === false;
 
   return (
@@ -406,16 +446,15 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
       ) : null}
       <div className={cn(
         "relative overflow-hidden",
-        shouldShowFullArtwork ? "aspect-[3/4] bg-[#f8f1e8]" : "aspect-[4/3]"
+        shouldUseSquareArtwork ? "aspect-square bg-[#f8f1e8]" : shouldShowFullArtwork ? "aspect-[3/4] bg-[#f8f1e8]" : "aspect-[4/3]"
       )}>
         <MenuItemImage item={item} />
-        <div className={cn(
-          "absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent",
-          shouldShowFullArtwork ? "opacity-25" : "opacity-60"
-        )} />
-        {item.calories && (
+        {!shouldShowFullArtwork && (
+          <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent opacity-60" />
+        )}
+        {displayedCalories !== undefined && (
           <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold border border-white/10">
-            {item.calories} Kcal
+            {displayedCalories} Kcal
           </div>
         )}
       </div>
@@ -449,7 +488,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-primary font-black text-2xl">
-              {item.sizes ? item.sizes.find(s => s.name === selectedSize)?.price : item.price}
+              {selectedOption?.price ?? item.price}
               <span className="text-xs mr-1 font-bold">SR</span>
             </span>
           </div>
@@ -1269,11 +1308,11 @@ const Home = () => {
 
       if (error) {
         console.warn('Using local fallback menu because Supabase menu_items could not be loaded.', error.message);
-        setMenuItems(applyBuiltInMenuOverrides(INITIAL_MENU));
+        setMenuItems(prepareMenuItems(INITIAL_MENU));
         return;
       }
 
-      setMenuItems(applyBuiltInMenuOverrides(data && data.length > 0 ? data as MenuItem[] : INITIAL_MENU));
+      setMenuItems(prepareMenuItems(data && data.length > 0 ? data as MenuItem[] : INITIAL_MENU));
     };
 
     loadMenuItems();
@@ -1640,7 +1679,7 @@ const MenuManagement = () => {
     category: CATEGORIES[0]?.id || 'shawarma',
     price: '',
     calories: '',
-    sizes: [] as { name: string; price: string }[],
+    sizes: [] as { name: string; price: string; calories: string }[],
     isAvailable: true,
   });
 
@@ -1657,7 +1696,7 @@ const MenuManagement = () => {
       return;
     }
 
-    setItems(applyBuiltInMenuOverrides((data || []) as MenuItem[]));
+    setItems(prepareMenuItems((data || []) as MenuItem[]));
   };
 
   useEffect(() => {
@@ -1754,9 +1793,16 @@ const MenuManagement = () => {
     const price = Number(form.price);
     const calories = form.calories ? Number(form.calories) : undefined;
     const hasIncompleteSize = form.sizes.some(size => !size.name.trim() || !size.price.trim());
+    const hasInvalidSizeCalories = form.sizes.some(size => (
+      size.calories.trim() !== ''
+      && (!Number.isFinite(Number(size.calories)) || Number(size.calories) < 0)
+    ));
     const sizes = form.sizes.map(size => ({
       name: size.name.trim(),
       price: Number(size.price),
+      ...(size.calories.trim() && Number.isFinite(Number(size.calories))
+        ? { calories: Number(size.calories) }
+        : {}),
     }));
 
     if (!form.nameAr.trim() || !form.nameEn.trim() || !form.category || !Number.isFinite(price) || price <= 0) {
@@ -1764,7 +1810,7 @@ const MenuManagement = () => {
       return;
     }
 
-    if (hasIncompleteSize || sizes.some(size => !Number.isFinite(size.price) || size.price < 0)) {
+    if (hasIncompleteSize || hasInvalidSizeCalories || sizes.some(size => !Number.isFinite(size.price) || size.price < 0)) {
       setMessage(t('أكمل اسم وسعر كل حجم أو احذف الصف الفارغ.', 'Complete the name and price for every size, or remove the empty row.'));
       return;
     }
@@ -1879,7 +1925,11 @@ const MenuManagement = () => {
       category: item.category,
       price: String(item.price),
       calories: item.calories === undefined ? '' : String(item.calories),
-      sizes: item.sizes?.map(size => ({ name: size.name, price: String(size.price) })) || [],
+      sizes: item.sizes?.map(size => ({
+        name: size.name,
+        price: String(size.price),
+        calories: size.calories === undefined ? '' : String(size.calories),
+      })) || [],
       isAvailable: item.isAvailable !== false,
     });
   };
@@ -2188,7 +2238,7 @@ const MenuManagement = () => {
                 type="button"
                 onClick={() => setForm(current => ({
                   ...current,
-                  sizes: [...current.sizes, { name: '', price: '' }],
+                  sizes: [...current.sizes, { name: '', price: '', calories: '' }],
                 }))}
                 className="flex shrink-0 items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-xs font-black text-primary transition-all hover:bg-primary hover:text-secondary"
               >
@@ -2203,8 +2253,8 @@ const MenuManagement = () => {
             ) : (
               <div className="space-y-2">
                 {form.sizes.map((size, index) => (
-                  <div key={index} className="grid grid-cols-[1fr_110px_42px] items-end gap-2 rounded-2xl bg-white/5 p-3">
-                    <label className="text-xs font-black text-white/50">
+                  <div key={index} className="relative grid grid-cols-2 items-end gap-2 rounded-2xl bg-white/5 p-3 pt-12">
+                    <label className="col-span-2 text-xs font-black text-white/50">
                       {t('اسم الحجم', 'Size name')}
                       <input
                         value={size.name}
@@ -2231,6 +2281,21 @@ const MenuManagement = () => {
                         className="mt-1.5 w-full rounded-xl border border-white/10 bg-secondary/60 px-3 py-2.5 text-center font-black text-white focus:border-primary focus:outline-none"
                       />
                     </label>
+                    <label className="text-xs font-black text-white/50">
+                      {t('السعرات', 'Calories')}
+                      <input
+                        value={size.calories}
+                        onChange={event => setForm(current => ({
+                          ...current,
+                          sizes: current.sizes.map((row, rowIndex) => rowIndex === index ? { ...row, calories: event.target.value } : row),
+                        }))}
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder={t('اختياري', 'Optional')}
+                        className="mt-1.5 w-full rounded-xl border border-white/10 bg-secondary/60 px-3 py-2.5 text-center font-black text-white focus:border-primary focus:outline-none"
+                      />
+                    </label>
                     <button
                       type="button"
                       onClick={() => setForm(current => ({
@@ -2238,7 +2303,7 @@ const MenuManagement = () => {
                         sizes: current.sizes.filter((_, rowIndex) => rowIndex !== index),
                       }))}
                       aria-label={t('حذف الحجم', 'Remove size')}
-                      className="flex h-[42px] items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 transition-all hover:bg-red-500 hover:text-white"
+                      className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 transition-all hover:bg-red-500 hover:text-white"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -2338,14 +2403,18 @@ const MenuManagement = () => {
                   selectedItemId === item.id ? "border-primary ring-2 ring-primary/20" : "border-white/10"
                 )}
               >
-                <img src={item.image} alt={item.nameEn} className="w-16 h-16 rounded-xl object-cover" />
+                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-secondary">
+                  <MenuItemImage item={item} />
+                </div>
                 <div className="flex-1">
                   <p className="font-black text-white">{language === 'ar' ? item.nameAr : item.nameEn}</p>
                   <p className="text-white/40 text-xs font-bold">{language === 'ar' ? item.nameEn : item.nameAr}</p>
                   <p className="text-primary font-black mt-1">{item.price} SR</p>
                   {item.sizes?.length ? (
                     <p className="mt-1 text-[11px] font-bold text-white/45">
-                      {item.sizes.map(size => `${size.name}: ${size.price} SR`).join(' • ')}
+                      {item.sizes.map(size => (
+                        `${size.name}: ${size.price} SR${size.calories === undefined ? '' : ` / ${size.calories} Kcal`}`
+                      )).join(' • ')}
                     </p>
                   ) : null}
                 </div>

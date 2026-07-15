@@ -1,3 +1,9 @@
+export interface MenuSize {
+  name: string;
+  price: number;
+  calories?: number;
+}
+
 export interface MenuItem {
   id: string;
   nameAr: string;
@@ -6,7 +12,7 @@ export interface MenuItem {
   price: number;
   calories?: number;
   image: string;
-  sizes?: { name: string; price: number }[];
+  sizes?: MenuSize[];
   isAvailable?: boolean;
   sortOrder?: number;
 }
@@ -40,7 +46,7 @@ export const CATEGORIES = [
   { id: 'shawarma', nameAr: 'شاورما', nameEn: 'Shawarma' },
   { id: 'pastries', nameAr: 'معجنات/فطاير', nameEn: 'Pastries' },
   { id: 'pizza', nameAr: 'بيتزا', nameEn: 'Pizza' },
-  { id: 'meals', nameAr: 'برقر', nameEn: 'Burger' },
+  { id: 'meals', nameAr: 'الوجبات', nameEn: 'Meals' },
   { id: 'broast', nameAr: 'بروست', nameEn: 'Broast' },
   { id: 'sandwiches', nameAr: 'ساندوتشات', nameEn: 'Sandwiches' },
   { id: 'pasta', nameAr: 'باستا', nameEn: 'Pasta' },
