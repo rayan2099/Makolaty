@@ -46,7 +46,7 @@ export const CATEGORIES = [
   { id: 'shawarma', nameAr: 'شاورما', nameEn: 'Shawarma' },
   { id: 'pastries', nameAr: 'معجنات/فطاير', nameEn: 'Pastries' },
   { id: 'pizza', nameAr: 'بيتزا', nameEn: 'Pizza' },
-  { id: 'meals', nameAr: 'الوجبات', nameEn: 'Meals' },
+  { id: 'meals', nameAr: 'برقر', nameEn: 'Burgers' },
   { id: 'broast', nameAr: 'بروست', nameEn: 'Broast' },
   { id: 'sandwiches', nameAr: 'ساندوتشات', nameEn: 'Sandwiches' },
   { id: 'pasta', nameAr: 'باستا', nameEn: 'Pasta' },
