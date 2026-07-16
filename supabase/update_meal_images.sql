@@ -2,6 +2,24 @@
 -- This inserts missing rows and refreshes existing rows without changing availability.
 begin;
 
+-- Keep the supplied Bazooka artwork in شاورما without creating a duplicate row.
+insert into public.menu_items (
+  id, "nameAr", "nameEn", category, price, calories, image, sizes,
+  "isAvailable", "sortOrder", "createdAt", "updatedAt"
+) values (
+  'sh-2', 'بازوكا شاورما', 'Bazooka Shawarma', 'shawarma', 16, 715,
+  '/menu/shawarma/bazooka-shawarma.jpeg', null, true, 20, now(), now()
+)
+on conflict (id) do update set
+  "nameAr" = excluded."nameAr",
+  "nameEn" = excluded."nameEn",
+  category = excluded.category,
+  price = excluded.price,
+  calories = excluded.calories,
+  image = excluded.image,
+  "sortOrder" = excluded."sortOrder",
+  "updatedAt" = now();
+
 insert into public.menu_items (
   id, "nameAr", "nameEn", category, price, calories, image, sizes,
   "isAvailable", "sortOrder", "createdAt", "updatedAt"
@@ -21,7 +39,8 @@ insert into public.menu_items (
   ('ml-13', 'وجبة برجر دجاج مشوي دبل',   'Double Grilled Chicken Burger Meal','meals', 26,  470,  '/menu/meals/double-grilled-chicken-burger-meal.jpeg', null, true, 312, now(), now()),
   ('ml-14', 'وجبة فاهيتا دجاج',          'Chicken Fajita Meal',               'meals', 20,  850,  '/menu/meals/chicken-fajita-meal.jpeg',                null, true, 313, now(), now()),
   ('ml-15', 'وجبة روست دجاج',            'Roast Chicken Meal',                'meals', 18,  630,  '/menu/meals/roast-chicken-meal.jpeg',                 null, true, 314, now(), now()),
-  ('ml-16', 'وجبة صاروخ دجاج',           'Chicken Rocket Meal',               'meals', 18,  850,  '/menu/meals/chicken-rocket-meal.jpeg',                null, true, 315, now(), now())
+  ('ml-16', 'وجبة صاروخ دجاج',           'Chicken Rocket Meal',               'meals', 18,  850,  '/menu/meals/chicken-rocket-meal.jpeg',                null, true, 315, now(), now()),
+  ('ml-17', 'وجبة عربي دجاج',            'Arabic Chicken Meal',               'meals', 22,  850,  '/menu/meals/arabic-chicken-meal.jpeg',                null, true, 316, now(), now())
 on conflict (id) do update set
   "nameAr" = excluded."nameAr",
   "nameEn" = excluded."nameEn",
@@ -59,5 +78,20 @@ on conflict (id) do update set
   sizes = excluded.sizes,
   "sortOrder" = excluded."sortOrder",
   "updatedAt" = now();
+
+-- Remove legacy rows only when they exactly duplicate one of the canonical burgers.
+delete from public.menu_items as duplicate
+using public.menu_items as canonical
+where duplicate.category = 'burgers'
+  and canonical.category = 'burgers'
+  and canonical.id in (
+    'sw-5', 'sw-6', 'sw-7', 'sw-8', 'sw-9', 'sw-10',
+    'sw-11', 'sw-12', 'sw-13', 'sw-14', 'sw-15'
+  )
+  and duplicate.id <> canonical.id
+  and (
+    lower(trim(duplicate."nameAr")) = lower(trim(canonical."nameAr"))
+    or lower(trim(duplicate."nameEn")) = lower(trim(canonical."nameEn"))
+  );
 
 commit;

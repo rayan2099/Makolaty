@@ -184,7 +184,7 @@ const LOCKED_BUILT_IN_IMAGE_IDS = new Set([
   'ap-9',
   'broast-nuggets-regular',
   'broast-nuggets-spicy',
-  ...Array.from({ length: 16 }, (_, index) => `ml-${index + 1}`),
+  ...Array.from({ length: 17 }, (_, index) => `ml-${index + 1}`),
 ]);
 const LOCKED_BUILT_IN_CATEGORY_IDS = new Set(
   Array.from({ length: 11 }, (_, index) => `sw-${index + 5}`)

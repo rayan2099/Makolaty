@@ -31,7 +31,7 @@ const RAW_INITIAL_MENU: MenuItem[] = [
     id: 'sh-16', nameAr: 'شاورما تبولة', nameEn: 'Tabbouleh Shawarma', category: 'shawarma', price: 11, calories: 480,
     image: '/menu/shawarma/tabbouleh-shawarma.jpeg', sizes: sizes(['عادي', 11, 480], ['بازوكا', 16, 985]),
   },
-  { id: 'sh-2', nameAr: 'صاروخ مقمر', nameEn: 'Bazooka', category: 'shawarma', price: 11, calories: 715, image: '/menu/shawarma/bazooka-shawarma.jpeg' },
+  { id: 'sh-2', nameAr: 'بازوكا شاورما', nameEn: 'Bazooka Shawarma', category: 'shawarma', price: 16, calories: 715, image: '/menu/shawarma/bazooka-shawarma.jpeg' },
   { id: 'sh-21', nameAr: 'صاروخ إسبيشل مكسيكي', nameEn: 'Special Mexican Rocket', category: 'shawarma', price: 13, calories: 890, image: '' },
   {
     id: 'sh-23', nameAr: 'إضافة دجاج شاورما', nameEn: 'Extra Shawarma Chicken', category: 'shawarma', price: 3,
@@ -90,7 +90,7 @@ const RAW_INITIAL_MENU: MenuItem[] = [
   { id: 'ml-14', nameAr: 'وجبة فاهيتا دجاج', nameEn: 'Chicken Fajita Meal', category: 'meals', price: 20, calories: 850, image: '/menu/meals/chicken-fajita-meal.jpeg' },
   { id: 'ml-15', nameAr: 'وجبة روست دجاج', nameEn: 'Roast Chicken Meal', category: 'meals', price: 18, calories: 630, image: '/menu/meals/roast-chicken-meal.jpeg' },
   { id: 'ml-16', nameAr: 'وجبة صاروخ دجاج', nameEn: 'Chicken Rocket Meal', category: 'meals', price: 18, calories: 850, image: '/menu/meals/chicken-rocket-meal.jpeg' },
-  { id: 'ml-17', nameAr: 'وجبة عربي دجاج', nameEn: 'Arabic Chicken Meal', category: 'meals', price: 22, calories: 850, image: '' },
+  { id: 'ml-17', nameAr: 'وجبة عربي دجاج', nameEn: 'Arabic Chicken Meal', category: 'meals', price: 22, calories: 850, image: '/menu/meals/arabic-chicken-meal.jpeg' },
 
   // Sandwiches.
   { id: 'sw-3', nameAr: 'كرسبي جامبو', nameEn: 'Jumbo Crispy Sandwich', category: 'sandwiches', price: 12, calories: 2033, image: '/menu/sandwiches/jumbo-crispy.jpg' },
