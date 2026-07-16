@@ -323,16 +323,16 @@ const MenuItemImage = ({ item, priority = false }: { item: MenuItem; priority?: 
         src={item.image}
         alt={language === 'ar' ? item.nameAr : item.nameEn}
         width={320}
-        height={260}
+        height={400}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
         className={cn(
           "relative h-full w-full transition-[opacity,transform] duration-500",
           isLoaded ? "opacity-100" : "opacity-0",
           shouldShowFullArtwork
-            ? "object-cover"
+            ? "object-contain"
             : shouldUseSquareFrame
-              ? "object-cover"
+              ? "object-contain"
               : shouldUseDrinkFrame
                 ? getDrinkImageClass(item)
                 : "object-cover group-hover:scale-110"

@@ -5,8 +5,8 @@
   --category-card-size: 120px;
   --category-icon-size: 72px;
   --meal-card-width: 320px;
-  --meal-card-height: 650px;
-  --meal-card-image-height: 260px;
+  --meal-card-height: 740px;
+  --meal-card-image-height: 400px;
 }
 
 @theme {
@@ -61,8 +61,9 @@
 .menu-card-image {
   width: var(--meal-card-width);
   height: var(--meal-card-image-height);
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 4 / 5;
   flex: 0 0 var(--meal-card-image-height);
+  background-color: #f8f1e8;
 }
 
 .staff-category-card {
