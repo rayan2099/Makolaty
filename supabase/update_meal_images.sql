@@ -1,97 +1,38 @@
--- Add every supplied combo to the live وجبات category.
--- This inserts missing rows and refreshes existing rows without changing availability.
-begin;
+## Fix: Card Sizing Consistency + Image Loading Layout Shift
 
--- Keep the supplied Bazooka artwork in شاورما without creating a duplicate row.
-insert into public.menu_items (
-  id, "nameAr", "nameEn", category, price, calories, image, sizes,
-  "isAvailable", "sortOrder", "createdAt", "updatedAt"
-) values (
-  'sh-2', 'بازوكا شاورما', 'Bazooka Shawarma', 'shawarma', 16, 715,
-  '/menu/shawarma/bazooka-shawarma.jpeg', null, true, 20, now(), now()
-)
-on conflict (id) do update set
-  "nameAr" = excluded."nameAr",
-  "nameEn" = excluded."nameEn",
-  category = excluded.category,
-  price = excluded.price,
-  calories = excluded.calories,
-  image = excluded.image,
-  "sortOrder" = excluded."sortOrder",
-  "updatedAt" = now();
+### Problem
+1. Item/category cards render at inconsistent sizes across the menu (categories row and meal cards).
+2. On page load, cards visibly shrink/resize as images finish loading — this is a layout shift (CLS) issue, not a "download" issue. The images likely aren't preloaded and the containers don't have reserved space.
 
-insert into public.menu_items (
-  id, "nameAr", "nameEn", category, price, calories, image, sizes,
-  "isAvailable", "sortOrder", "createdAt", "updatedAt"
-) values
-  ('ml-1',  'وجبة برجر دجاج مشوي',       'Grilled Chicken Burger Meal',       'meals', 18,  580,  '/menu/meals/grilled-chicken-burger-meal.jpeg',        null, true, 300, now(), now()),
-  ('ml-2',  'وجبة برجر لحم مشوي',        'Grilled Beef Burger Meal',          'meals', 23,  465,  '/menu/meals/grilled-beef-burger-meal.jpeg',           null, true, 301, now(), now()),
-  ('ml-3',  'وجبة كلاسيك كرسبي',         'Classic Crispy Meal',               'meals', 23,  480,  '/menu/meals/classic-crispy-meal.jpeg',                null, true, 302, now(), now()),
-  ('ml-4',  'وجبة زنجر برجر',            'Zinger Burger Meal',                'meals', 18,  850,  '/menu/meals/zinger-burger-meal.jpeg',                 null, true, 303, now(), now()),
-  ('ml-5',  'وجبة برجر دجاج',            'Chicken Burger Meal',               'meals', 16,  300,  '/menu/meals/fried-chicken-burger-meal.jpeg',          null, true, 304, now(), now()),
-  ('ml-6',  'وجبة كرسبي جامبو',          'Crispy Jumbo Meal',                 'meals', 20, 2033,  '/menu/meals/crispy-jumbo-meal.jpeg',                  null, true, 305, now(), now()),
-  ('ml-7',  'وجبة ساندويتش تورتيلا',     'Tortilla Sandwich Meal',            'meals', 20,  800,  '/menu/meals/tortilla-meal.jpeg',                      null, true, 306, now(), now()),
-  ('ml-8',  'وجبة سبيشل كرسبي',          'Special Crispy Meal',               'meals', 23,  480,  '/menu/meals/special-crispy-meal.jpeg',                null, true, 307, now(), now()),
-  ('ml-9',  'وجبة كلاسيك كرسبي حراق',    'Classic Spicy Crispy Meal',         'meals', 23,  480,  '/menu/meals/classic-spicy-crispy-meal.jpeg',          null, true, 308, now(), now()),
-  ('ml-10', 'وجبة برجر لحم كراميل',      'Caramel Beef Burger Meal',          'meals', 23,  460,  '/menu/meals/caramel-beef-burger-meal.jpeg',           null, true, 309, now(), now()),
-  ('ml-11', 'وجبة برجر لحم كراميل دبل',  'Double Caramel Beef Burger Meal',   'meals', 33,  720,  '/menu/meals/double-caramel-beef-burger-meal.jpeg',    null, true, 310, now(), now()),
-  ('ml-12', 'وجبة برجر لحم مشوي دبل',    'Double Grilled Beef Burger Meal',   'meals', 33,  660,  '/menu/meals/double-grilled-beef-burger-meal.jpeg',    null, true, 311, now(), now()),
-  ('ml-13', 'وجبة برجر دجاج مشوي دبل',   'Double Grilled Chicken Burger Meal','meals', 26,  470,  '/menu/meals/double-grilled-chicken-burger-meal.jpeg', null, true, 312, now(), now()),
-  ('ml-14', 'وجبة فاهيتا دجاج',          'Chicken Fajita Meal',               'meals', 20,  850,  '/menu/meals/chicken-fajita-meal.jpeg',                null, true, 313, now(), now()),
-  ('ml-15', 'وجبة روست دجاج',            'Roast Chicken Meal',                'meals', 18,  630,  '/menu/meals/roast-chicken-meal.jpeg',                 null, true, 314, now(), now()),
-  ('ml-16', 'وجبة صاروخ دجاج',           'Chicken Rocket Meal',               'meals', 18,  850,  '/menu/meals/chicken-rocket-meal.jpeg',                null, true, 315, now(), now()),
-  ('ml-17', 'وجبة عربي دجاج',            'Arabic Chicken Meal',               'meals', 22,  850,  '/menu/meals/arabic-chicken-meal.jpeg',                null, true, 316, now(), now())
-on conflict (id) do update set
-  "nameAr" = excluded."nameAr",
-  "nameEn" = excluded."nameEn",
-  category = excluded.category,
-  price = excluded.price,
-  calories = excluded.calories,
-  image = excluded.image,
-  sizes = excluded.sizes,
-  "sortOrder" = excluded."sortOrder",
-  "updatedAt" = now();
+### Requirements
 
--- Add standalone burgers to برقر. These products do not include fries or a drink.
-insert into public.menu_items (
-  id, "nameAr", "nameEn", category, price, calories, image, sizes,
-  "isAvailable", "sortOrder", "createdAt", "updatedAt"
-) values
-  ('sw-5',  'كلاسيك كرسبي',        'Classic Crispy Burger',         'burgers', 15, 480, '/menu/burgers/crispy.jpeg',          null, true, 400, now(), now()),
-  ('sw-6',  'سبيشل كرسبي',         'Special Crispy Burger',         'burgers', 15, 480, '/menu/burgers/crispy.jpeg',          null, true, 401, now(), now()),
-  ('sw-7',  'كلاسيك كرسبي حراق',   'Classic Spicy Crispy Burger',   'burgers', 15, 480, '/menu/burgers/crispy.jpeg',          null, true, 402, now(), now()),
-  ('sw-8',  'برجر لحم مشوي',       'Grilled Beef Burger',           'burgers', 15, 465, '/menu/burgers/grilled-beef.jpeg',    null, true, 403, now(), now()),
-  ('sw-9',  'برجر لحم كراميل',     'Caramel Beef Burger',           'burgers', 15, 352, '/menu/burgers/grilled-beef.jpeg',    null, true, 404, now(), now()),
-  ('sw-10', 'برجر لحم كراميل دبل', 'Double Caramel Beef Burger',    'burgers', 25, 555, '/menu/burgers/grilled-beef.jpeg',    null, true, 405, now(), now()),
-  ('sw-11', 'برجر دجاج مشوي',      'Grilled Chicken Burger',        'burgers', 10, 580, '/menu/burgers/grilled-chicken.jpeg', null, true, 406, now(), now()),
-  ('sw-12', 'برجر دجاج',           'Chicken Burger',                'burgers',  8, 300, '/menu/burgers/fried-chicken.jpeg',  null, true, 407, now(), now()),
-  ('sw-13', 'برجر لحم مشوي دبل',   'Double Grilled Beef Burger',    'burgers', 25, 660, '/menu/burgers/grilled-beef.jpeg',    null, true, 408, now(), now()),
-  ('sw-14', 'برجر دجاج مشوي دبل',  'Double Grilled Chicken Burger', 'burgers', 18, 470, '/menu/burgers/grilled-chicken.jpeg', null, true, 409, now(), now()),
-  ('sw-15', 'زنجر برجر',           'Zinger Burger',                 'burgers', 10, 650, '/menu/burgers/zinger.jpeg',          null, true, 410, now(), now())
-on conflict (id) do update set
-  "nameAr" = excluded."nameAr",
-  "nameEn" = excluded."nameEn",
-  category = excluded.category,
-  price = excluded.price,
-  calories = excluded.calories,
-  image = excluded.image,
-  sizes = excluded.sizes,
-  "sortOrder" = excluded."sortOrder",
-  "updatedAt" = now();
+**1. Fixed, consistent card dimensions**
+- Define a single fixed size (width + height) per card type using CSS variables, e.g.:
+```css
+  :root {
+    --category-card-size: 120px;
+    --meal-card-width: 320px;
+    --meal-card-image-height: 260px;
+  }
+```
+- Apply these as fixed `width`/`height` (not `min-width`/`max-width`, not content-based `auto`) to every card container of the same type, so all category icons and all meal cards are pixel-identical regardless of content length (e.g. Arabic text length varies — text must truncate/wrap inside the fixed box, never resize it).
+- Image containers inside cards must use `aspect-ratio` (e.g. `aspect-ratio: 1/1` for category icons, `aspect-ratio: 4/3` for meal photos) combined with `object-fit: cover`, so the image always fills a pre-reserved box instead of dictating box size.
 
--- Remove legacy rows only when they exactly duplicate one of the canonical burgers.
-delete from public.menu_items as duplicate
-using public.menu_items as canonical
-where duplicate.category = 'burgers'
-  and canonical.category = 'burgers'
-  and canonical.id in (
-    'sw-5', 'sw-6', 'sw-7', 'sw-8', 'sw-9', 'sw-10',
-    'sw-11', 'sw-12', 'sw-13', 'sw-14', 'sw-15'
-  )
-  and duplicate.id <> canonical.id
-  and (
-    lower(trim(duplicate."nameAr")) = lower(trim(canonical."nameAr"))
-    or lower(trim(duplicate."nameEn")) = lower(trim(canonical."nameEn"))
-  );
+**2. Eliminate the shrink-on-load / layout shift**
+- Reserve space for every image BEFORE it loads: every `<img>` must have explicit `width` and `height` attributes (or a wrapping div with the fixed `aspect-ratio` above) so the browser allocates the final layout space immediately, before the image bytes arrive.
+- Add `loading="eager"` and `fetchpriority="high"` to above-the-fold images (category icons, first row of meal cards). Only images below the fold should use `loading="lazy"`.
+- Preload the critical above-the-fold images in `<head>`:
+```html
+  <link rel="preload" as="image" href="/path/to/category-icon-1.png">
+```
+- If using React/Next.js, use `next/image` with explicit `width`/`height` and `priority` for above-the-fold images — never unstyled `<img>` with no dimensions.
+- Do NOT change card size based on image load state (no conditional classes like `.loaded { width: auto }`). The card's size must be identical in its loading skeleton state and its loaded state — literally the same CSS box, only the content inside changes.
 
-commit;
+**3. Loading skeleton (optional but recommended)**
+- Show a skeleton/placeholder (solid color or blurred low-res placeholder) inside the fixed-size box until the real image loads, using CSS `background-color` + a fade-in transition on the `<img>` once `onLoad` fires. This avoids blank flashes without ever changing the container's dimensions.
+
+### Acceptance criteria
+- [ ] All category icon cards are identical size (icon + label), no visual difference in width/height across the row.
+- [ ] All meal cards are identical size regardless of Arabic text length (title truncates/wraps, card doesn't grow).
+- [ ] On a hard refresh with throttled network (Chrome DevTools "Slow 3G"), card layout does not shift at all — CLS score should be ~0 (verify in Lighthouse).
+- [ ] Cards must render at final size on first paint, not resize once images finish loading.

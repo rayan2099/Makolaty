@@ -293,9 +293,10 @@ const getDrinkImageClass = (item: MenuItem) => {
   return 'object-contain p-1';
 };
 
-const MenuItemImage = ({ item }: { item: MenuItem }) => {
+const MenuItemImage = ({ item, priority = false }: { item: MenuItem; priority?: boolean }) => {
   const { language } = useLanguage();
   const [hasImageError, setHasImageError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const shouldShowFullArtwork = shouldUseFullArtworkItem(item);
   const shouldUseSquareFrame = isSquareArtworkItem(item);
   const shouldUseDrinkFrame = isDrinkItem(item);
@@ -310,22 +311,37 @@ const MenuItemImage = ({ item }: { item: MenuItem }) => {
   }
 
   return (
-    <img
-      src={item.image}
-      alt={language === 'ar' ? item.nameAr : item.nameEn}
-      className={cn(
-        "w-full h-full transition-transform duration-500",
-        shouldShowFullArtwork
-          ? "object-contain"
-          : shouldUseSquareFrame
+    <>
+      <div
+        aria-hidden="true"
+        className={cn(
+          "absolute inset-0 bg-[#2b211d] transition-opacity duration-300",
+          isLoaded ? "opacity-0" : "animate-pulse opacity-100"
+        )}
+      />
+      <img
+        src={item.image}
+        alt={language === 'ar' ? item.nameAr : item.nameEn}
+        width={320}
+        height={260}
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
+        className={cn(
+          "relative h-full w-full transition-[opacity,transform] duration-500",
+          isLoaded ? "opacity-100" : "opacity-0",
+          shouldShowFullArtwork
             ? "object-cover"
-            : shouldUseDrinkFrame
-              ? getDrinkImageClass(item)
-              : "object-cover group-hover:scale-110"
-      )}
-      referrerPolicy="no-referrer"
-      onError={() => setHasImageError(true)}
-    />
+            : shouldUseSquareFrame
+              ? "object-cover"
+              : shouldUseDrinkFrame
+                ? getDrinkImageClass(item)
+                : "object-cover group-hover:scale-110"
+        )}
+        referrerPolicy="no-referrer"
+        onLoad={() => setIsLoaded(true)}
+        onError={() => setHasImageError(true)}
+      />
+    </>
   );
 };
 
@@ -462,6 +478,10 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
           <img 
             src="/logo.jpeg" 
             alt={t('مأكولاتي', 'Makolaty')}
+            width={64}
+            height={64}
+            loading="eager"
+            fetchPriority="high"
             className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
             onError={(e) => {
@@ -481,7 +501,7 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
   );
 };
 
-const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, size?: string, addOns?: SelectedAddOn[]) => void; key?: string }) => {
+const MenuCard = ({ item, onAdd, priority = false }: { item: MenuItem; onAdd: (item: MenuItem, size?: string, addOns?: SelectedAddOn[]) => void; priority?: boolean; key?: string }) => {
   const { language, t } = useLanguage();
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
   const [isAddOnSelected, setIsAddOnSelected] = useState(false);
@@ -500,7 +520,7 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "glass relative h-full rounded-3xl overflow-hidden flex flex-col group transition-all",
+        "menu-card-shell glass relative rounded-3xl overflow-hidden flex flex-col group transition-all",
         isUnavailable && "border-red-500/40 grayscale-[35%]"
       )}
     >
@@ -513,16 +533,10 @@ const MenuCard = ({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, siz
         </div>
       ) : null}
       <div className={cn(
-        "relative overflow-hidden",
-        shouldUseSquareArtwork
-          ? "aspect-square bg-[#f8f1e8]"
-          : shouldShowFullArtwork
-            ? "aspect-[3/4] bg-[#f8f1e8]"
-            : shouldUseDrinkFrame
-              ? "aspect-[4/3] bg-[#f8f1e8]"
-              : "aspect-[4/3]"
+        "menu-card-image relative overflow-hidden",
+        (shouldUseSquareArtwork || shouldShowFullArtwork || shouldUseDrinkFrame) && "bg-[#f8f1e8]"
       )}>
-        <MenuItemImage item={item} />
+        <MenuItemImage item={item} priority={priority} />
         {!shouldShowFullArtwork && !shouldUseSquareArtwork && !shouldUseDrinkFrame && (
           <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent opacity-60" />
         )}
@@ -707,7 +721,7 @@ const CartDrawer = ({
                       className="bg-white/5 border border-white/5 p-4 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all text-right group"
                     >
                       <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 shadow-lg">
-                        <img src={addon.image} className="w-full h-full object-cover" />
+                        <img src={addon.image} alt="" width={96} height={96} loading="lazy" className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-grow">
                         <p className="text-white font-black text-lg">{addon.nameAr}</p>
@@ -747,7 +761,7 @@ const CartDrawer = ({
                       <div key={`${item.id}-${item.selectedSize}-${idx}`} className="flex flex-row items-center gap-3 relative pb-4 border-b border-white/5 last:border-0">
                         {/* Far Right: Product Image */}
                         <div className="relative w-[56px] h-[56px] rounded-xl overflow-hidden flex-shrink-0 shadow-lg border border-white/10">
-                          <img src={item.image} className="w-full h-full object-cover" />
+                          <img src={item.image} alt="" width={96} height={96} loading="lazy" className="w-full h-full object-cover" />
                         </div>
 
                         {/* Right-Center: Name + Options (Right next to image) */}
@@ -1259,16 +1273,16 @@ const CategoryBar = ({ active, onChange }: { active: string; onChange: (id: stri
         <button
           key={cat.id}
           onClick={() => onChange(cat.id)}
-          className="flex flex-col items-center gap-3 md:gap-4 group transition-all shrink-0 snap-center"
+          className="category-card flex flex-col items-center justify-center gap-2 group transition-all shrink-0 snap-center overflow-hidden"
         >
           <div className={cn(
-            "w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center text-3xl md:text-4xl transition-all shadow-xl",
+            "category-icon-box rounded-2xl flex items-center justify-center text-4xl transition-all shadow-xl",
             active === cat.id ? "bg-primary scale-110 shadow-primary/20" : "bg-white/5 hover:bg-white/10"
           )}>
             {icons[cat.id] || '🍴'}
           </div>
           <span className={cn(
-            "text-xs md:text-sm font-bold transition-colors",
+            "line-clamp-2 h-9 w-full px-1 text-center text-xs font-bold leading-tight transition-colors",
             active === cat.id ? "text-primary" : "text-white/40"
           )}>
             {language === 'ar' ? cat.nameAr : cat.nameEn}
@@ -1625,6 +1639,10 @@ const Home = () => {
           <div className="absolute inset-0 bg-black/60 z-10" />
           <img 
             src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1920&q=80" 
+            width={1920}
+            height={1080}
+            loading="eager"
+            fetchPriority="high"
             className="w-full h-full object-cover"
             alt="Hero Background"
           />
@@ -1702,9 +1720,9 @@ const Home = () => {
           </div>
         ) : (
           <div className="flex overflow-x-auto gap-6 md:gap-10 pb-12 no-scrollbar snap-x snap-mandatory px-4 md:px-8 cursor-grab active:cursor-grabbing scroll-smooth">
-            {filteredMenu.map(item => (
-              <div key={item.id} className="flex w-[280px] md:w-[350px] shrink-0 snap-start">
-                <MenuCard item={item} onAdd={addToCart} />
+            {filteredMenu.map((item, index) => (
+              <div key={item.id} className="meal-card-slot flex shrink-0 snap-start">
+                <MenuCard item={item} onAdd={addToCart} priority={index < 3} />
               </div>
             ))}
           </div>
@@ -2356,7 +2374,7 @@ const MenuManagement = () => {
             <div className="flex items-center gap-4">
               <div className="h-20 w-20 overflow-hidden rounded-2xl border border-white/10 bg-secondary shrink-0">
                 {imagePreviewUrl ? (
-                  <img src={imagePreviewUrl} alt="معاينة صورة الصنف" className="h-full w-full bg-[#f8f1e8] object-contain" />
+                  <img src={imagePreviewUrl} alt="معاينة صورة الصنف" width={320} height={240} loading="lazy" className="h-full w-full bg-[#f8f1e8] object-contain" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-primary">
                     <Upload className="h-7 w-7" />
@@ -2512,7 +2530,7 @@ const MenuManagement = () => {
                 key={category.id}
                 onClick={() => setActiveMenuCategory(category.id)}
                 className={cn(
-                  "group relative min-h-[120px] overflow-hidden rounded-3xl border text-right transition-all focus:outline-none focus:ring-2 focus:ring-primary/70",
+                  "staff-category-card group relative overflow-hidden rounded-3xl border text-right transition-all focus:outline-none focus:ring-2 focus:ring-primary/70",
                   isActive
                     ? "border-primary shadow-[0_18px_40px_rgba(255,210,0,0.22)]"
                     : "border-white/10 hover:border-primary/60"
@@ -2521,6 +2539,9 @@ const MenuManagement = () => {
                 <img
                   src={getCategoryImage(category.id)}
                   alt={category.nameAr}
+                  width={120}
+                  height={120}
+                  loading="lazy"
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className={cn(

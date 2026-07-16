@@ -1,6 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 @import "tailwindcss";
 
+:root {
+  --category-card-size: 120px;
+  --category-icon-size: 72px;
+  --meal-card-width: 320px;
+  --meal-card-height: 650px;
+  --meal-card-image-height: 260px;
+}
+
 @theme {
   --font-sans: "Cairo", ui-sans-serif, system-ui, sans-serif;
   
@@ -30,3 +38,35 @@
   @apply bg-white/10 backdrop-blur-md border border-white/20;
 }
 
+.category-card {
+  width: var(--category-card-size);
+  height: var(--category-card-size);
+  flex: 0 0 var(--category-card-size);
+}
+
+.category-icon-box {
+  width: var(--category-icon-size);
+  height: var(--category-icon-size);
+  aspect-ratio: 1 / 1;
+  flex: 0 0 var(--category-icon-size);
+}
+
+.meal-card-slot,
+.menu-card-shell {
+  width: var(--meal-card-width);
+  height: var(--meal-card-height);
+  flex: 0 0 var(--meal-card-width);
+}
+
+.menu-card-image {
+  width: var(--meal-card-width);
+  height: var(--meal-card-image-height);
+  aspect-ratio: 4 / 3;
+  flex: 0 0 var(--meal-card-image-height);
+}
+
+.staff-category-card {
+  width: 100%;
+  height: var(--category-card-size);
+  aspect-ratio: 1 / 1;
+}
