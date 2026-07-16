@@ -468,7 +468,6 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
       <div className="hidden md:flex items-center gap-8 font-bold text-sm">
         <Link to="/" className="text-white hover:text-primary transition-colors">{t('الرئيسية', 'Home')}</Link>
         <a href="#menu" className="text-white/60 hover:text-primary transition-colors">{t('القائمة', 'Menu')}</a>
-        <Link to="/staff" className="text-white/60 hover:text-primary transition-colors">{t('الموظفون', 'Staff')}</Link>
       </div>
 
       {/* Logo on the Left */}
