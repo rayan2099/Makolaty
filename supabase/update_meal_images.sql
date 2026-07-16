@@ -1,36 +1,36 @@
--- Update the live Supabase menu to use the bundled artwork for the meals category.
--- Run this once in the Supabase SQL editor after deploying the matching public files.
-update public.menu_items
-set image = case id
-  when 'ml-1' then '/menu/meals/grilled-chicken-burger-meal.jpeg'
-  when 'ml-2' then '/menu/meals/grilled-beef-burger-meal.jpeg'
-  when 'ml-3' then '/menu/meals/classic-crispy-meal.jpeg'
-  when 'ml-4' then '/menu/meals/zinger-burger-meal.jpeg'
-  when 'ml-5' then '/menu/meals/fried-chicken-burger-meal.jpeg'
-  when 'ml-6' then '/menu/meals/crispy-jumbo-meal.jpeg'
-  when 'ml-7' then '/menu/meals/tortilla-meal.jpeg'
-  when 'ml-8' then '/menu/meals/special-crispy-meal.jpeg'
-  when 'ml-9' then '/menu/meals/classic-spicy-crispy-meal.jpeg'
-  when 'ml-10' then '/menu/meals/caramel-beef-burger-meal.jpeg'
-  when 'ml-11' then '/menu/meals/double-caramel-beef-burger-meal.jpeg'
-  when 'ml-12' then '/menu/meals/double-grilled-beef-burger-meal.jpeg'
-  when 'ml-13' then '/menu/meals/double-grilled-chicken-burger-meal.jpeg'
-  when 'ml-14' then '/menu/meals/chicken-fajita-meal.jpeg'
-  when 'ml-15' then '/menu/meals/roast-chicken-meal.jpeg'
-  when 'ml-16' then '/menu/meals/chicken-rocket-meal.jpeg'
-  else image
-end,
-"updatedAt" = now()
-where id in (
-  'ml-1', 'ml-2', 'ml-3', 'ml-4', 'ml-5', 'ml-6', 'ml-7', 'ml-8',
-  'ml-9', 'ml-10', 'ml-11', 'ml-12', 'ml-13', 'ml-14', 'ml-15', 'ml-16'
-);
+-- Add every supplied combo to the live وجبات category.
+-- This inserts missing rows and refreshes existing rows without changing availability.
+begin;
 
--- Standalone burgers remain separate from combo meals.
-update public.menu_items
-set category = 'burgers',
-    "updatedAt" = now()
-where id in (
-  'sw-5', 'sw-6', 'sw-7', 'sw-8', 'sw-9', 'sw-10',
-  'sw-11', 'sw-12', 'sw-13', 'sw-14', 'sw-15'
-);
+insert into public.menu_items (
+  id, "nameAr", "nameEn", category, price, calories, image, sizes,
+  "isAvailable", "sortOrder", "createdAt", "updatedAt"
+) values
+  ('ml-1',  'وجبة برجر دجاج مشوي',       'Grilled Chicken Burger Meal',       'meals', 18,  580,  '/menu/meals/grilled-chicken-burger-meal.jpeg',        null, true, 300, now(), now()),
+  ('ml-2',  'وجبة برجر لحم مشوي',        'Grilled Beef Burger Meal',          'meals', 23,  465,  '/menu/meals/grilled-beef-burger-meal.jpeg',           null, true, 301, now(), now()),
+  ('ml-3',  'وجبة كلاسيك كرسبي',         'Classic Crispy Meal',               'meals', 23,  480,  '/menu/meals/classic-crispy-meal.jpeg',                null, true, 302, now(), now()),
+  ('ml-4',  'وجبة زنجر برجر',            'Zinger Burger Meal',                'meals', 18,  850,  '/menu/meals/zinger-burger-meal.jpeg',                 null, true, 303, now(), now()),
+  ('ml-5',  'وجبة برجر دجاج',            'Chicken Burger Meal',               'meals', 16,  300,  '/menu/meals/fried-chicken-burger-meal.jpeg',          null, true, 304, now(), now()),
+  ('ml-6',  'وجبة كرسبي جامبو',          'Crispy Jumbo Meal',                 'meals', 20, 2033,  '/menu/meals/crispy-jumbo-meal.jpeg',                  null, true, 305, now(), now()),
+  ('ml-7',  'وجبة ساندويتش تورتيلا',     'Tortilla Sandwich Meal',            'meals', 20,  800,  '/menu/meals/tortilla-meal.jpeg',                      null, true, 306, now(), now()),
+  ('ml-8',  'وجبة سبيشل كرسبي',          'Special Crispy Meal',               'meals', 23,  480,  '/menu/meals/special-crispy-meal.jpeg',                null, true, 307, now(), now()),
+  ('ml-9',  'وجبة كلاسيك كرسبي حراق',    'Classic Spicy Crispy Meal',         'meals', 23,  480,  '/menu/meals/classic-spicy-crispy-meal.jpeg',          null, true, 308, now(), now()),
+  ('ml-10', 'وجبة برجر لحم كراميل',      'Caramel Beef Burger Meal',          'meals', 23,  460,  '/menu/meals/caramel-beef-burger-meal.jpeg',           null, true, 309, now(), now()),
+  ('ml-11', 'وجبة برجر لحم كراميل دبل',  'Double Caramel Beef Burger Meal',   'meals', 33,  720,  '/menu/meals/double-caramel-beef-burger-meal.jpeg',    null, true, 310, now(), now()),
+  ('ml-12', 'وجبة برجر لحم مشوي دبل',    'Double Grilled Beef Burger Meal',   'meals', 33,  660,  '/menu/meals/double-grilled-beef-burger-meal.jpeg',    null, true, 311, now(), now()),
+  ('ml-13', 'وجبة برجر دجاج مشوي دبل',   'Double Grilled Chicken Burger Meal','meals', 26,  470,  '/menu/meals/double-grilled-chicken-burger-meal.jpeg', null, true, 312, now(), now()),
+  ('ml-14', 'وجبة فاهيتا دجاج',          'Chicken Fajita Meal',               'meals', 20,  850,  '/menu/meals/chicken-fajita-meal.jpeg',                null, true, 313, now(), now()),
+  ('ml-15', 'وجبة روست دجاج',            'Roast Chicken Meal',                'meals', 18,  630,  '/menu/meals/roast-chicken-meal.jpeg',                 null, true, 314, now(), now()),
+  ('ml-16', 'وجبة صاروخ دجاج',           'Chicken Rocket Meal',               'meals', 18,  850,  '/menu/meals/chicken-rocket-meal.jpeg',                null, true, 315, now(), now())
+on conflict (id) do update set
+  "nameAr" = excluded."nameAr",
+  "nameEn" = excluded."nameEn",
+  category = excluded.category,
+  price = excluded.price,
+  calories = excluded.calories,
+  image = excluded.image,
+  sizes = excluded.sizes,
+  "sortOrder" = excluded."sortOrder",
+  "updatedAt" = now();
+
+commit;
