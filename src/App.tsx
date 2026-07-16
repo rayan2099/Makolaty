@@ -46,6 +46,8 @@ const LanguageContext = createContext<{
 
 const useLanguage = () => useContext(LanguageContext);
 
+const PASTA_CHICKEN_EXTRA_ID = 'pasta-extra-chicken';
+
 const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
   const [language, setLanguageState] = useState<Language>(() => (
     localStorage.getItem('makolaty_language') === 'en' ? 'en' : 'ar'
@@ -100,13 +102,19 @@ const localizedSize = (size: string, language: Language) => {
   } as Record<string, string>)[size] || size;
 };
 
-const getAvailableAddOn = (item: MenuItem, selectedSize?: string): SelectedAddOn | null => {
+const getAvailableAddOn = (item: MenuItem, selectedSize?: string, pastaChickenExtra?: MenuItem): SelectedAddOn | null => {
   if (item.category === 'pizza') {
     const prices: Record<string, number> = { 'صغير': 3, 'وسط': 5, 'كبير': 7 };
     return { id: 'extra-cheese', nameAr: 'زيادة جبن', nameEn: 'Extra Cheese', price: prices[selectedSize || ''] ?? 3 };
   }
   if (item.category === 'pasta') {
-    return { id: 'extra-chicken', nameAr: 'اكسترا دجاج', nameEn: 'Extra Chicken', price: 5 };
+    if (!pastaChickenExtra || pastaChickenExtra.isAvailable === false) return null;
+    return {
+      id: 'extra-chicken',
+      nameAr: pastaChickenExtra.nameAr,
+      nameEn: pastaChickenExtra.nameEn,
+      price: pastaChickenExtra.price,
+    };
   }
   if (item.category === 'shawarma') {
     return { id: 'shawarma-extra-cheese', nameAr: 'جبن اكسترا', nameEn: 'Extra Cheese', price: 1 };
@@ -499,7 +507,7 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
   );
 };
 
-const MenuCard = ({ item, onAdd, priority = false }: { item: MenuItem; onAdd: (item: MenuItem, size?: string, addOns?: SelectedAddOn[]) => void; priority?: boolean; key?: string }) => {
+const MenuCard = ({ item, onAdd, priority = false, pastaChickenExtra }: { item: MenuItem; onAdd: (item: MenuItem, size?: string, addOns?: SelectedAddOn[]) => void; priority?: boolean; pastaChickenExtra?: MenuItem; key?: string }) => {
   const { language, t } = useLanguage();
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
   const [isAddOnSelected, setIsAddOnSelected] = useState(false);
@@ -509,7 +517,7 @@ const MenuCard = ({ item, onAdd, priority = false }: { item: MenuItem; onAdd: (i
   const shouldUseSquareArtwork = isSquareArtworkItem(item);
   const shouldUseDrinkFrame = isDrinkItem(item);
   const isUnavailable = item.isAvailable === false;
-  const availableAddOn = getAvailableAddOn(item, selectedSize);
+  const availableAddOn = getAvailableAddOn(item, selectedSize, pastaChickenExtra);
   const displayedPrice = (selectedOption?.price ?? item.price) + (isAddOnSelected ? availableAddOn?.price ?? 0 : 0);
 
   return (
@@ -1500,7 +1508,9 @@ const Home = () => {
   }, []);
 
   const normalizedSearchQuery = normalizeSearchText(searchQuery);
+  const pastaChickenExtra = menuItems.find(item => item.id === PASTA_CHICKEN_EXTRA_ID);
   const filteredMenu = menuItems.filter(item => {
+    if (item.id === PASTA_CHICKEN_EXTRA_ID) return false;
     const matchesCategory = item.category === activeCategory;
     if (!matchesCategory) return false;
     if (!normalizedSearchQuery) return true;
@@ -1720,7 +1730,7 @@ const Home = () => {
           <div className="flex overflow-x-auto gap-6 md:gap-10 pb-12 no-scrollbar snap-x snap-mandatory px-4 md:px-8 cursor-grab active:cursor-grabbing scroll-smooth">
             {filteredMenu.map((item, index) => (
               <div key={item.id} className="meal-card-slot flex shrink-0 snap-start">
-                <MenuCard item={item} onAdd={addToCart} priority={index < 3} />
+                <MenuCard item={item} onAdd={addToCart} priority={index < 3} pastaChickenExtra={pastaChickenExtra} />
               </div>
             ))}
           </div>
@@ -1840,6 +1850,7 @@ const MenuManagement = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingImage, setIsUpdatingImage] = useState(false);
+  const [isUpdatingPastaExtra, setIsUpdatingPastaExtra] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -1887,12 +1898,15 @@ const MenuManagement = () => {
     return () => URL.revokeObjectURL(objectUrl);
   }, [selectedImageFile]);
 
-  const categoryCounts = items.reduce<Record<string, number>>((counts, item) => {
+  const customerMenuItems = items.filter(item => item.id !== PASTA_CHICKEN_EXTRA_ID);
+  const pastaChickenExtra = items.find(item => item.id === PASTA_CHICKEN_EXTRA_ID);
+
+  const categoryCounts = customerMenuItems.reduce<Record<string, number>>((counts, item) => {
     counts[item.category] = (counts[item.category] || 0) + 1;
     return counts;
   }, {});
 
-  const visibleItems = items.filter(item => item.category === activeMenuCategory);
+  const visibleItems = customerMenuItems.filter(item => item.category === activeMenuCategory);
 
   const selectedItem = selectedItemId
     ? items.find(item => item.id === selectedItemId) || null
@@ -1906,6 +1920,41 @@ const MenuManagement = () => {
     const timeout = window.setTimeout(() => setMessage(''), 5000);
     return () => window.clearTimeout(timeout);
   }, [isSuccessMessage, message]);
+
+  const setPastaChickenExtraAvailability = async (isAvailable: boolean) => {
+    setMessage('');
+    setIsUpdatingPastaExtra(true);
+    const now = new Date().toISOString();
+    const payload = sanitizeForSupabase({
+      id: PASTA_CHICKEN_EXTRA_ID,
+      nameAr: 'اكسترا دجاج',
+      nameEn: 'Extra Chicken',
+      category: 'pasta',
+      price: pastaChickenExtra?.price ?? 5,
+      image: pastaChickenExtra?.image || '/menu/pasta/fettuccine.jpg',
+      sizes: null,
+      isAvailable,
+      sortOrder: 9999,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    try {
+      const { error } = await supabase
+        .from('menu_items')
+        .upsert(payload, { onConflict: 'id' });
+      if (error) throw error;
+      setMessage(isAvailable
+        ? t('تمت إضافة اكسترا الدجاج إلى الباستا بنجاح.', 'Extra chicken was added to pasta successfully.')
+        : t('تمت إزالة اكسترا الدجاج من الباستا بنجاح.', 'Extra chicken was removed from pasta successfully.'));
+      await loadItems();
+    } catch (error) {
+      await handleSupabaseError(error, OperationType.UPDATE, 'menu_items');
+      setMessage(t('تعذر تحديث اكسترا الدجاج.', 'Could not update extra chicken.'));
+    } finally {
+      setIsUpdatingPastaExtra(false);
+    }
+  };
 
   const categoryFallbackImages: Record<string, string> = {
     fallback: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=800&q=80',
@@ -2554,6 +2603,39 @@ const MenuManagement = () => {
             );
           })}
         </div>
+
+        {activeMenuCategory === 'pasta' ? (
+          <div className="mb-6 rounded-3xl border border-primary/25 bg-primary/[0.06] p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-right">
+                <p className="text-lg font-black text-white">{t('اكسترا دجاج للباستا', 'Extra Chicken for Pasta')}</p>
+                <p className="mt-1 text-sm font-bold text-white/45">
+                  {pastaChickenExtra?.isAvailable !== false && pastaChickenExtra
+                    ? t(`متاح للعملاء بسعر ${pastaChickenExtra.price} ريال`, `Available to customers for ${pastaChickenExtra.price} SR`)
+                    : t('غير متاح للعملاء', 'Not available to customers')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPastaChickenExtraAvailability(!(pastaChickenExtra?.isAvailable !== false && pastaChickenExtra))}
+                disabled={isUpdatingPastaExtra}
+                className={cn(
+                  "flex min-w-44 items-center justify-center gap-2 rounded-2xl px-5 py-3 font-black transition-all disabled:cursor-not-allowed disabled:opacity-50",
+                  pastaChickenExtra?.isAvailable !== false && pastaChickenExtra
+                    ? "border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500 hover:text-white"
+                    : "bg-primary text-secondary hover:bg-accent"
+                )}
+              >
+                {pastaChickenExtra?.isAvailable !== false && pastaChickenExtra ? <Trash2 className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+                {isUpdatingPastaExtra
+                  ? t('جاري التحديث...', 'Updating...')
+                  : pastaChickenExtra?.isAvailable !== false && pastaChickenExtra
+                    ? t('إزالة اكسترا الدجاج', 'Remove extra chicken')
+                    : t('إضافة اكسترا الدجاج', 'Add extra chicken')}
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {items.length === 0 ? (
           <p className="text-white/40 font-bold">{t('لا توجد أصناف مضافة حتى الآن.', 'No menu items have been added yet.')}</p>
