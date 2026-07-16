@@ -469,7 +469,6 @@ const Navbar = ({ cartCount, onOpenCart }: { cartCount: number; onOpenCart: () =
         <Link to="/" className="text-white hover:text-primary transition-colors">{t('الرئيسية', 'Home')}</Link>
         <a href="#menu" className="text-white/60 hover:text-primary transition-colors">{t('القائمة', 'Menu')}</a>
         <Link to="/staff" className="text-white/60 hover:text-primary transition-colors">{t('الموظفون', 'Staff')}</Link>
-        <a href={`https://wa.me/${formatPhone(STAFF_WHATSAPP)}`} className="text-white/60 hover:text-primary transition-colors">{t('تواصل معنا', 'Contact us')}</a>
       </div>
 
       {/* Logo on the Left */}
@@ -1752,13 +1751,6 @@ const Home = () => {
         items={cart}
       />
 
-      {/* Floating Chat */}
-      <a 
-        href={`https://wa.me/${formatPhone(STAFF_WHATSAPP)}`}
-        className="fixed bottom-6 left-6 md:bottom-8 md:left-8 w-14 h-14 md:w-16 md:h-16 bg-primary rounded-full flex items-center justify-center shadow-2xl shadow-primary/40 hover:scale-110 transition-transform z-50"
-      >
-        <Phone className="w-7 h-7 md:w-8 md:h-8 text-secondary" />
-      </a>
     </div>
   );
 };
