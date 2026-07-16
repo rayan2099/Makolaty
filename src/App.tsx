@@ -180,7 +180,15 @@ const BUILT_IN_MENU_OVERRIDES = new Map(
     .map(item => [item.id, item])
 );
 const CANONICAL_MENU_IDS = new Set(INITIAL_MENU.map(item => item.id));
-const LOCKED_BUILT_IN_IMAGE_IDS = new Set(['ap-9', 'broast-nuggets-regular', 'broast-nuggets-spicy']);
+const LOCKED_BUILT_IN_IMAGE_IDS = new Set([
+  'ap-9',
+  'broast-nuggets-regular',
+  'broast-nuggets-spicy',
+  ...Array.from({ length: 16 }, (_, index) => `ml-${index + 1}`),
+]);
+const LOCKED_BUILT_IN_CATEGORY_IDS = new Set(
+  Array.from({ length: 11 }, (_, index) => `sw-${index + 5}`)
+);
 
 const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
   items.map(item => {
@@ -200,6 +208,7 @@ const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
       ...item,
       nameAr: override.nameAr,
       nameEn: override.nameEn,
+      category: LOCKED_BUILT_IN_CATEGORY_IDS.has(item.id) ? override.category : item.category,
       image: shouldUseOverrideImage ? override.image : item.image,
     };
   })
