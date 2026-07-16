@@ -33,4 +33,31 @@ on conflict (id) do update set
   "sortOrder" = excluded."sortOrder",
   "updatedAt" = now();
 
+-- Add standalone burgers to برقر. These products do not include fries or a drink.
+insert into public.menu_items (
+  id, "nameAr", "nameEn", category, price, calories, image, sizes,
+  "isAvailable", "sortOrder", "createdAt", "updatedAt"
+) values
+  ('sw-5',  'كلاسيك كرسبي',        'Classic Crispy Burger',         'burgers', 15, 480, '/menu/burgers/crispy.jpeg',          null, true, 400, now(), now()),
+  ('sw-6',  'سبيشل كرسبي',         'Special Crispy Burger',         'burgers', 15, 480, '/menu/burgers/crispy.jpeg',          null, true, 401, now(), now()),
+  ('sw-7',  'كلاسيك كرسبي حراق',   'Classic Spicy Crispy Burger',   'burgers', 15, 480, '/menu/burgers/crispy.jpeg',          null, true, 402, now(), now()),
+  ('sw-8',  'برجر لحم مشوي',       'Grilled Beef Burger',           'burgers', 15, 465, '/menu/burgers/grilled-beef.jpeg',    null, true, 403, now(), now()),
+  ('sw-9',  'برجر لحم كراميل',     'Caramel Beef Burger',           'burgers', 15, 352, '/menu/burgers/grilled-beef.jpeg',    null, true, 404, now(), now()),
+  ('sw-10', 'برجر لحم كراميل دبل', 'Double Caramel Beef Burger',    'burgers', 25, 555, '/menu/burgers/grilled-beef.jpeg',    null, true, 405, now(), now()),
+  ('sw-11', 'برجر دجاج مشوي',      'Grilled Chicken Burger',        'burgers', 10, 580, '/menu/burgers/grilled-chicken.jpeg', null, true, 406, now(), now()),
+  ('sw-12', 'برجر دجاج',           'Chicken Burger',                'burgers',  8, 300, '/menu/burgers/fried-chicken.jpeg',  null, true, 407, now(), now()),
+  ('sw-13', 'برجر لحم مشوي دبل',   'Double Grilled Beef Burger',    'burgers', 25, 660, '/menu/burgers/grilled-beef.jpeg',    null, true, 408, now(), now()),
+  ('sw-14', 'برجر دجاج مشوي دبل',  'Double Grilled Chicken Burger', 'burgers', 18, 470, '/menu/burgers/grilled-chicken.jpeg', null, true, 409, now(), now()),
+  ('sw-15', 'زنجر برجر',           'Zinger Burger',                 'burgers', 10, 650, '/menu/burgers/zinger.jpeg',          null, true, 410, now(), now())
+on conflict (id) do update set
+  "nameAr" = excluded."nameAr",
+  "nameEn" = excluded."nameEn",
+  category = excluded.category,
+  price = excluded.price,
+  calories = excluded.calories,
+  image = excluded.image,
+  sizes = excluded.sizes,
+  "sortOrder" = excluded."sortOrder",
+  "updatedAt" = now();
+
 commit;
