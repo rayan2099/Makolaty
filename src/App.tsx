@@ -1938,13 +1938,10 @@ const MenuManagement = () => {
     if (rememberForUndo) setLastPastaExtraChange(null);
     setUpdatingPastaItemId(item.id);
     try {
-      const { error } = await supabase
-        .from('menu_items')
-        .update({
-          allowExtraChicken,
-          updatedAt: new Date().toISOString(),
-        })
-        .eq('id', item.id);
+      const { error } = await supabase.rpc('set_pasta_item_extra_chicken', {
+        item_id: item.id,
+        item_allow_extra_chicken: allowExtraChicken,
+      });
       if (error) throw error;
 
       setItems(currentItems => currentItems.map(currentItem => (
