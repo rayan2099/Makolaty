@@ -1851,6 +1851,10 @@ const MenuManagement = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingImage, setIsUpdatingImage] = useState(false);
   const [updatingPastaItemId, setUpdatingPastaItemId] = useState<string | null>(null);
+  const [lastPastaExtraChange, setLastPastaExtraChange] = useState<{
+    item: MenuItem;
+    previousValue: boolean;
+  } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -1918,12 +1922,20 @@ const MenuManagement = () => {
 
   useEffect(() => {
     if (!isSuccessMessage) return;
-    const timeout = window.setTimeout(() => setMessage(''), 5000);
+    const timeout = window.setTimeout(() => {
+      setMessage('');
+      setLastPastaExtraChange(null);
+    }, 5000);
     return () => window.clearTimeout(timeout);
   }, [isSuccessMessage, message]);
 
-  const setPastaItemExtraChicken = async (item: MenuItem, allowExtraChicken: boolean) => {
+  const setPastaItemExtraChicken = async (
+    item: MenuItem,
+    allowExtraChicken: boolean,
+    rememberForUndo = true
+  ) => {
     setMessage('');
+    if (rememberForUndo) setLastPastaExtraChange(null);
     setUpdatingPastaItemId(item.id);
     try {
       const { error } = await supabase
@@ -1941,6 +1953,9 @@ const MenuManagement = () => {
       if (selectedItemId === item.id) {
         setForm(current => ({ ...current, allowExtraChicken }));
       }
+      setLastPastaExtraChange(rememberForUndo
+        ? { item: { ...item, allowExtraChicken }, previousValue: item.allowExtraChicken !== false }
+        : null);
       setMessage(allowExtraChicken
         ? t(`تمت إضافة اكسترا الدجاج إلى ${item.nameAr} بنجاح.`, `Extra chicken was enabled for ${item.nameEn} successfully.`)
         : t(`تمت إزالة اكسترا الدجاج من ${item.nameAr} بنجاح.`, `Extra chicken was disabled for ${item.nameEn} successfully.`));
@@ -2298,6 +2313,20 @@ const MenuManagement = () => {
                 <p className="text-lg font-black text-white">{t('تم الحفظ بنجاح', 'Saved successfully')}</p>
                 <p className="mt-1 text-sm font-bold leading-relaxed text-emerald-100/70">{message}</p>
               </div>
+              {lastPastaExtraChange ? (
+                <button
+                  type="button"
+                  onClick={() => setPastaItemExtraChicken(
+                    lastPastaExtraChange.item,
+                    lastPastaExtraChange.previousValue,
+                    false
+                  )}
+                  disabled={updatingPastaItemId === lastPastaExtraChange.item.id}
+                  className="shrink-0 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-3 py-2 text-xs font-black text-emerald-100 transition-colors hover:bg-emerald-300 hover:text-[#10271d] disabled:opacity-50"
+                >
+                  {t('تراجع', 'Undo')}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setMessage('')}
@@ -2705,7 +2734,7 @@ const MenuManagement = () => {
                         ? t('جاري التحديث...', 'Updating...')
                         : item.allowExtraChicken !== false
                           ? t('إزالة', 'Remove')
-                          : t('إضافة', 'Add')}
+                          : t('استعادة', 'Restore')}
                     </button>
                   </div>
                 ) : null}
