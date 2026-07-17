@@ -367,8 +367,11 @@ const generateWhatsAppLink = (order: Order) => {
       if (i.spicyLevel === 1) options.push('حراق');
       if (i.spicyLevel === 2) options.push('حراق اكسترا');
       const optionsStr = options.length > 0 ? ` [${options.join(' + ')}]` : '';
+      const itemNote = i.itemNote?.trim()
+        ? `\n  📝 *ملاحظة الصنف / Item note:* ${i.itemNote.trim()}`
+        : '';
       
-      return `• ${i.quantity} ${i.nameAr} (${i.nameEn})${sizeStr}${optionsStr}\n  ${i.basePrice ?? i.finalPrice} SR + إضافات ${(i.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0)} SR = ${i.finalPrice} SR للحبة`;
+      return `• ${i.quantity} ${i.nameAr} (${i.nameEn})${sizeStr}${optionsStr}${itemNote}\n  ${i.basePrice ?? i.finalPrice} SR + إضافات ${(i.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0)} SR = ${i.finalPrice} SR للحبة`;
     })
     .join('\n');
 
@@ -651,10 +654,9 @@ const CartDrawer = ({
   onUpdateQty, 
   onRemove,
   onUpdateOption,
+  onUpdateItemNote,
   onAdd,
   onCheckout,
-  notes,
-  onNotesChange
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
@@ -663,10 +665,9 @@ const CartDrawer = ({
   onUpdateQty: (id: string, size: string | undefined, addOnKey: string, delta: number) => void;
   onRemove: (id: string, size: string | undefined, addOnKey: string) => void;
   onUpdateOption: (id: string, size: string | undefined, addOnKey: string, option: 'ketchup' | 'mayo' | 'spicy', level: number) => void;
+  onUpdateItemNote: (id: string, size: string | undefined, addOnKey: string, note: string) => void;
   onAdd: (item: MenuItem) => void;
   onCheckout: () => void;
-  notes: string;
-  onNotesChange: (val: string) => void;
 }) => {
   const { language, t } = useLanguage();
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
@@ -819,6 +820,25 @@ const CartDrawer = ({
                               </div>
                             ))}
                           </div>
+                          <div className="mt-3 rounded-xl border border-primary/15 bg-black/15 p-2.5 focus-within:border-primary/50">
+                            <label className="mb-1.5 block text-[10px] font-black text-white/45">
+                              {t('ملاحظة لهذا الصنف', 'Note for this item')}
+                            </label>
+                            <textarea
+                              value={item.itemNote || ''}
+                              onChange={event => onUpdateItemNote(
+                                item.id,
+                                item.selectedSize,
+                                addOnConfigurationKey(item.addOns),
+                                event.target.value
+                              )}
+                              placeholder={t('مثال: بدون بصل...', 'Example: no onions...')}
+                              rows={2}
+                              maxLength={200}
+                              className="w-full resize-none bg-transparent text-xs font-bold text-white placeholder:text-white/20 focus:outline-none"
+                            />
+                            <p className="text-left text-[9px] font-bold text-white/20">{(item.itemNote || '').length}/200</p>
+                          </div>
                         </div>
 
                         {/* Far Left: Quantity stepper and price */}
@@ -878,25 +898,6 @@ const CartDrawer = ({
                     </div>
                   </div>
 
-                  {/* Notes Section */}
-                  <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/[0.025] p-3 text-right transition-colors focus-within:border-primary/55 focus-within:bg-primary/[0.05]">
-                    <label className="mb-2 flex items-center gap-2 text-xs font-black text-white/55">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,210,0,0.8)]" />
-                      {t('ملاحظات إضافية (اختياري)', 'Additional notes (optional)')}
-                    </label>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => onNotesChange(e.target.value)}
-                      placeholder={t('مثال: بدون بصل، صوص زيادة...', 'Example: no onions, extra sauce...')}
-                      dir="rtl"
-                      rows={1}
-                      className="w-full resize-none rounded-xl border border-primary/15 bg-black/15 p-3 text-sm font-bold text-white placeholder:text-white/20 transition-all focus:border-primary/45 focus:bg-black/25 focus:outline-none"
-                      maxLength={200}
-                    />
-                    <div className="flex justify-between mt-1">
-                      <p className="text-[10px] text-white/20">{notes.length}/200</p>
-                    </div>
-                  </div>
                 </>
               )}
             </div>
@@ -1378,6 +1379,12 @@ const SuccessModal = ({
                           {item.selectedSize && <span className="text-primary text-xs mr-1">({localizedSize(item.selectedSize, language)})</span>}
                         </p>
                         {optionsStr && <p className="text-white/40 text-[10px] mt-0.5">{optionsStr}</p>}
+                        {item.itemNote?.trim() && (
+                          <div className="mt-2 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2">
+                            <p className="text-[10px] font-black text-primary">{t('ملاحظة الصنف', 'Item note')}</p>
+                            <p className="mt-0.5 text-xs font-bold text-white">{item.itemNote.trim()}</p>
+                          </div>
+                        )}
                         <div className="mt-1 space-y-0.5 text-[11px] font-bold text-white/45">
                           <p dir="ltr">{t('سعر المنتج', 'Item')}: {item.basePrice ?? item.finalPrice} SR × {item.quantity}</p>
                           {item.addOns?.map(addOn => (
@@ -1476,7 +1483,6 @@ const Home = () => {
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [isWhatsAppClicked, setIsWhatsAppClicked] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
-  const [orderNotes, setOrderNotes] = useState('');
 
   useEffect(() => {
     const loadMenuItems = async () => {
@@ -1569,6 +1575,16 @@ const Home = () => {
     }));
   };
 
+  const updateItemNote = (id: string, size: string | undefined, addOnKey: string, note: string) => {
+    setCart(prev => prev.map(item => (
+      item.id === id
+      && item.selectedSize === size
+      && addOnConfigurationKey(item.addOns) === addOnKey
+        ? { ...item, itemNote: note }
+        : item
+    )));
+  };
+
   const handleCheckout = async (formData: any) => {
     setIsSubmitting(true);
     const subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
@@ -1595,7 +1611,6 @@ const Home = () => {
       deliveryFee,
       deliveryDistanceKm: formData.type === 'delivery' ? deliveryQuote?.distanceKm : undefined,
       total,
-      notes: orderNotes,
       status: 'pending',
       createdAt: new Date().toISOString()
     };
@@ -1608,7 +1623,6 @@ const Home = () => {
       if (error) throw error;
       setLastOrder(orderData);
       setCart([]);
-      setOrderNotes('');
       setIsCheckoutOpen(false);
       setIsCartOpen(false);
       setIsWhatsAppClicked(false);
@@ -1745,10 +1759,9 @@ const Home = () => {
         onUpdateQty={updateQty}
         onRemove={removeFromCart}
         onUpdateOption={updateOption}
+        onUpdateItemNote={updateItemNote}
         onAdd={addToCart}
         onCheckout={() => setIsCheckoutOpen(true)}
-        notes={orderNotes}
-        onNotesChange={setOrderNotes}
       />
 
       <CheckoutModal 
@@ -2912,6 +2925,12 @@ const StaffDashboard = () => {
                       {item.addOns?.map(addOn => (
                         <p key={addOn.id} className="text-[10px] font-bold text-emerald-300">{addOn.nameAr} ({addOn.nameEn}) +{addOn.price} SR</p>
                       ))}
+                      {item.itemNote?.trim() && (
+                        <div className="mt-2 rounded-lg border border-primary/15 bg-primary/5 px-2.5 py-2">
+                          <p className="text-[9px] font-black text-primary">ملاحظة الصنف / Item note</p>
+                          <p className="mt-0.5 text-xs font-bold text-white">{item.itemNote.trim()}</p>
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-1 mt-1 justify-end">
                         {item.spicyLevel === 1 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px] font-bold">حراق</span>}
                         {item.spicyLevel === 2 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px] font-bold">حراق اكسترا</span>}

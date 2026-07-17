@@ -31,6 +31,7 @@ export interface CartItem extends MenuItem {
   finalPrice: number;
   basePrice: number;
   addOns?: SelectedAddOn[];
+  itemNote?: string;
   ketchupLevel?: number; // 0=none, 1=regular, 2=extra
   mayoLevel?: number;    // 0=none, 1=regular, 2=extra
   spicyLevel?: number;   // 0=none, 1=regular, 2=extra
