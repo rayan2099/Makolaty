@@ -108,7 +108,7 @@ const getAvailableAddOn = (item: MenuItem, selectedSize?: string, pastaChickenEx
     return { id: 'extra-cheese', nameAr: 'زيادة جبن', nameEn: 'Extra Cheese', price: prices[selectedSize || ''] ?? 3 };
   }
   if (item.category === 'pasta') {
-    if (!pastaChickenExtra || pastaChickenExtra.isAvailable === false) return null;
+    if (item.allowExtraChicken === false || !pastaChickenExtra || pastaChickenExtra.isAvailable === false) return null;
     return {
       id: 'extra-chicken',
       nameAr: pastaChickenExtra.nameAr,
@@ -1850,7 +1850,7 @@ const MenuManagement = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingImage, setIsUpdatingImage] = useState(false);
-  const [isUpdatingPastaExtra, setIsUpdatingPastaExtra] = useState(false);
+  const [updatingPastaItemId, setUpdatingPastaItemId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -1864,6 +1864,7 @@ const MenuManagement = () => {
     calories: '',
     sizes: [] as { name: string; price: string; calories: string }[],
     isAvailable: true,
+    allowExtraChicken: true,
   });
 
   const loadItems = async () => {
@@ -1921,38 +1922,36 @@ const MenuManagement = () => {
     return () => window.clearTimeout(timeout);
   }, [isSuccessMessage, message]);
 
-  const setPastaChickenExtraAvailability = async (isAvailable: boolean) => {
+  const setPastaItemExtraChicken = async (item: MenuItem, allowExtraChicken: boolean) => {
     setMessage('');
-    setIsUpdatingPastaExtra(true);
-    const now = new Date().toISOString();
-    const payload = sanitizeForSupabase({
-      id: PASTA_CHICKEN_EXTRA_ID,
-      nameAr: 'اكسترا دجاج',
-      nameEn: 'Extra Chicken',
-      category: 'pasta',
-      price: pastaChickenExtra?.price ?? 5,
-      image: pastaChickenExtra?.image || '/menu/pasta/fettuccine.jpg',
-      sizes: null,
-      isAvailable,
-      sortOrder: 9999,
-      createdAt: now,
-      updatedAt: now,
-    });
-
+    setUpdatingPastaItemId(item.id);
     try {
       const { error } = await supabase
         .from('menu_items')
-        .upsert(payload, { onConflict: 'id' });
+        .update({
+          allowExtraChicken,
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('id', item.id);
       if (error) throw error;
-      setMessage(isAvailable
-        ? t('تمت إضافة اكسترا الدجاج إلى الباستا بنجاح.', 'Extra chicken was added to pasta successfully.')
-        : t('تمت إزالة اكسترا الدجاج من الباستا بنجاح.', 'Extra chicken was removed from pasta successfully.'));
-      await loadItems();
+
+      setItems(currentItems => currentItems.map(currentItem => (
+        currentItem.id === item.id ? { ...currentItem, allowExtraChicken } : currentItem
+      )));
+      if (selectedItemId === item.id) {
+        setForm(current => ({ ...current, allowExtraChicken }));
+      }
+      setMessage(allowExtraChicken
+        ? t(`تمت إضافة اكسترا الدجاج إلى ${item.nameAr} بنجاح.`, `Extra chicken was enabled for ${item.nameEn} successfully.`)
+        : t(`تمت إزالة اكسترا الدجاج من ${item.nameAr} بنجاح.`, `Extra chicken was disabled for ${item.nameEn} successfully.`));
     } catch (error) {
-      await handleSupabaseError(error, OperationType.UPDATE, 'menu_items');
-      setMessage(t('تعذر تحديث اكسترا الدجاج.', 'Could not update extra chicken.'));
+      await handleSupabaseError(error, OperationType.UPDATE, 'menu_items.allowExtraChicken');
+      setMessage(t(
+        'تعذر تحديث الصنف. شغّل ملف supabase/pasta_item_extra_chicken.sql في Supabase أولاً.',
+        'Could not update the item. Run supabase/pasta_item_extra_chicken.sql in Supabase first.'
+      ));
     } finally {
-      setIsUpdatingPastaExtra(false);
+      setUpdatingPastaItemId(null);
     }
   };
 
@@ -1980,6 +1979,7 @@ const MenuManagement = () => {
     const payload = INITIAL_MENU.map((item, index) => sanitizeForSupabase({
       ...item,
       isAvailable: true,
+      allowExtraChicken: true,
       sortOrder: index,
       createdAt: now,
       updatedAt: now,
@@ -2049,6 +2049,7 @@ const MenuManagement = () => {
         image: uploadedImageUrl,
         sizes: sizes.length ? sizes : null,
         isAvailable: form.isAvailable,
+        allowExtraChicken: form.category === 'pasta' ? form.allowExtraChicken : true,
         sortOrder: selectedItem?.sortOrder ?? Date.now(),
         ...(selectedItem
           ? { updatedAt: new Date().toISOString() }
@@ -2145,6 +2146,7 @@ const MenuManagement = () => {
         calories: size.calories === undefined ? '' : String(size.calories),
       })) || [],
       isAvailable: item.isAvailable !== false,
+      allowExtraChicken: item.allowExtraChicken !== false,
     });
   };
 
@@ -2160,6 +2162,7 @@ const MenuManagement = () => {
       calories: '',
       sizes: [],
       isAvailable: true,
+      allowExtraChicken: true,
     });
   };
 
@@ -2536,6 +2539,20 @@ const MenuManagement = () => {
               className="w-5 h-5 accent-primary"
             />
           </label>
+          {form.category === 'pasta' ? (
+            <label className="flex items-center justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/[0.06] px-4 py-3 text-right font-bold text-white/70">
+              <span>
+                <span className="block font-black text-white">{t('السماح باكسترا دجاج', 'Allow extra chicken')}</span>
+                <span className="mt-1 block text-xs text-white/40">{t('يظهر هذا الخيار للعملاء لهذا الصنف فقط.', 'Customers will see this option for this item only.')}</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={form.allowExtraChicken}
+                onChange={event => setForm({ ...form, allowExtraChicken: event.target.checked })}
+                className="h-5 w-5 shrink-0 accent-primary"
+              />
+            </label>
+          ) : null}
           {message && !isSuccessMessage ? (
             <div className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold leading-relaxed text-red-200" role="alert">
               {message}
@@ -2609,33 +2626,14 @@ const MenuManagement = () => {
 
         {activeMenuCategory === 'pasta' ? (
           <div className="mb-6 rounded-3xl border border-primary/25 bg-primary/[0.06] p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-right">
-                <p className="text-lg font-black text-white">{t('اكسترا دجاج للباستا', 'Extra Chicken for Pasta')}</p>
-                <p className="mt-1 text-sm font-bold text-white/45">
-                  {pastaChickenExtra?.isAvailable !== false && pastaChickenExtra
-                    ? t(`متاح للعملاء بسعر ${pastaChickenExtra.price} ريال`, `Available to customers for ${pastaChickenExtra.price} SR`)
-                    : t('غير متاح للعملاء', 'Not available to customers')}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPastaChickenExtraAvailability(!(pastaChickenExtra?.isAvailable !== false && pastaChickenExtra))}
-                disabled={isUpdatingPastaExtra}
-                className={cn(
-                  "flex min-w-44 items-center justify-center gap-2 rounded-2xl px-5 py-3 font-black transition-all disabled:cursor-not-allowed disabled:opacity-50",
-                  pastaChickenExtra?.isAvailable !== false && pastaChickenExtra
-                    ? "border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500 hover:text-white"
-                    : "bg-primary text-secondary hover:bg-accent"
+            <div className="text-right">
+              <p className="text-lg font-black text-white">{t('اكسترا دجاج لكل صنف', 'Extra chicken per item')}</p>
+              <p className="mt-1 text-sm font-bold text-white/45">
+                {t(
+                  `استخدم زر إضافة أو إزالة أسفل كل صنف. السعر ${pastaChickenExtra?.price ?? 5} ريال.`,
+                  `Use the Add or Remove button under each item. Price: ${pastaChickenExtra?.price ?? 5} SR.`
                 )}
-              >
-                {pastaChickenExtra?.isAvailable !== false && pastaChickenExtra ? <Trash2 className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-                {isUpdatingPastaExtra
-                  ? t('جاري التحديث...', 'Updating...')
-                  : pastaChickenExtra?.isAvailable !== false && pastaChickenExtra
-                    ? t('إزالة اكسترا الدجاج', 'Remove extra chicken')
-                    : t('إضافة اكسترا الدجاج', 'Add extra chicken')}
-              </button>
+              </p>
             </div>
           </div>
         ) : null}
@@ -2647,37 +2645,71 @@ const MenuManagement = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visibleItems.map(item => (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                onClick={() => selectItemForEditing(item)}
                 className={cn(
-                  "w-full bg-white/5 rounded-2xl p-4 border flex gap-4 items-center text-right transition-all hover:border-primary/60 hover:bg-primary/5",
+                  "overflow-hidden rounded-2xl border bg-white/5 transition-all hover:border-primary/60 hover:bg-primary/5",
                   selectedItemId === item.id ? "border-primary ring-2 ring-primary/20" : "border-white/10"
                 )}
               >
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-secondary">
-                  <MenuItemImage item={item} />
-                </div>
-                <div className="flex-1">
-                  <p className="font-black text-white">{language === 'ar' ? item.nameAr : item.nameEn}</p>
-                  <p className="text-white/40 text-xs font-bold">{language === 'ar' ? item.nameEn : item.nameAr}</p>
-                  <p className="text-primary font-black mt-1">{item.price} SR</p>
-                  {item.sizes?.length ? (
-                    <p className="mt-1 text-[11px] font-bold text-white/45">
-                      {item.sizes.map(size => (
-                        `${size.name}: ${size.price} SR${size.calories === undefined ? '' : ` / ${size.calories} Kcal`}`
-                      )).join(' • ')}
-                    </p>
-                  ) : null}
-                </div>
-                <span className={cn(
-                  "text-[10px] px-2 py-1 rounded-full font-black",
-                  item.isAvailable ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
-                )}>
-                  {item.isAvailable ? t('متاح', 'Available') : t('مخفي', 'Hidden')}
-                </span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => selectItemForEditing(item)}
+                  className="flex w-full items-center gap-4 p-4 text-right"
+                >
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-secondary">
+                    <MenuItemImage item={item} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-black text-white">{language === 'ar' ? item.nameAr : item.nameEn}</p>
+                    <p className="text-white/40 text-xs font-bold">{language === 'ar' ? item.nameEn : item.nameAr}</p>
+                    <p className="text-primary font-black mt-1">{item.price} SR</p>
+                    {item.sizes?.length ? (
+                      <p className="mt-1 text-[11px] font-bold text-white/45">
+                        {item.sizes.map(size => (
+                          `${size.name}: ${size.price} SR${size.calories === undefined ? '' : ` / ${size.calories} Kcal`}`
+                        )).join(' • ')}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className={cn(
+                    "text-[10px] px-2 py-1 rounded-full font-black",
+                    item.isAvailable ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                  )}>
+                    {item.isAvailable ? t('متاح', 'Available') : t('مخفي', 'Hidden')}
+                  </span>
+                </button>
+                {item.category === 'pasta' ? (
+                  <div className="flex items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
+                    <div className="text-right">
+                      <p className="text-sm font-black text-white">{t('اكسترا دجاج', 'Extra chicken')}</p>
+                      <p className={cn(
+                        "text-xs font-bold",
+                        item.allowExtraChicken !== false ? "text-emerald-400" : "text-white/35"
+                      )}>
+                        {item.allowExtraChicken !== false ? t('مسموح لهذا الصنف', 'Enabled for this item') : t('غير مسموح لهذا الصنف', 'Disabled for this item')}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPastaItemExtraChicken(item, item.allowExtraChicken === false)}
+                      disabled={updatingPastaItemId === item.id}
+                      className={cn(
+                        "min-w-28 rounded-xl px-3 py-2 text-xs font-black transition-all disabled:cursor-not-allowed disabled:opacity-50",
+                        item.allowExtraChicken !== false
+                          ? "border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500 hover:text-white"
+                          : "bg-primary text-secondary hover:bg-accent"
+                      )}
+                    >
+                      {updatingPastaItemId === item.id
+                        ? t('جاري التحديث...', 'Updating...')
+                        : item.allowExtraChicken !== false
+                          ? t('إزالة', 'Remove')
+                          : t('إضافة', 'Add')}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             ))}
           </div>
         )}

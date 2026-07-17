@@ -8,10 +8,14 @@ create table if not exists public.menu_items (
   image text not null,
   sizes jsonb,
   "isAvailable" boolean not null default true,
+  "allowExtraChicken" boolean not null default true,
   "sortOrder" bigint not null default 0,
   "createdAt" timestamptz not null default now(),
   "updatedAt" timestamptz not null default now()
 );
+
+alter table public.menu_items
+add column if not exists "allowExtraChicken" boolean not null default true;
 
 alter table public.menu_items enable row level security;
 

@@ -14,6 +14,7 @@ export interface MenuItem {
   image: string;
   sizes?: MenuSize[];
   isAvailable?: boolean;
+  allowExtraChicken?: boolean;
   sortOrder?: number;
 }
 
