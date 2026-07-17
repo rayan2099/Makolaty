@@ -323,7 +323,7 @@ const MenuItemImage = ({ item, priority = false }: { item: MenuItem; priority?: 
       <div
         aria-hidden="true"
         className={cn(
-          "absolute inset-0 bg-[#2b211d] transition-opacity duration-300",
+          "pointer-events-none absolute inset-0 bg-[#2b211d] transition-opacity duration-300",
           isLoaded ? "opacity-0" : "animate-pulse opacity-100"
         )}
       />
@@ -2350,6 +2350,7 @@ const MenuManagement = () => {
         ) : null}
 
         {!selectedItem ? <button
+          type="button"
           onClick={importCurrentMenu}
           disabled={isImporting}
           className="w-full py-4 mb-6 bg-white/5 border border-primary/30 text-primary font-black rounded-2xl hover:bg-primary hover:text-secondary disabled:opacity-50 transition-all flex items-center justify-center gap-2"
@@ -2541,6 +2542,7 @@ const MenuManagement = () => {
             </div>
           ) : null}
           <button
+            type="button"
             onClick={addMenuItem}
             disabled={isSaving || isDeleting || isUpdatingImage}
             className="w-full py-4 bg-primary text-secondary font-black rounded-2xl hover:bg-accent disabled:opacity-50 transition-all flex items-center justify-center gap-2"
@@ -2568,6 +2570,7 @@ const MenuManagement = () => {
             return (
               <button
                 key={category.id}
+                type="button"
                 onClick={() => setActiveMenuCategory(category.id)}
                 className={cn(
                   "staff-category-card group relative overflow-hidden rounded-3xl border text-right transition-all focus:outline-none focus:ring-2 focus:ring-primary/70",
@@ -2653,7 +2656,7 @@ const MenuManagement = () => {
                   selectedItemId === item.id ? "border-primary ring-2 ring-primary/20" : "border-white/10"
                 )}
               >
-                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-secondary">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-secondary">
                   <MenuItemImage item={item} />
                 </div>
                 <div className="flex-1">
