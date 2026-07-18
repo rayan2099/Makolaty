@@ -1006,6 +1006,7 @@ const CheckoutModal = ({
     maps: ''
   });
   const [locationError, setLocationError] = useState('');
+  const [isLocationPermissionDenied, setIsLocationPermissionDenied] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [locationProgress, setLocationProgress] = useState('');
   const [showManualLocation, setShowManualLocation] = useState(false);
@@ -1061,17 +1062,20 @@ const CheckoutModal = ({
         maps: `https://www.google.com/maps?q=${latitude},${longitude}`
       }));
       setLocationError('');
+      setIsLocationPermissionDenied(false);
     };
 
     const failRequest = (error?: GeolocationPositionError) => {
       if (!finishRequest()) return;
-      const message = error?.code === error?.PERMISSION_DENIED
-        ? 'تم رفض الوصول للموقع. فعّل الموقع لموقع makolaty.online من إعدادات Safari، أو استخدم رابط خرائط Google.'
+      const permissionDenied = error?.code === error?.PERMISSION_DENIED;
+      const message = permissionDenied
+        ? 'الوصول للموقع متوقف لهذا الموقع. يمكنك تفعيله من Safari بدون مغادرة الطلب.'
         : error?.code === error?.POSITION_UNAVAILABLE
           ? 'موقعك غير متاح حالياً. تأكد من تفعيل خدمات الموقع والاتصال بالإنترنت، أو استخدم رابط خرائط Google.'
           : 'تعذر تحديد موقعك بسرعة. حاول مرة أخرى أو استخدم رابط خرائط Google.';
+      setIsLocationPermissionDenied(permissionDenied);
       setLocationError(message);
-      setShowManualLocation(true);
+      setShowManualLocation(!permissionDenied);
     };
 
     const requestAccuratePosition = () => {
@@ -1089,6 +1093,7 @@ const CheckoutModal = ({
     };
 
     setLocationError('');
+    setIsLocationPermissionDenied(false);
     setIsLocating(true);
     setLocationProgress('جارٍ البحث عن موقعك...');
     locationTimeoutRef.current = setTimeout(() => {
@@ -1278,6 +1283,28 @@ const CheckoutModal = ({
               )}
               {locationError && (
                 <p className="text-red-400 text-xs font-bold leading-relaxed">{locationError}</p>
+              )}
+              {isLocationPermissionDenied && (
+                <div className="space-y-4 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-right">
+                  <div>
+                    <p className="font-black text-amber-300">
+                      {t('فعّل الموقع بدون مغادرة الطلب', 'Enable location without leaving checkout')}
+                    </p>
+                    <ol className="mt-3 list-decimal space-y-2 pr-5 text-sm font-bold leading-relaxed text-white/70">
+                      <li>{t('اضغط AA بجانب عنوان الموقع أعلى Safari.', 'Tap AA beside the website address in Safari.')}</li>
+                      <li>{t('اختر إعدادات موقع الويب.', 'Choose Website Settings.')}</li>
+                      <li>{t('غيّر الموقع إلى سماح، ثم أغلق النافذة.', 'Change Location to Allow, then close the sheet.')}</li>
+                      <li>{t('اضغط حاول تحديد موقعي مجدداً أدناه.', 'Tap Try locating me again below.')}</li>
+                    </ol>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={useCurrentLocation}
+                    className="w-full rounded-xl bg-amber-300 px-4 py-3 font-black text-secondary transition-colors hover:bg-primary"
+                  >
+                    {t('حاول تحديد موقعي مجدداً', 'Try locating me again')}
+                  </button>
+                </div>
               )}
               <button
                 type="button"
