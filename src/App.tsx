@@ -570,6 +570,9 @@ const MenuCard = ({ item, onAdd, priority = false, pastaChickenExtra }: { item: 
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0]?.name);
   const [isAddOnSelected, setIsAddOnSelected] = useState(false);
   const selectedOption = item.sizes?.find(size => size.name === selectedSize);
+  const displayedItem = selectedOption?.image
+    ? { ...item, image: selectedOption.image }
+    : item;
   const displayedCalories = selectedOption?.calories ?? item.calories;
   const shouldShowFullArtwork = shouldUseFullArtworkItem(item);
   const shouldUseSquareArtwork = isSquareArtworkItem(item);
@@ -600,7 +603,7 @@ const MenuCard = ({ item, onAdd, priority = false, pastaChickenExtra }: { item: 
         "menu-card-image relative overflow-hidden",
         (shouldUseSquareArtwork || shouldShowFullArtwork || shouldUseDrinkFrame) && "bg-[#f8f1e8]"
       )}>
-        <MenuItemImage item={item} priority={priority} />
+        <MenuItemImage item={displayedItem} priority={priority} />
         {!shouldShowFullArtwork && !shouldUseSquareArtwork && !shouldUseDrinkFrame && (
           <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent opacity-60" />
         )}
@@ -1599,7 +1602,8 @@ const Home = () => {
     setCart(prev => {
       const addOnKey = addOnConfigurationKey(addOns);
       const existing = prev.find(i => i.id === item.id && i.selectedSize === size && addOnConfigurationKey(i.addOns) === addOnKey);
-      const basePrice = size ? item.sizes?.find(s => s.name === size)?.price || item.price : item.price;
+      const selectedSizeOption = size ? item.sizes?.find(s => s.name === size) : undefined;
+      const basePrice = selectedSizeOption?.price || item.price;
       const price = basePrice + addOns.reduce((sum, addOn) => sum + addOn.price, 0);
       
       if (existing) {
@@ -1609,7 +1613,15 @@ const Home = () => {
             : i
         );
       }
-      return [...prev, { ...item, quantity: 1, selectedSize: size, basePrice, addOns, finalPrice: price }];
+      return [...prev, {
+        ...item,
+        image: selectedSizeOption?.image || item.image,
+        quantity: 1,
+        selectedSize: size,
+        basePrice,
+        addOns,
+        finalPrice: price,
+      }];
     });
     setIsCartOpen(true);
   };
@@ -1901,9 +1913,15 @@ const resizeMenuImage = async (file: File) => {
   }
 };
 
-const uploadMenuImage = async (file: File, itemId: string) => {
+const uploadMenuImage = async (file: File, itemId: string, sizeKey?: string) => {
   const resizedImage = await resizeMenuImage(file);
-  const path = `items/${itemId}.webp`;
+  const safeSizeKey = sizeKey
+    ?.normalize('NFKD')
+    .replace(/[^a-zA-Z0-9\u0600-\u06FF]+/g, '-')
+    .replace(/^-|-$/g, '');
+  const path = safeSizeKey
+    ? `items/${itemId}/sizes/${safeSizeKey}.webp`
+    : `items/${itemId}.webp`;
 
   const { error } = await supabase.storage
     .from(MENU_IMAGE_BUCKET)
@@ -1942,7 +1960,7 @@ const MenuManagement = () => {
     category: CATEGORIES[0]?.id || 'shawarma',
     price: '',
     calories: '',
-    sizes: [] as { name: string; price: string; calories: string }[],
+    sizes: [] as { name: string; price: string; calories: string; image: string; imageFile: File | null }[],
     isAvailable: true,
     allowExtraChicken: true,
   });
@@ -2113,6 +2131,7 @@ const MenuManagement = () => {
       ...(size.calories.trim() && Number.isFinite(Number(size.calories))
         ? { calories: Number(size.calories) }
         : {}),
+      ...(size.image ? { image: size.image } : {}),
     }));
 
     if (!form.nameAr.trim() || !form.nameEn.trim() || !form.category || !Number.isFinite(price) || price <= 0) {
@@ -2133,6 +2152,16 @@ const MenuManagement = () => {
       const uploadedImageUrl = selectedImageFile
         ? await uploadMenuImage(selectedImageFile, id)
         : selectedItem?.image || '';
+      const sizesWithImages = await Promise.all(sizes.map(async (size, index) => {
+        const imageFile = form.sizes[index]?.imageFile;
+        const image = imageFile
+          ? await uploadMenuImage(imageFile, id, `${index + 1}-${size.name}`)
+          : size.image;
+        return {
+          ...size,
+          ...(image ? { image } : {}),
+        };
+      }));
 
       saveStage = 'item';
       const payload = sanitizeForSupabase({
@@ -2143,7 +2172,7 @@ const MenuManagement = () => {
         price,
         calories: Number.isFinite(calories) ? calories : undefined,
         image: uploadedImageUrl,
-        sizes: sizes.length ? sizes : null,
+        sizes: sizesWithImages.length ? sizesWithImages : null,
         isAvailable: form.isAvailable,
         allowExtraChicken: form.category === 'pasta' ? form.allowExtraChicken : true,
         sortOrder: selectedItem?.sortOrder ?? Date.now(),
@@ -2173,7 +2202,7 @@ const MenuManagement = () => {
             item_price: price,
             item_calories: Number.isFinite(calories) ? calories : null,
             item_image: uploadedImageUrl,
-            item_sizes: sizes.length ? sizes : null,
+            item_sizes: sizesWithImages.length ? sizesWithImages : null,
             item_is_available: form.isAvailable,
             item_sort_order: selectedItem.sortOrder ?? 0,
           });
@@ -2192,6 +2221,7 @@ const MenuManagement = () => {
         calories: '',
         sizes: [],
         isAvailable: true,
+        allowExtraChicken: true,
       });
       setSelectedItemId(null);
       setSelectedImageFile(null);
@@ -2240,6 +2270,8 @@ const MenuManagement = () => {
         name: size.name,
         price: String(size.price),
         calories: size.calories === undefined ? '' : String(size.calories),
+        image: size.image || '',
+        imageFile: null,
       })) || [],
       isAvailable: item.isAvailable !== false,
       allowExtraChicken: item.allowExtraChicken !== false,
@@ -2301,6 +2333,7 @@ const MenuManagement = () => {
         calories: '',
         sizes: [],
         isAvailable: true,
+        allowExtraChicken: true,
       });
       setMessage(t(`تم حذف ${deletedName} بنجاح.`, `${deletedName} was deleted successfully.`));
     } catch (error) {
@@ -2566,7 +2599,7 @@ const MenuManagement = () => {
                 type="button"
                 onClick={() => setForm(current => ({
                   ...current,
-                  sizes: [...current.sizes, { name: '', price: '', calories: '' }],
+                  sizes: [...current.sizes, { name: '', price: '', calories: '', image: '', imageFile: null }],
                 }))}
                 className="flex shrink-0 items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-xs font-black text-primary transition-all hover:bg-primary hover:text-secondary"
               >
@@ -2623,6 +2656,43 @@ const MenuManagement = () => {
                         placeholder={t('اختياري', 'Optional')}
                         className="mt-1.5 w-full rounded-xl border border-white/10 bg-secondary/60 px-3 py-2.5 text-center font-black text-white focus:border-primary focus:outline-none"
                       />
+                    </label>
+                    <label className="col-span-2 cursor-pointer rounded-xl border border-dashed border-primary/25 bg-primary/[0.04] p-3 transition-all hover:border-primary/60 hover:bg-primary/[0.08]">
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        onChange={event => {
+                          const file = event.target.files?.[0] || null;
+                          setForm(current => ({
+                            ...current,
+                            sizes: current.sizes.map((row, rowIndex) => (
+                              rowIndex === index ? { ...row, imageFile: file } : row
+                            )),
+                          }));
+                        }}
+                      />
+                      <div className="flex items-center gap-3">
+                        {size.image ? (
+                          <img
+                            src={size.image}
+                            alt=""
+                            className="h-14 w-14 shrink-0 rounded-lg bg-[#f8f1e8] object-contain"
+                          />
+                        ) : (
+                          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-white/5 text-primary">
+                            <Upload className="h-5 w-5" />
+                          </span>
+                        )}
+                        <span className="min-w-0 text-right">
+                          <span className="block truncate text-xs font-black text-white">
+                            {size.imageFile?.name || t('رفع صورة خاصة بهذا الحجم', 'Upload image for this size')}
+                          </span>
+                          <span className="mt-1 block text-[10px] font-bold text-white/35">
+                            {t('اختياري — تستخدم صورة الصنف الأساسية عند تركها فارغة', 'Optional — the main item image is used when empty')}
+                          </span>
+                        </span>
+                      </div>
                     </label>
                     <button
                       type="button"
