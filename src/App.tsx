@@ -129,13 +129,62 @@ const bilingualName = (nameAr: string, nameEn: string, language: Language) => (
 const normalizeArabicItemNote = (note: string) => {
   const replacements: Array<[RegExp, string]> = [
     [/(?<![\p{L}\p{N}])(?:كتشب|كاتشاب|كاتشب|ketchup)(?![\p{L}\p{N}])/giu, 'كاتشب'],
-    [/(?<![\p{L}\p{N}])(?:مايونيز|مايونيس|mayonnaise|mayo)(?![\p{L}\p{N}])/giu, 'مايونيز'],
+    [/(?<![\p{L}\p{N}])(?:ميونيز|ميونيس|مايونيز|مايونيس|mayonnaise|mayo)(?![\p{L}\p{N}])/giu, 'مايونيز'],
   ];
 
   return replacements.reduce(
     (normalizedNote, [pattern, replacement]) => normalizedNote.replace(pattern, replacement),
     note.trim()
   );
+};
+
+const romanizeArabic = (text: string) => {
+  const letters: Record<string, string> = {
+    ا: 'a', أ: 'a', إ: 'i', آ: 'aa', ب: 'b', ت: 't', ث: 'th', ج: 'j', ح: 'h', خ: 'kh',
+    د: 'd', ذ: 'dh', ر: 'r', ز: 'z', س: 's', ش: 'sh', ص: 's', ض: 'd', ط: 't', ظ: 'z',
+    ع: 'a', غ: 'gh', ف: 'f', ق: 'q', ك: 'k', ل: 'l', م: 'm', ن: 'n', ه: 'h', و: 'w',
+    ي: 'y', ى: 'a', ة: 'ah', ء: '', ئ: 'y', ؤ: 'w', '،': ',', '؛': ';', '؟': '?',
+  };
+
+  return Array.from(text.normalize('NFKD'))
+    .filter(character => !/[\u064B-\u065F\u0670]/u.test(character))
+    .map(character => letters[character] ?? character)
+    .join('')
+    .replace(/\s+([,;?.!])/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const translateItemNoteToEnglish = (note: string) => {
+  const normalizedNote = normalizeArabicItemNote(note);
+  const translations: Array<[RegExp, string]> = [
+    [/بدون كاتشب/gu, 'No ketchup'],
+    [/مع كاتشب/gu, 'With ketchup'],
+    [/بدون مايونيز/gu, 'No mayonnaise'],
+    [/مع مايونيز/gu, 'With mayonnaise'],
+    [/مايونيز (?:إضافي|اضافي|زيادة)/gu, 'Extra mayonnaise'],
+    [/كاتشب (?:إضافي|اضافي|زيادة)/gu, 'Extra ketchup'],
+    [/بدون بصل/gu, 'No onion'],
+    [/بدون مخلل/gu, 'No pickles'],
+    [/بدون ثوم/gu, 'No garlic sauce'],
+    [/بدون جبن/gu, 'No cheese'],
+    [/(?:حراق|سبايسي)/gu, 'Spicy'],
+    [/كاتشب/gu, 'ketchup'],
+    [/مايونيز/gu, 'mayonnaise'],
+    [/بصل/gu, 'onion'],
+    [/مخلل/gu, 'pickles'],
+    [/ثوم/gu, 'garlic sauce'],
+    [/جبن/gu, 'cheese'],
+    [/بدون/gu, 'without'],
+    [/مع/gu, 'with'],
+    [/(?:إضافي|اضافي|زيادة)/gu, 'extra'],
+  ];
+  const translatedNote = translations.reduce(
+    (result, [pattern, replacement]) => result.replace(pattern, replacement),
+    normalizedNote
+  ).trim();
+
+  return romanizeArabic(translatedNote);
 };
 
 const addOnConfigurationKey = (addOns: SelectedAddOn[] = []) => (
@@ -406,7 +455,11 @@ const generateWhatsAppLink = (order: Order) => {
           ? `${mark}${sectionLanguage === 'ar' ? 'الخيارات' : 'Options'}: ${options.join(sectionLanguage === 'ar' ? '، ' : ', ')}`
           : '',
         item.itemNote?.trim()
-          ? `${mark}${sectionLanguage === 'ar' ? 'ملاحظة' : 'Note'}: ${normalizeArabicItemNote(item.itemNote)}`
+          ? `${mark}${sectionLanguage === 'ar' ? 'ملاحظة' : 'Note'}: ${
+            sectionLanguage === 'ar'
+              ? normalizeArabicItemNote(item.itemNote)
+              : translateItemNoteToEnglish(item.itemNote)
+          }`
           : '',
       ].filter(Boolean).join('\n');
     }).join(`\n${thinLine}\n`);
@@ -728,11 +781,12 @@ const CartDrawer = ({
   onUpdateQty: (id: string, size: string | undefined, addOnKey: string, delta: number) => void;
   onRemove: (id: string, size: string | undefined, addOnKey: string) => void;
   onUpdateItemNote: (id: string, size: string | undefined, addOnKey: string, note: string) => void;
-  onAdd: (item: MenuItem) => void;
+  onAdd: (item: MenuItem, size?: string) => void;
   onCheckout: () => void;
 }) => {
   const { language, t } = useLanguage();
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
+  const [selectedAddonSizes, setSelectedAddonSizes] = useState<Record<string, string>>({});
   const total = items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
   
   const suggestedDrinks = menuItems.filter(item => item.category === 'drinks');
@@ -740,7 +794,7 @@ const CartDrawer = ({
   const suggestedSauces = menuItems.filter(item => item.category === 'sauces');
 
   const handleAddItem = (item: MenuItem) => {
-    onAdd(item);
+    onAdd(item, selectedAddonSizes[item.id] ?? item.sizes?.[0]?.name);
   };
 
   return (
@@ -783,31 +837,64 @@ const CartDrawer = ({
             <div className="flex-grow overflow-y-auto p-8 space-y-8">
               {viewingCategory ? (
                 <div className="grid grid-cols-1 gap-4">
-                  {(viewingCategory === 'drinks' ? suggestedDrinks : suggestedSauces).map(addon => (
-                    <button
+                  {(viewingCategory === 'drinks' ? suggestedDrinks : suggestedSauces).map(addon => {
+                    const selectedSize = selectedAddonSizes[addon.id] ?? addon.sizes?.[0]?.name;
+                    const selectedSizeOption = addon.sizes?.find(size => size.name === selectedSize);
+                    const displayedImage = selectedSizeOption?.image || addon.image;
+                    const displayedPrice = selectedSizeOption?.price ?? addon.price;
+                    const addedQuantity = items
+                      .filter(item => item.id === addon.id && (!selectedSize || item.selectedSize === selectedSize))
+                      .reduce((sum, item) => sum + item.quantity, 0);
+
+                    return (
+                    <div
                       key={addon.id}
-                      onClick={() => handleAddItem(addon)}
-                      className="bg-white/5 border border-white/5 p-4 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all text-right group"
+                      className="bg-white/5 border border-white/5 p-4 rounded-3xl flex items-center gap-4 transition-all text-right group"
                     >
                       <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 shadow-lg">
-                        <img src={addon.image} alt="" width={96} height={96} loading="lazy" className="w-full h-full object-cover" />
+                        <img src={displayedImage} alt="" width={96} height={96} loading="lazy" className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-grow">
                         <p className="text-white font-black text-lg">{addon.nameAr}</p>
                         <div className="flex items-center gap-2">
-                          <p className="text-primary font-black">{addon.price} SR</p>
-                          {items.find(i => i.id === addon.id) && (
+                          <p className="text-primary font-black">{displayedPrice} SR</p>
+                          {addedQuantity > 0 && (
                             <span className="bg-primary/20 text-primary text-[10px] px-2 py-0.5 rounded-full font-black">
-                              {t('تمت الإضافة', 'Added')} {items.find(i => i.id === addon.id)?.quantity}
+                              {t('تمت الإضافة', 'Added')} {addedQuantity}
                             </span>
                           )}
                         </div>
+                        {addon.sizes?.length ? (
+                          <div className="mt-2 flex gap-1.5" role="group" aria-label={t('اختر الحجم', 'Choose size')}>
+                            {addon.sizes.map(size => (
+                              <button
+                                key={size.name}
+                                type="button"
+                                onClick={() => setSelectedAddonSizes(current => ({ ...current, [addon.id]: size.name }))}
+                                className={cn(
+                                  'rounded-lg border px-2.5 py-1 text-[10px] font-black transition-all',
+                                  selectedSize === size.name
+                                    ? 'border-primary bg-primary text-secondary'
+                                    : 'border-white/10 bg-white/5 text-white/50'
+                                )}
+                              >
+                                {localizedSize(size.name, language)}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-secondary transition-all">
+                      <button
+                        type="button"
+                        onClick={() => handleAddItem(addon)}
+                        aria-label={t('إضافة إلى السلة', 'Add to cart')}
+                        className="w-10 h-10 shrink-0 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-secondary transition-all"
+                      >
                         <Plus className="w-5 h-5" />
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    </div>
+                    );
+                  })}
                   { (viewingCategory === 'drinks' ? suggestedDrinks : suggestedSauces).length === 0 && (
                     <p className="text-white/20 text-center py-10 font-bold">{t('تمت إضافة جميع الأصناف المتوفرة', 'All available items have been added')}</p>
                   )}
