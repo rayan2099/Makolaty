@@ -1007,8 +1007,11 @@ const CheckoutModal = ({
   });
   const [locationError, setLocationError] = useState('');
   const [isLocating, setIsLocating] = useState(false);
+  const [locationProgress, setLocationProgress] = useState('');
   const [showManualLocation, setShowManualLocation] = useState(false);
   const [mapsLinkInput, setMapsLinkInput] = useState('');
+  const locationRequestId = useRef(0);
+  const locationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { resolveLink, isResolving, error: resolveError, clearError: clearResolveError } = useResolveMapsLink();
 
   const customerCoordinates = form.type === 'delivery'
@@ -1021,31 +1024,99 @@ const CheckoutModal = ({
   const finalTotal = orderSubtotal + (deliveryQuote?.isAllowed ? deliveryQuote.fee : 0);
   const isDeliveryBlocked = form.type === 'delivery' && (!customerCoordinates || !deliveryQuote?.isAllowed);
 
+  useEffect(() => () => {
+    locationRequestId.current += 1;
+    if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
+  }, []);
+
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {
-      setLocationError('المتصفح لا يدعم تحديد الموقع.');
+      setLocationError('المتصفح لا يدعم تحديد الموقع. استخدم رابط خرائط Google بدلاً من ذلك.');
+      setShowManualLocation(true);
       return;
     }
 
+    const requestId = locationRequestId.current + 1;
+    locationRequestId.current = requestId;
+    let requestFinished = false;
+    if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
+
+    const finishRequest = () => {
+      if (requestFinished || locationRequestId.current !== requestId) return false;
+      requestFinished = true;
+      if (locationTimeoutRef.current) {
+        clearTimeout(locationTimeoutRef.current);
+        locationTimeoutRef.current = null;
+      }
+      setIsLocating(false);
+      setLocationProgress('');
+      return true;
+    };
+
+    const savePosition = (position: GeolocationPosition) => {
+      if (!finishRequest()) return;
+      const { latitude, longitude } = position.coords;
+      setForm(prev => ({
+        ...prev,
+        maps: `https://www.google.com/maps?q=${latitude},${longitude}`
+      }));
+      setLocationError('');
+    };
+
+    const failRequest = (error?: GeolocationPositionError) => {
+      if (!finishRequest()) return;
+      const message = error?.code === error?.PERMISSION_DENIED
+        ? 'تم رفض الوصول للموقع. فعّل الموقع لموقع makolaty.online من إعدادات Safari، أو استخدم رابط خرائط Google.'
+        : error?.code === error?.POSITION_UNAVAILABLE
+          ? 'موقعك غير متاح حالياً. تأكد من تفعيل خدمات الموقع والاتصال بالإنترنت، أو استخدم رابط خرائط Google.'
+          : 'تعذر تحديد موقعك بسرعة. حاول مرة أخرى أو استخدم رابط خرائط Google.';
+      setLocationError(message);
+      setShowManualLocation(true);
+    };
+
+    const requestAccuratePosition = () => {
+      if (requestFinished || locationRequestId.current !== requestId) return;
+      setLocationProgress('جارٍ تحسين دقة الموقع...');
+      navigator.geolocation.getCurrentPosition(
+        savePosition,
+        failRequest,
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    };
+
     setLocationError('');
     setIsLocating(true);
+    setLocationProgress('جارٍ البحث عن موقعك...');
+    locationTimeoutRef.current = setTimeout(() => {
+      if (!finishRequest()) return;
+      setLocationError('استغرق تحديد الموقع وقتاً طويلاً. تأكد من تفعيل خدمات الموقع للمتصفح، أو استخدم رابط خرائط Google.');
+      setShowManualLocation(true);
+    }, 16000);
+
+    // First try a recent device location. This is usually nearly instant on mobile.
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
-        setForm(prev => ({
-          ...prev,
-          maps: `https://www.google.com/maps?q=${latitude},${longitude}`
-        }));
-        setIsLocating(false);
+        if (position.coords.accuracy <= 250) {
+          savePosition(position);
+          return;
+        }
+        requestAccuratePosition();
       },
-      () => {
-        setIsLocating(false);
-        setLocationError('تعذر تحديد موقعك. يرجى السماح بالوصول للموقع أو استخدام خيار الرابط اليدوي.');
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          failRequest(error);
+          return;
+        }
+        requestAccuratePosition();
       },
       {
-        enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 60000,
+        enableHighAccuracy: false,
+        timeout: 3500,
+        maximumAge: 600000,
       }
     );
   };
@@ -1175,7 +1246,7 @@ const CheckoutModal = ({
               >
                 {isLocating ? (
                   <>
-                    <Clock className="w-5 h-5 animate-spin" /> جاري تحديد الموقع...
+                    <Clock className="w-5 h-5 animate-spin" /> {locationProgress || 'جاري تحديد الموقع...'}
                   </>
                 ) : customerCoordinates ? (
                   <>
