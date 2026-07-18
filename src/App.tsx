@@ -3122,6 +3122,11 @@ const StaffDashboard = () => {
   const activeOrders = orders.filter(order => order.status !== 'completed');
   const completedOrders = orders.filter(order => order.status === 'completed');
   const filteredOrders = orderFilter === 'completed' ? completedOrders : activeOrders;
+  const sortedFilteredOrders = [...filteredOrders].sort((firstOrder, secondOrder) => {
+    const firstTime = orderCreatedAtDate(firstOrder.createdAt)?.getTime() ?? 0;
+    const secondTime = orderCreatedAtDate(secondOrder.createdAt)?.getTime() ?? 0;
+    return orderFilter === 'completed' ? secondTime - firstTime : firstTime - secondTime;
+  });
   const analyticsOrders = orders.filter(order => {
     const createdAt = orderCreatedAtDate(order.createdAt);
     return createdAt ? localDateKey(createdAt) === analyticsDate : false;
@@ -3359,8 +3364,25 @@ const StaffDashboard = () => {
         {activeView === 'menu' ? (
           <MenuManagement />
         ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredOrders.length === 0 && (
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-5">
+          <div className="flex items-end justify-between px-1">
+            <div>
+              <h2 className="text-2xl font-black text-white">
+                {orderFilter === 'completed'
+                  ? t('سجل الطلبات المكتملة', 'Completed order history')
+                  : t('طابور الطلبات الحالية', 'Current order queue')}
+              </h2>
+              <p className="mt-1 text-xs font-bold text-white/35">
+                {orderFilter === 'completed'
+                  ? t('الأحدث يظهر أولاً.', 'Newest orders appear first.')
+                  : t('الأقدم يظهر أولاً لضمان تجهيز الطلبات بالترتيب.', 'Oldest orders appear first for preparation in order.')}
+              </p>
+            </div>
+            <span className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-black text-white/50">
+              {sortedFilteredOrders.length}
+            </span>
+          </div>
+          {sortedFilteredOrders.length === 0 && (
             <div className="glass col-span-full rounded-3xl px-6 py-16 text-center">
               <ClipboardList className="mx-auto mb-4 h-12 w-12 text-white/20" />
               <h2 className="text-xl font-black text-white">{t('لا توجد طلبات في هذه الحالة', 'No orders in this status')}</h2>
@@ -3369,48 +3391,69 @@ const StaffDashboard = () => {
               </p>
             </div>
           )}
-          {filteredOrders.map(order => (
+          {sortedFilteredOrders.map((order, orderIndex) => (
             <motion.div 
               key={order.id}
               layout
               className={cn(
-                "glass rounded-3xl p-6 border-l-8",
-                order.status === 'completed' ? "border-green-500 opacity-80" : "border-primary shadow-[0_12px_35px_rgba(255,210,0,0.06)]"
+                "glass relative overflow-hidden rounded-3xl border p-5 md:p-6",
+                order.status === 'completed'
+                  ? "border-green-500/25"
+                  : "border-primary/30 shadow-[0_12px_35px_rgba(255,210,0,0.07)]"
               )}
             >
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h3 className="text-xl font-black">{order.customerName}</h3>
-                  <p className="text-white/40 font-bold flex items-center gap-2">
-                    <Phone className="w-3 h-3" /> {order.customerPhone}
-                  </p>
+              <div className={cn(
+                'absolute inset-y-0 start-0 w-1.5',
+                order.status === 'completed' ? 'bg-green-500' : 'bg-primary'
+              )} />
+              <div className="mb-5 flex flex-col gap-4 border-b border-white/8 pb-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    'flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl border',
+                    order.status === 'completed'
+                      ? 'border-green-500/25 bg-green-500/10 text-green-300'
+                      : 'border-primary/25 bg-primary/10 text-primary'
+                  )}>
+                    <span className="text-[9px] font-black uppercase">{t('الدور', 'Queue')}</span>
+                    <span className="text-xl font-black">{order.status === 'completed' ? '✓' : orderIndex + 1}</span>
+                  </div>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-xl font-black text-white">{order.customerName}</h3>
+                      <span className="rounded-lg bg-white/5 px-2 py-1 text-[10px] font-black text-white/35">
+                        #{order.id ? String(order.id).slice(-6).toUpperCase() : orderIndex + 1}
+                      </span>
+                    </div>
+                    <p className="mt-1 flex items-center gap-2 text-sm font-bold text-white/45" dir="ltr">
+                      <Phone className="h-3 w-3" /> {order.customerPhone}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <select
-                    value={order.status === 'completed' ? 'completed' : 'active'}
-                    onChange={event => order.id && updateStatus(
-                      order.id,
-                      event.target.value === 'completed' ? 'completed' : 'pending'
-                    )}
+                <div className="flex items-center justify-between gap-3 sm:justify-end">
+                  <div className="text-end">
+                    <p className="text-[10px] font-black text-white/30">{t('وقت الاستلام', 'Received')}</p>
+                    <p className="text-sm font-black text-white/70">{formatOrderTime(order.createdAt)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => order.id && updateStatus(order.id, order.status === 'completed' ? 'pending' : 'completed')}
                     disabled={!order.id}
-                    aria-label={t('تحديث حالة الطلب', 'Update order status')}
                     className={cn(
-                      'rounded-xl border px-3 py-2 text-xs font-black outline-none transition-colors [color-scheme:dark]',
+                      'flex min-w-[130px] items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-black transition-all active:scale-95 disabled:opacity-40',
                       order.status === 'completed'
-                        ? 'border-green-500/30 bg-green-500/15 text-green-300'
-                        : 'border-primary/30 bg-primary/15 text-primary'
+                        ? 'border-green-500/30 bg-green-500/15 text-green-300 hover:bg-green-500/20'
+                        : 'border-primary/30 bg-primary/15 text-primary hover:bg-primary/20'
                     )}
                   >
-                    <option value="active">{t('طلب حالي', 'Current order')}</option>
-                    <option value="completed">{t('مكتملة', 'Completed')}</option>
-                  </select>
-                  <p className="text-xs text-white/20 mt-1">
-                    {formatOrderTime(order.createdAt)}
-                  </p>
+                    <CheckCircle2 className="h-4 w-4" />
+                    {order.status === 'completed'
+                      ? t('إعادة فتح الطلب', 'Reopen order')
+                      : t('تحديد كمكتملة', 'Mark completed')}
+                  </button>
                 </div>
               </div>
 
-              <div className="space-y-3 mb-6">
+              <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2">
                 {order.items.map((item, idx) => (
                   <div key={idx} className="flex justify-start items-center bg-white/5 p-3 rounded-xl gap-3">
                     <span className="w-8 h-8 bg-primary/20 text-primary rounded-lg flex items-center justify-center font-black text-sm shrink-0">
@@ -3508,28 +3551,12 @@ const StaffDashboard = () => {
                   <button
                     type="button"
                     onClick={() => window.open(generateWhatsAppLink(order), '_blank')}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 font-black text-white hover:bg-white/10"
+                    className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 font-black text-white hover:bg-white/10"
                   >
                     <ExternalLink className="h-4 w-4" />
                     {t('فتح واتساب', 'Open WhatsApp')}
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={() => order.id && updateStatus(order.id, order.status === 'completed' ? 'pending' : 'completed')}
-                  disabled={!order.id}
-                  className={cn(
-                    'flex items-center justify-center gap-2 rounded-xl py-3 font-black transition-all disabled:opacity-40',
-                    order.status === 'completed'
-                      ? 'col-span-2 border border-primary/30 bg-primary/10 text-primary'
-                      : 'bg-green-500 text-white hover:bg-green-400'
-                  )}
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  {order.status === 'completed'
-                    ? t('إعادة للطلبات الحالية', 'Return to current orders')
-                    : t('تحديد كمكتملة', 'Mark completed')}
-                </button>
               </div>
             </motion.div>
           ))}
