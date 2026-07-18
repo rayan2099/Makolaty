@@ -1005,14 +1005,7 @@ const CheckoutModal = ({
     type: 'pickup' as 'pickup' | 'delivery',
     maps: ''
   });
-  const [locationError, setLocationError] = useState('');
-  const [isLocationPermissionDenied, setIsLocationPermissionDenied] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationProgress, setLocationProgress] = useState('');
-  const [showManualLocation, setShowManualLocation] = useState(false);
   const [mapsLinkInput, setMapsLinkInput] = useState('');
-  const locationRequestId = useRef(0);
-  const locationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { resolveLink, isResolving, error: resolveError, clearError: clearResolveError } = useResolveMapsLink();
 
   const customerCoordinates = form.type === 'delivery'
@@ -1025,109 +1018,8 @@ const CheckoutModal = ({
   const finalTotal = orderSubtotal + (deliveryQuote?.isAllowed ? deliveryQuote.fee : 0);
   const isDeliveryBlocked = form.type === 'delivery' && (!customerCoordinates || !deliveryQuote?.isAllowed);
 
-  useEffect(() => () => {
-    locationRequestId.current += 1;
-    if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
-  }, []);
-
-  const useCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('المتصفح لا يدعم تحديد الموقع. استخدم رابط خرائط Google بدلاً من ذلك.');
-      setShowManualLocation(true);
-      return;
-    }
-
-    const requestId = locationRequestId.current + 1;
-    locationRequestId.current = requestId;
-    let requestFinished = false;
-    if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
-
-    const finishRequest = () => {
-      if (requestFinished || locationRequestId.current !== requestId) return false;
-      requestFinished = true;
-      if (locationTimeoutRef.current) {
-        clearTimeout(locationTimeoutRef.current);
-        locationTimeoutRef.current = null;
-      }
-      setIsLocating(false);
-      setLocationProgress('');
-      return true;
-    };
-
-    const savePosition = (position: GeolocationPosition) => {
-      if (!finishRequest()) return;
-      const { latitude, longitude } = position.coords;
-      setForm(prev => ({
-        ...prev,
-        maps: `https://www.google.com/maps?q=${latitude},${longitude}`
-      }));
-      setLocationError('');
-      setIsLocationPermissionDenied(false);
-    };
-
-    const failRequest = (error?: GeolocationPositionError) => {
-      if (!finishRequest()) return;
-      const permissionDenied = error?.code === error?.PERMISSION_DENIED;
-      const message = permissionDenied
-        ? 'الوصول للموقع متوقف لهذا الموقع. يمكنك تفعيله من Safari بدون مغادرة الطلب.'
-        : error?.code === error?.POSITION_UNAVAILABLE
-          ? 'موقعك غير متاح حالياً. تأكد من تفعيل خدمات الموقع والاتصال بالإنترنت، أو استخدم رابط خرائط Google.'
-          : 'تعذر تحديد موقعك بسرعة. حاول مرة أخرى أو استخدم رابط خرائط Google.';
-      setIsLocationPermissionDenied(permissionDenied);
-      setLocationError(message);
-      setShowManualLocation(!permissionDenied);
-    };
-
-    const requestAccuratePosition = () => {
-      if (requestFinished || locationRequestId.current !== requestId) return;
-      setLocationProgress('جارٍ تحسين دقة الموقع...');
-      navigator.geolocation.getCurrentPosition(
-        savePosition,
-        failRequest,
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        }
-      );
-    };
-
-    setLocationError('');
-    setIsLocationPermissionDenied(false);
-    setIsLocating(true);
-    setLocationProgress('جارٍ البحث عن موقعك...');
-    locationTimeoutRef.current = setTimeout(() => {
-      if (!finishRequest()) return;
-      setLocationError('استغرق تحديد الموقع وقتاً طويلاً. تأكد من تفعيل خدمات الموقع للمتصفح، أو استخدم رابط خرائط Google.');
-      setShowManualLocation(true);
-    }, 16000);
-
-    // First try a recent device location. This is usually nearly instant on mobile.
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (position.coords.accuracy <= 250) {
-          savePosition(position);
-          return;
-        }
-        requestAccuratePosition();
-      },
-      (error) => {
-        if (error.code === error.PERMISSION_DENIED) {
-          failRequest(error);
-          return;
-        }
-        requestAccuratePosition();
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 3500,
-        maximumAge: 600000,
-      }
-    );
-  };
-
   const handleResolveMapsLink = async () => {
-    setLocationError('');
+    clearResolveError();
     const localCoordinates = extractCoordinatesFromMapsLink(mapsLinkInput);
     if (localCoordinates) {
       setForm(prev => ({
@@ -1243,26 +1135,64 @@ const CheckoutModal = ({
               <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
                 {t('موقع التوصيل', 'Delivery location')} <MapPin className="w-3 h-3" />
               </label>
-              <button
-                type="button"
-                onClick={useCurrentLocation}
-                disabled={isLocating}
-                className="w-full py-5 bg-primary text-secondary rounded-2xl font-black text-xl shadow-2xl shadow-primary/20 hover:bg-accent disabled:opacity-60 transition-all flex items-center justify-center gap-3"
-              >
-                {isLocating ? (
-                  <>
-                    <Clock className="w-5 h-5 animate-spin" /> {locationProgress || 'جاري تحديد الموقع...'}
-                  </>
-                ) : customerCoordinates ? (
-                  <>
-                    <CheckCircle2 className="w-5 h-5" /> تم تحديد موقع التوصيل
-                  </>
-                ) : (
-                  <>
-                    <MapPin className="w-5 h-5" /> حدد موقعي للتوصيل
-                  </>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-right">
+                <p className="font-black text-white">
+                  {t('الصق رابط موقعك من خرائط Google', 'Paste your Google Maps location link')}
+                </p>
+                <p className="mt-1 text-xs font-bold leading-relaxed text-white/40">
+                  {t('افتح موقعك في خرائط Google، اضغط مشاركة، ثم انسخ الرابط والصقه هنا.', 'Open your location in Google Maps, tap Share, then copy and paste the link here.')}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <input
+                  type="url"
+                  value={mapsLinkInput}
+                  onChange={e => {
+                    const nextValue = e.target.value;
+                    const localCoordinates = extractCoordinatesFromMapsLink(nextValue);
+                    clearResolveError();
+                    setMapsLinkInput(nextValue);
+                    setForm(prev => ({
+                      ...prev,
+                      maps: localCoordinates
+                        ? `https://www.google.com/maps?q=${localCoordinates.lat},${localCoordinates.lng}`
+                        : ''
+                    }));
+                  }}
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-right text-lg font-bold transition-all focus:border-primary focus:outline-none"
+                  placeholder="https://maps.app.goo.gl/..."
+                  aria-label={t('رابط موقع التوصيل', 'Delivery location link')}
+                />
+                <button
+                  type="button"
+                  onClick={handleResolveMapsLink}
+                  disabled={!mapsLinkInput || isResolving}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-primary px-4 py-4 font-black text-secondary transition-all hover:bg-accent disabled:opacity-50"
+                >
+                  {isResolving ? (
+                    <>
+                      <Clock className="h-4 w-4 animate-spin" /> {t('جارٍ قراءة الموقع...', 'Reading location...')}
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-4 w-4" /> {t('تأكيد موقع التوصيل', 'Confirm delivery location')}
+                    </>
+                  )}
+                </button>
+                {resolveError && (
+                  <p className="text-xs font-bold leading-relaxed text-red-400">{resolveError}</p>
                 )}
-              </button>
+                {mapsLinkInput && !customerCoordinates && !resolveError && !isResolving && (
+                  <p className={cn(
+                    "text-xs font-bold leading-relaxed",
+                    hasShortMapsLink ? "text-primary" : "text-white/40"
+                  )}>
+                    {hasShortMapsLink
+                      ? t('اضغط تأكيد موقع التوصيل لقراءة الرابط المختصر.', 'Tap Confirm delivery location to read the shortened link.')
+                      : t('الصق رابط خرائط Google صحيحاً ثم اضغط تأكيد.', 'Paste a valid Google Maps link, then tap Confirm.')}
+                  </p>
+                )}
+              </div>
               {customerCoordinates && (
                 <div className="flex items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/10 p-4">
                   <a
@@ -1279,92 +1209,6 @@ const CheckoutModal = ({
                       {t('سنستخدمه لحساب المسافة ورسوم التوصيل.', 'It will be used to calculate distance and delivery fees.')}
                     </p>
                   </div>
-                </div>
-              )}
-              {locationError && (
-                <p className="text-red-400 text-xs font-bold leading-relaxed">{locationError}</p>
-              )}
-              {isLocationPermissionDenied && (
-                <div className="space-y-4 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-right">
-                  <div>
-                    <p className="font-black text-amber-300">
-                      {t('فعّل الموقع بدون مغادرة الطلب', 'Enable location without leaving checkout')}
-                    </p>
-                    <ol className="mt-3 list-decimal space-y-2 pr-5 text-sm font-bold leading-relaxed text-white/70">
-                      <li>{t('اضغط AA بجانب عنوان الموقع أعلى Safari.', 'Tap AA beside the website address in Safari.')}</li>
-                      <li>{t('اختر إعدادات موقع الويب.', 'Choose Website Settings.')}</li>
-                      <li>{t('غيّر الموقع إلى سماح، ثم أغلق النافذة.', 'Change Location to Allow, then close the sheet.')}</li>
-                      <li>{t('اضغط حاول تحديد موقعي مجدداً أدناه.', 'Tap Try locating me again below.')}</li>
-                    </ol>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={useCurrentLocation}
-                    className="w-full rounded-xl bg-amber-300 px-4 py-3 font-black text-secondary transition-colors hover:bg-primary"
-                  >
-                    {t('حاول تحديد موقعي مجدداً', 'Try locating me again')}
-                  </button>
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowManualLocation(value => !value)}
-                className="w-full py-3 text-white/40 hover:text-white font-bold transition-colors"
-              >
-                {showManualLocation ? 'إخفاء الرابط اليدوي' : 'استخدام رابط خرائط بدلاً من ذلك'}
-              </button>
-              {showManualLocation && (
-                <div className="space-y-2">
-                  <input 
-                    type="url" 
-                    value={mapsLinkInput}
-                    onChange={e => {
-                      const nextValue = e.target.value;
-                      const localCoordinates = extractCoordinatesFromMapsLink(nextValue);
-                      setLocationError('');
-                      clearResolveError();
-                      setMapsLinkInput(nextValue);
-                      if (localCoordinates) {
-                        setForm(prev => ({
-                          ...prev,
-                          maps: `https://www.google.com/maps?q=${localCoordinates.lat},${localCoordinates.lng}`
-                        }));
-                      }
-                    }}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary transition-all text-right font-bold text-lg"
-                    placeholder="https://maps.app.goo.gl/..."
-                  />
-                  <button
-                    type="button"
-                    onClick={handleResolveMapsLink}
-                    disabled={!mapsLinkInput || isResolving}
-                    className="w-full py-3 bg-white/5 border border-white/10 rounded-2xl font-black text-white/70 hover:bg-white/10 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                  >
-                    {isResolving ? (
-                      <>
-                        <Clock className="w-4 h-4 animate-spin" /> جارٍ تحديد الموقع من الرابط...
-                      </>
-                    ) : (
-                      <>
-                        <MapPin className="w-4 h-4" /> قراءة الموقع من الرابط
-                      </>
-                    )}
-                  </button>
-                  {resolveError && (
-                    <p className="text-red-400 text-xs font-bold leading-relaxed">
-                      {resolveError} يمكنك استخدام زر تحديد موقعي للتوصيل بدلاً من ذلك.
-                    </p>
-                  )}
-                  {mapsLinkInput && !customerCoordinates && !resolveError && !isResolving && (
-                    <p className={cn(
-                      "text-xs font-bold leading-relaxed",
-                      hasShortMapsLink ? "text-primary" : "text-white/40"
-                    )}>
-                      {hasShortMapsLink
-                        ? 'سنحاول قراءة الرابط المختصر من خلال الخادم. إذا لم ينجح، استخدم زر تحديد موقعي للتوصيل.'
-                        : 'اضغط قراءة الموقع من الرابط لحساب المسافة ورسوم التوصيل، أو الصق رابطاً يحتوي على الإحداثيات ليتم حسابه تلقائياً.'}
-                    </p>
-                  )}
                 </div>
               )}
               {deliveryQuote && (
