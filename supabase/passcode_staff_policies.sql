@@ -1,5 +1,7 @@
 drop policy if exists "Staff can read orders" on public.orders;
 drop policy if exists "Staff can update order status" on public.orders;
+drop policy if exists "Passcode dashboard can read orders" on public.orders;
+drop policy if exists "Passcode dashboard can update order status" on public.orders;
 
 create policy "Passcode dashboard can read orders"
 on public.orders
@@ -18,6 +20,8 @@ drop policy if exists "Customers can read available menu items" on public.menu_i
 drop policy if exists "Staff can create menu items" on public.menu_items;
 drop policy if exists "Staff can update menu items" on public.menu_items;
 drop policy if exists "Staff can delete menu items" on public.menu_items;
+drop policy if exists "Anyone can read available menu items" on public.menu_items;
+drop policy if exists "Passcode dashboard can manage menu items" on public.menu_items;
 
 create policy "Anyone can read available menu items"
 on public.menu_items
