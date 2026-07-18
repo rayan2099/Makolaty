@@ -408,42 +408,72 @@ const translateItemNote = (note: string) => {
 
 const generateWhatsAppLink = (order: Order) => {
   const staffPhone = formatPhone(STAFF_WHATSAPP);
+  const subtotal = order.subtotal ?? order.items.reduce(
+    (sum, item) => sum + (item.finalPrice * item.quantity),
+    0
+  );
+  const line = '━━━━━━━━━━━━━━━━━━';
+  const thinLine = '──────────────────';
   
   const itemsList = order.items
-    .map(i => {
-      const sizeStr = i.selectedSize ? ` (${i.selectedSize})` : '';
-      const options = i.addOns?.map(addOn => `${addOn.nameAr} (${addOn.nameEn}) +${addOn.price} SR`) || [];
+    .map((i, index) => {
+      const options: string[] = [];
+      i.addOns?.forEach(addOn => {
+        options.push(`  ＋ ${addOn.nameAr} (${addOn.nameEn}): ${addOn.price} SR`);
+      });
       if (i.ketchupLevel === 1) options.push('كاتشب');
       if (i.ketchupLevel === 2) options.push('كاتشب اكسترا');
       if (i.mayoLevel === 1) options.push('مايونيز');
       if (i.mayoLevel === 2) options.push('مايونيز اكسترا');
       if (i.spicyLevel === 1) options.push('حراق');
       if (i.spicyLevel === 2) options.push('حراق اكسترا');
-      const optionsStr = options.length > 0 ? ` [${options.join(' + ')}]` : '';
+      const pricedAddOnsCount = i.addOns?.length ?? 0;
+      const freeOptions = options.slice(pricedAddOnsCount);
+      const addOnsTotal = (i.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0);
+      const basePrice = i.basePrice ?? (i.finalPrice - addOnsTotal);
+      const itemTotal = i.finalPrice * i.quantity;
       const itemNote = i.itemNote?.trim()
         ? `\n  📝 *ملاحظة الصنف / Item note:*${translateItemNote(i.itemNote)}`
         : '';
-      
-      return `• ${i.quantity} ${i.nameAr} (${i.nameEn})${sizeStr}${optionsStr}${itemNote}\n  ${i.basePrice ?? i.finalPrice} SR + إضافات ${(i.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0)} SR = ${i.finalPrice} SR للحبة`;
-    })
-    .join('\n');
 
-  const sep = '────────────────';
+      return [
+        `*${index + 1}. ${i.quantity} × ${i.nameAr} (${i.nameEn})*`,
+        i.selectedSize ? `  الحجم / Size: ${i.selectedSize}` : '',
+        `  سعر المنتج / Item: ${basePrice} SR`,
+        ...options.slice(0, pricedAddOnsCount),
+        freeOptions.length > 0 ? `  الخيارات / Options: ${freeOptions.join(' + ')}` : '',
+        itemNote,
+        `  *إجمالي الصنف / Item total: ${itemTotal} SR*`,
+      ].filter(Boolean).join('\n');
+    })
+    .join(`\n${thinLine}\n`);
   
   const message = [
-    `*طلب جديد 🛒*`,
-    sep,
-    `👤 *العميل:* ${order.customerName}`,
-    `📦 *نوع الطلب:* ${order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}`,
-    order.orderType === 'delivery' ? `📍 *الموقع:* ${order.googleMapsLink}` : `استلام من الفرع 🏪`,
-    sep,
+    `🛒 *طلب جديد من مأكولاتي*`,
+    line,
+    `👤 *بيانات العميل*`,
+    `الاسم / Name: ${order.customerName}`,
+    `الجوال / Mobile: ${order.customerPhone}`,
+    '',
+    `📦 *نوع الطلب / Order type*`,
+    order.orderType === 'delivery' ? 'توصيل للمنزل / Delivery' : 'استلام من الفرع / Pickup',
+    order.orderType === 'delivery' ? `📍 *الموقع / Location:*\n${order.googleMapsLink}` : '🏪 *الموقع / Location:* الفرع',
+    line,
+    `🧾 *ملخص الطلب / Order summary*`,
+    '',
     itemsList,
-    sep,
-    order.notes?.trim() ? `📝 *ملاحظات:* ${order.notes}\n${sep}` : '',
-    order.orderType === 'delivery' ? `🚚 *رسوم التوصيل:* SR ${order.deliveryFee ?? 0}` : '',
-    order.orderType === 'delivery' && order.deliveryDistanceKm ? `📏 *المسافة:* ${order.deliveryDistanceKm} كم` : '',
-    `💰 *الإجمالي:* SR ${order.total}`,
-    sep
+    order.notes?.trim() ? `${line}\n📝 *ملاحظات الطلب / Order notes:*\n${order.notes}` : '',
+    line,
+    `💳 *تفاصيل الحساب / Payment summary*`,
+    `قيمة الطلب / Subtotal: *${subtotal} SR*`,
+    order.orderType === 'delivery' ? `رسوم التوصيل / Delivery fee: *${order.deliveryFee ?? 0} SR*` : '',
+    order.orderType === 'delivery' && order.deliveryDistanceKm != null
+      ? `المسافة / Distance: *${order.deliveryDistanceKm} كم*`
+      : '',
+    thinLine,
+    `💰 *الإجمالي / Total: ${order.total} SR*`,
+    line,
+    `✅ يرجى تأكيد الطلب مع العميل`,
   ].filter(Boolean).join('\n');
 
   return `https://wa.me/${staffPhone}?text=${encodeURIComponent(message)}`;
