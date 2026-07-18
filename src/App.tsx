@@ -361,10 +361,6 @@ const MenuItemImage = ({ item, priority = false }: { item: MenuItem; priority?: 
 
 const generateWhatsAppLink = (order: Order) => {
   const staffPhone = formatPhone(STAFF_WHATSAPP);
-  const subtotal = order.subtotal ?? order.items.reduce(
-    (sum, item) => sum + (item.finalPrice * item.quantity),
-    0
-  );
   const line = '━━━━━━━━━━━━━━━━';
   const thinLine = '────────────────';
 
@@ -381,29 +377,25 @@ const generateWhatsAppLink = (order: Order) => {
 
   const buildItems = (sectionLanguage: Language) => {
     const mark = sectionLanguage === 'ar' ? '\u200F' : '\u200E';
-    const currency = sectionLanguage === 'ar' ? 'ر.س' : 'SR';
 
     return order.items.map(item => {
-      const addOnsTotal = (item.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0);
-      const basePrice = item.basePrice ?? (item.finalPrice - addOnsTotal);
       const options = getFreeOptions(item, sectionLanguage);
       const itemName = sectionLanguage === 'ar' ? item.nameAr : item.nameEn;
       return [
-        `${mark}*${item.quantity} × ${itemName}*`,
+        `${mark}*${itemName}*`,
+        `${mark}${sectionLanguage === 'ar' ? 'الكمية' : 'Quantity'}: ${item.quantity}`,
         item.selectedSize
           ? `${mark}${sectionLanguage === 'ar' ? 'الحجم' : 'Size'}: ${localizedSize(item.selectedSize, sectionLanguage)}`
           : '',
-        `${mark}${sectionLanguage === 'ar' ? 'السعر' : 'Price'}: ${basePrice} ${currency}`,
         ...(item.addOns || []).map(addOn => (
-          `${mark}＋ ${sectionLanguage === 'ar' ? addOn.nameAr : addOn.nameEn}: ${addOn.price} ${currency}`
+          `${mark}${sectionLanguage === 'ar' ? 'إضافة' : 'Add-on'}: ${sectionLanguage === 'ar' ? addOn.nameAr : addOn.nameEn}`
         )),
         options.length
           ? `${mark}${sectionLanguage === 'ar' ? 'الخيارات' : 'Options'}: ${options.join(sectionLanguage === 'ar' ? '، ' : ', ')}`
           : '',
         item.itemNote?.trim()
-          ? `${mark}📝 ${sectionLanguage === 'ar' ? 'ملاحظة' : 'Note'}: ${item.itemNote.trim()}`
+          ? `${mark}${sectionLanguage === 'ar' ? 'ملاحظة' : 'Note'}: ${item.itemNote.trim()}`
           : '',
-        `${mark}*${sectionLanguage === 'ar' ? 'إجمالي الصنف' : 'Item total'}: ${item.finalPrice * item.quantity} ${currency}*`,
       ].filter(Boolean).join('\n');
     }).join(`\n${thinLine}\n`);
   };
@@ -411,49 +403,41 @@ const generateWhatsAppLink = (order: Order) => {
   const rtl = '\u200F';
   const ltr = '\u200E';
   const arabicSection = [
-        `${rtl}🇸🇦 *القسم العربي*`,
+        `${rtl}*القسم العربي*`,
         line,
-        `${rtl}👤 *العميل*`,
+        `${rtl}*بيانات العميل*`,
         `${rtl}${order.customerName}`,
-        `${rtl}📞 ${order.customerPhone}`,
-        `${rtl}${order.orderType === 'delivery' ? '🚚 توصيل للمنزل' : '🏪 استلام من الفرع'}`,
-        order.orderType === 'delivery' ? `${rtl}📍 ${order.googleMapsLink}` : '',
+        `${rtl}${order.customerPhone}`,
+        `${rtl}${order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}`,
+        order.orderType === 'delivery' ? `${rtl}${order.googleMapsLink}` : '',
         line,
-        `${rtl}🧾 *ملخص الطلب*`,
+        `${rtl}*ملخص الطلب*`,
         buildItems('ar'),
-        order.notes?.trim() ? `${rtl}📝 *ملاحظات الطلب*\n${rtl}${order.notes}` : '',
+        order.notes?.trim() ? `${rtl}*ملاحظات الطلب*\n${rtl}${order.notes}` : '',
         line,
-        `${rtl}💳 *الحساب*`,
-        `${rtl}قيمة الأصناف: ${subtotal} ر.س`,
-        order.orderType === 'delivery' ? `${rtl}رسوم التوصيل: ${order.deliveryFee ?? 0} ر.س` : '',
         order.orderType === 'delivery' && order.deliveryDistanceKm != null
           ? `${rtl}المسافة: ${order.deliveryDistanceKm} كم`
           : '',
-        thinLine,
-        `${rtl}💰 *الإجمالي: ${order.total} ر.س*`,
+        `${rtl}*الإجمالي: ${order.total} ر.س*`,
       ].filter(Boolean).join('\n');
 
   const englishSection = [
-        `${ltr}🇬🇧 *ENGLISH SECTION*`,
+        `${ltr}*ENGLISH SECTION*`,
         line,
-        `${ltr}👤 *CUSTOMER*`,
+        `${ltr}*CUSTOMER DETAILS*`,
         `${ltr}${order.customerName}`,
-        `${ltr}📞 ${order.customerPhone}`,
-        `${ltr}${order.orderType === 'delivery' ? '🚚 Home delivery' : '🏪 Branch pickup'}`,
-        order.orderType === 'delivery' ? `${ltr}📍 ${order.googleMapsLink}` : '',
+        `${ltr}${order.customerPhone}`,
+        `${ltr}${order.orderType === 'delivery' ? 'Home delivery' : 'Branch pickup'}`,
+        order.orderType === 'delivery' ? `${ltr}${order.googleMapsLink}` : '',
         line,
-        `${ltr}🧾 *ORDER SUMMARY*`,
+        `${ltr}*ORDER SUMMARY*`,
         buildItems('en'),
-        order.notes?.trim() ? `${ltr}📝 *ORDER NOTES*\n${ltr}${order.notes}` : '',
+        order.notes?.trim() ? `${ltr}*ORDER NOTES*\n${ltr}${order.notes}` : '',
         line,
-        `${ltr}💳 *PAYMENT*`,
-        `${ltr}Items subtotal: ${subtotal} SR`,
-        order.orderType === 'delivery' ? `${ltr}Delivery fee: ${order.deliveryFee ?? 0} SR` : '',
         order.orderType === 'delivery' && order.deliveryDistanceKm != null
           ? `${ltr}Distance: ${order.deliveryDistanceKm} km`
           : '',
-        thinLine,
-        `${ltr}💰 *TOTAL: ${order.total} SR*`,
+        `${ltr}*TOTAL: ${order.total} SR*`,
       ].filter(Boolean).join('\n');
 
   const message = [arabicSection, '', line, '', englishSection].join('\n');
