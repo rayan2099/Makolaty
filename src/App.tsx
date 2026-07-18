@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, Component, createContext, useContext } from 'react';
+import React, { useState, useEffect, useRef, Component, createContext, useContext } from 'react';
 import { 
   BrowserRouter as Router, 
   Routes, 
@@ -1504,6 +1504,15 @@ const Home = () => {
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [isWhatsAppClicked, setIsWhatsAppClicked] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const menuScrollerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      menuScrollerRef.current?.scrollTo({ left: 0, behavior: 'auto' });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeCategory, language]);
 
   useEffect(() => {
     const loadMenuItems = async () => {
@@ -1753,7 +1762,11 @@ const Home = () => {
             <p className="mt-2 text-sm font-bold text-white/40">{t('جرّب البحث باسم مختلف أو اختر تصنيف آخر.', 'Try another search or choose a different category.')}</p>
           </div>
         ) : (
-          <div className="flex overflow-x-auto gap-6 md:gap-10 pb-12 no-scrollbar snap-x snap-mandatory px-4 md:px-8 cursor-grab active:cursor-grabbing scroll-smooth">
+          <div
+            ref={menuScrollerRef}
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            className="flex overflow-x-auto gap-6 md:gap-10 pb-12 no-scrollbar snap-x snap-mandatory px-4 md:px-8 cursor-grab active:cursor-grabbing scroll-smooth"
+          >
             {filteredMenu.map((item, index) => (
               <div key={item.id} className="meal-card-slot flex shrink-0 snap-start">
                 <MenuCard item={item} onAdd={addToCart} priority={index < 3} pastaChickenExtra={pastaChickenExtra} />
