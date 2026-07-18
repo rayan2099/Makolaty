@@ -349,101 +349,104 @@ const MenuItemImage = ({ item, priority = false }: { item: MenuItem; priority?: 
   );
 };
 
-const generateWhatsAppLink = (order: Order, language: Language) => {
+const generateWhatsAppLink = (order: Order) => {
   const staffPhone = formatPhone(STAFF_WHATSAPP);
   const subtotal = order.subtotal ?? order.items.reduce(
     (sum, item) => sum + (item.finalPrice * item.quantity),
     0
   );
-  const directionMark = language === 'ar' ? '\u200F' : '\u200E';
   const line = '━━━━━━━━━━━━━━━━';
   const thinLine = '────────────────';
-  const currency = language === 'ar' ? 'ر.س' : 'SR';
 
-  const getFreeOptions = (item: CartItem) => {
+  const getFreeOptions = (item: CartItem, sectionLanguage: Language) => {
     const options: string[] = [];
-    if (item.ketchupLevel === 1) options.push(language === 'ar' ? 'كاتشب' : 'Ketchup');
-    if (item.ketchupLevel === 2) options.push(language === 'ar' ? 'كاتشب إضافي' : 'Extra ketchup');
-    if (item.mayoLevel === 1) options.push(language === 'ar' ? 'مايونيز' : 'Mayonnaise');
-    if (item.mayoLevel === 2) options.push(language === 'ar' ? 'مايونيز إضافي' : 'Extra mayonnaise');
-    if (item.spicyLevel === 1) options.push(language === 'ar' ? 'حراق' : 'Spicy');
-    if (item.spicyLevel === 2) options.push(language === 'ar' ? 'حراق إضافي' : 'Extra spicy');
+    if (item.ketchupLevel === 1) options.push(sectionLanguage === 'ar' ? 'كاتشب' : 'Ketchup');
+    if (item.ketchupLevel === 2) options.push(sectionLanguage === 'ar' ? 'كاتشب إضافي' : 'Extra ketchup');
+    if (item.mayoLevel === 1) options.push(sectionLanguage === 'ar' ? 'مايونيز' : 'Mayonnaise');
+    if (item.mayoLevel === 2) options.push(sectionLanguage === 'ar' ? 'مايونيز إضافي' : 'Extra mayonnaise');
+    if (item.spicyLevel === 1) options.push(sectionLanguage === 'ar' ? 'حراق' : 'Spicy');
+    if (item.spicyLevel === 2) options.push(sectionLanguage === 'ar' ? 'حراق إضافي' : 'Extra spicy');
     return options;
   };
 
-  const itemsList = order.items.map((item, index) => {
-    const addOnsTotal = (item.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0);
-    const basePrice = item.basePrice ?? (item.finalPrice - addOnsTotal);
-    const options = getFreeOptions(item);
-    const itemName = language === 'ar' ? item.nameAr : item.nameEn;
-    return [
-      `${directionMark}*${index + 1}. ${item.quantity} × ${itemName}*`,
-      item.selectedSize
-        ? `${directionMark}${language === 'ar' ? 'الحجم' : 'Size'}: ${localizedSize(item.selectedSize, language)}`
-        : '',
-      `${directionMark}${language === 'ar' ? 'السعر' : 'Price'}: ${basePrice} ${currency}`,
-      ...(item.addOns || []).map(addOn => (
-        `${directionMark}＋ ${language === 'ar' ? addOn.nameAr : addOn.nameEn}: ${addOn.price} ${currency}`
-      )),
-      options.length
-        ? `${directionMark}${language === 'ar' ? 'الخيارات' : 'Options'}: ${options.join(language === 'ar' ? '، ' : ', ')}`
-        : '',
-      item.itemNote?.trim()
-        ? `${directionMark}📝 ${language === 'ar' ? 'ملاحظة' : 'Note'}: ${item.itemNote.trim()}`
-        : '',
-      `${directionMark}*${language === 'ar' ? 'إجمالي الصنف' : 'Item total'}: ${item.finalPrice * item.quantity} ${currency}*`,
-    ].filter(Boolean).join('\n');
-  }).join(`\n${thinLine}\n`);
+  const buildItems = (sectionLanguage: Language) => {
+    const mark = sectionLanguage === 'ar' ? '\u200F' : '\u200E';
+    const currency = sectionLanguage === 'ar' ? 'ر.س' : 'SR';
 
-  const message = language === 'ar'
-    ? [
-        `${directionMark}🛒 *مأكولاتي | طلب جديد*`,
-        line,
-        `${directionMark}👤 *العميل*`,
-        `${directionMark}${order.customerName}`,
-        `${directionMark}📞 ${order.customerPhone}`,
-        `${directionMark}${order.orderType === 'delivery' ? '🚚 توصيل للمنزل' : '🏪 استلام من الفرع'}`,
-        order.orderType === 'delivery' ? `${directionMark}📍 ${order.googleMapsLink}` : '',
-        line,
-        `${directionMark}🧾 *الطلب*`,
-        itemsList,
-        order.notes?.trim() ? `${directionMark}📝 *ملاحظات الطلب*\n${directionMark}${order.notes}` : '',
-        line,
-        `${directionMark}💳 *الحساب*`,
-        `${directionMark}قيمة الأصناف: ${subtotal} ر.س`,
-        order.orderType === 'delivery' ? `${directionMark}رسوم التوصيل: ${order.deliveryFee ?? 0} ر.س` : '',
-        order.orderType === 'delivery' && order.deliveryDistanceKm != null
-          ? `${directionMark}المسافة: ${order.deliveryDistanceKm} كم`
+    return order.items.map(item => {
+      const addOnsTotal = (item.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0);
+      const basePrice = item.basePrice ?? (item.finalPrice - addOnsTotal);
+      const options = getFreeOptions(item, sectionLanguage);
+      const itemName = sectionLanguage === 'ar' ? item.nameAr : item.nameEn;
+      return [
+        `${mark}*${item.quantity} × ${itemName}*`,
+        item.selectedSize
+          ? `${mark}${sectionLanguage === 'ar' ? 'الحجم' : 'Size'}: ${localizedSize(item.selectedSize, sectionLanguage)}`
           : '',
-        thinLine,
-        `${directionMark}💰 *الإجمالي: ${order.total} ر.س*`,
-        line,
-        `${directionMark}✅ يرجى تأكيد الطلب مع العميل`,
-      ].filter(Boolean).join('\n')
-    : [
-        `${directionMark}🛒 *MAKOLATY | NEW ORDER*`,
-        line,
-        `${directionMark}👤 *CUSTOMER*`,
-        `${directionMark}${order.customerName}`,
-        `${directionMark}📞 ${order.customerPhone}`,
-        `${directionMark}${order.orderType === 'delivery' ? '🚚 Home delivery' : '🏪 Branch pickup'}`,
-        order.orderType === 'delivery' ? `${directionMark}📍 ${order.googleMapsLink}` : '',
-        line,
-        `${directionMark}🧾 *ORDER*`,
-        itemsList,
-        order.notes?.trim() ? `${directionMark}📝 *ORDER NOTES*\n${directionMark}${order.notes}` : '',
-        line,
-        `${directionMark}💳 *PAYMENT*`,
-        `${directionMark}Items subtotal: ${subtotal} SR`,
-        order.orderType === 'delivery' ? `${directionMark}Delivery fee: ${order.deliveryFee ?? 0} SR` : '',
-        order.orderType === 'delivery' && order.deliveryDistanceKm != null
-          ? `${directionMark}Distance: ${order.deliveryDistanceKm} km`
+        `${mark}${sectionLanguage === 'ar' ? 'السعر' : 'Price'}: ${basePrice} ${currency}`,
+        ...(item.addOns || []).map(addOn => (
+          `${mark}＋ ${sectionLanguage === 'ar' ? addOn.nameAr : addOn.nameEn}: ${addOn.price} ${currency}`
+        )),
+        options.length
+          ? `${mark}${sectionLanguage === 'ar' ? 'الخيارات' : 'Options'}: ${options.join(sectionLanguage === 'ar' ? '، ' : ', ')}`
           : '',
-        thinLine,
-        `${directionMark}💰 *TOTAL: ${order.total} SR*`,
-        line,
-        `${directionMark}✅ Please confirm this order with the customer`,
+        item.itemNote?.trim()
+          ? `${mark}📝 ${sectionLanguage === 'ar' ? 'ملاحظة' : 'Note'}: ${item.itemNote.trim()}`
+          : '',
+        `${mark}*${sectionLanguage === 'ar' ? 'إجمالي الصنف' : 'Item total'}: ${item.finalPrice * item.quantity} ${currency}*`,
       ].filter(Boolean).join('\n');
+    }).join(`\n${thinLine}\n`);
+  };
+
+  const rtl = '\u200F';
+  const ltr = '\u200E';
+  const arabicSection = [
+        `${rtl}🇸🇦 *القسم العربي*`,
+        line,
+        `${rtl}👤 *العميل*`,
+        `${rtl}${order.customerName}`,
+        `${rtl}📞 ${order.customerPhone}`,
+        `${rtl}${order.orderType === 'delivery' ? '🚚 توصيل للمنزل' : '🏪 استلام من الفرع'}`,
+        order.orderType === 'delivery' ? `${rtl}📍 ${order.googleMapsLink}` : '',
+        line,
+        `${rtl}🧾 *ملخص الطلب*`,
+        buildItems('ar'),
+        order.notes?.trim() ? `${rtl}📝 *ملاحظات الطلب*\n${rtl}${order.notes}` : '',
+        line,
+        `${rtl}💳 *الحساب*`,
+        `${rtl}قيمة الأصناف: ${subtotal} ر.س`,
+        order.orderType === 'delivery' ? `${rtl}رسوم التوصيل: ${order.deliveryFee ?? 0} ر.س` : '',
+        order.orderType === 'delivery' && order.deliveryDistanceKm != null
+          ? `${rtl}المسافة: ${order.deliveryDistanceKm} كم`
+          : '',
+        thinLine,
+        `${rtl}💰 *الإجمالي: ${order.total} ر.س*`,
+      ].filter(Boolean).join('\n');
+
+  const englishSection = [
+        `${ltr}🇬🇧 *ENGLISH SECTION*`,
+        line,
+        `${ltr}👤 *CUSTOMER*`,
+        `${ltr}${order.customerName}`,
+        `${ltr}📞 ${order.customerPhone}`,
+        `${ltr}${order.orderType === 'delivery' ? '🚚 Home delivery' : '🏪 Branch pickup'}`,
+        order.orderType === 'delivery' ? `${ltr}📍 ${order.googleMapsLink}` : '',
+        line,
+        `${ltr}🧾 *ORDER SUMMARY*`,
+        buildItems('en'),
+        order.notes?.trim() ? `${ltr}📝 *ORDER NOTES*\n${ltr}${order.notes}` : '',
+        line,
+        `${ltr}💳 *PAYMENT*`,
+        `${ltr}Items subtotal: ${subtotal} SR`,
+        order.orderType === 'delivery' ? `${ltr}Delivery fee: ${order.deliveryFee ?? 0} SR` : '',
+        order.orderType === 'delivery' && order.deliveryDistanceKm != null
+          ? `${ltr}Distance: ${order.deliveryDistanceKm} km`
+          : '',
+        thinLine,
+        `${ltr}💰 *TOTAL: ${order.total} SR*`,
+      ].filter(Boolean).join('\n');
+
+  const message = [arabicSection, '', line, '', englishSection].join('\n');
 
   return `https://wa.me/${staffPhone}?text=${encodeURIComponent(message)}`;
 };
@@ -1687,7 +1690,7 @@ const Home = () => {
 
   const handleWhatsAppConfirm = () => {
     if (lastOrder) {
-      const link = generateWhatsAppLink(lastOrder, language);
+      const link = generateWhatsAppLink(lastOrder);
       window.open(link, '_blank');
       setIsWhatsAppClicked(true);
     }
@@ -2827,7 +2830,7 @@ const MenuManagement = () => {
 };
 
 const StaffDashboard = () => {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isStaffUnlocked, setIsStaffUnlocked] = useState(() => sessionStorage.getItem('makolaty_staff_unlocked') === 'true');
   const [passcode, setPasscode] = useState('');
@@ -3044,7 +3047,7 @@ const StaffDashboard = () => {
                   <button 
                     onClick={() => {
                       updateStatus(order.id!, 'confirmed');
-                      window.open(generateWhatsAppLink(order, language), '_blank');
+                      window.open(generateWhatsAppLink(order), '_blank');
                     }}
                     className="col-span-2 py-3 bg-primary text-secondary font-black rounded-xl flex items-center justify-center gap-2 hover:bg-accent transition-all"
                   >
