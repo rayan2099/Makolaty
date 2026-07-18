@@ -986,6 +986,7 @@ const CartDrawer = ({
 const CheckoutModal = ({ 
   isOpen, 
   onClose, 
+  onAddMoreItems,
   onSubmit,
   isSubmitting,
   orderSubtotal,
@@ -993,6 +994,7 @@ const CheckoutModal = ({
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
+  onAddMoreItems: () => void;
   onSubmit: (data: any) => void;
   isSubmitting: boolean;
   orderSubtotal: number;
@@ -1017,6 +1019,9 @@ const CheckoutModal = ({
     : null;
   const finalTotal = orderSubtotal + (deliveryQuote?.isAllowed ? deliveryQuote.fee : 0);
   const isDeliveryBlocked = form.type === 'delivery' && (!customerCoordinates || !deliveryQuote?.isAllowed);
+  const amountNeededForDelivery = deliveryQuote?.minimumSubtotal
+    ? Math.max(0, deliveryQuote.minimumSubtotal - orderSubtotal)
+    : 0;
 
   const handleResolveMapsLink = async () => {
     clearResolveError();
@@ -1213,18 +1218,40 @@ const CheckoutModal = ({
               )}
               {deliveryQuote && (
                 <div className={cn(
-                  "rounded-2xl p-4 border text-right",
+                  "rounded-2xl p-4 border text-right space-y-3",
                   deliveryQuote.isAllowed ? "bg-primary/10 border-primary/20" : "bg-red-500/10 border-red-500/20"
                 )}>
-                  <p className={cn(
-                    "font-black text-sm mb-1",
-                    deliveryQuote.isAllowed ? "text-primary" : "text-red-400"
-                  )}>
-                    {deliveryQuote.messageAr}
-                  </p>
-                  <p className="text-white/50 text-xs font-bold">
-                    المسافة التقريبية: {deliveryQuote.distanceKm} كم
-                  </p>
+                  <div>
+                    <p className={cn(
+                      "font-black text-sm mb-1",
+                      deliveryQuote.isAllowed ? "text-primary" : "text-red-400"
+                    )}>
+                      {deliveryQuote.isAllowed
+                        ? deliveryQuote.messageAr
+                        : t(
+                            `أضف أصنافاً بقيمة ${amountNeededForDelivery} ريال لإتاحة التوصيل إلى هذا الموقع.`,
+                            `Add ${amountNeededForDelivery} SR of items to enable delivery to this location.`
+                          )}
+                    </p>
+                    <p className="text-white/50 text-xs font-bold">
+                      {t('المسافة التقريبية', 'Approximate distance')}: {deliveryQuote.distanceKm} {t('كم', 'km')}
+                    </p>
+                  </div>
+                  {!deliveryQuote.isAllowed && amountNeededForDelivery > 0 && (
+                    <div className="space-y-2 border-t border-red-400/15 pt-3">
+                      <button
+                        type="button"
+                        onClick={onAddMoreItems}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-black text-secondary shadow-lg shadow-primary/20 transition-all hover:bg-accent active:scale-[0.98]"
+                      >
+                        <Plus className="h-5 w-5" />
+                        {t('العودة للقائمة وإضافة أصناف', 'Return to menu and add items')}
+                      </button>
+                      <p className="text-center text-[11px] font-bold text-white/45">
+                        {t('سنحفظ بياناتك وموقعك، ويمكنك العودة لملخص الطلب من السلة.', 'Your details and location will be saved. Reopen the order summary from your cart.')}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1822,6 +1849,13 @@ const Home = () => {
       <CheckoutModal 
         isOpen={isCheckoutOpen} 
         onClose={() => setIsCheckoutOpen(false)} 
+        onAddMoreItems={() => {
+          setIsCheckoutOpen(false);
+          setIsCartOpen(false);
+          requestAnimationFrame(() => {
+            document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }}
         onSubmit={handleCheckout} 
         isSubmitting={isSubmitting}
         orderSubtotal={cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0)}
