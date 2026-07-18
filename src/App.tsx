@@ -353,12 +353,10 @@ const printOrderReceipt = (order: Order) => {
   const itemsHtml = order.items.map(item => `
     <section class="item">
       <div class="item-title">
-        <strong>${escapeReceiptHtml(item.nameAr)}</strong>
-        <strong class="quantity">${escapeReceiptHtml(item.quantity)}</strong>
+        <strong>${escapeReceiptHtml(item.quantity)} × ${escapeReceiptHtml(item.nameAr)}</strong>
+        ${item.selectedSize ? `<span>${escapeReceiptHtml(item.selectedSize)}</span>` : ''}
       </div>
-      <div class="english-name">${escapeReceiptHtml(item.nameEn)}</div>
-      ${item.selectedSize ? `<div>الحجم: ${escapeReceiptHtml(item.selectedSize)}</div>` : ''}
-      ${(item.addOns || []).map(addOn => `<div>إضافة: ${escapeReceiptHtml(addOn.nameAr)}</div>`).join('')}
+      ${(item.addOns || []).length ? `<div class="details">إضافة: ${(item.addOns || []).map(addOn => escapeReceiptHtml(addOn.nameAr)).join('، ')}</div>` : ''}
       ${item.itemNote?.trim() ? `<div class="note">ملاحظة: ${escapeReceiptHtml(normalizeArabicItemNote(item.itemNote))}</div>` : ''}
     </section>
   `).join('');
@@ -371,36 +369,32 @@ const printOrderReceipt = (order: Order) => {
         <meta charset="utf-8" />
         <title>طلب ${orderNumber}</title>
         <style>
-          @page { size: 80mm auto; margin: 4mm; }
+          @page { size: 80mm auto; margin: 2mm; }
           * { box-sizing: border-box; }
-          body { width: 72mm; margin: 0 auto; color: #000; background: #fff; font-family: Arial, Tahoma, sans-serif; font-size: 13px; line-height: 1.55; }
-          header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; }
-          h1 { margin: 0; font-size: 24px; }
-          .meta { padding: 8px 0; border-bottom: 1px dashed #000; }
-          .meta div { display: flex; justify-content: space-between; gap: 8px; }
-          .item { padding: 8px 0; border-bottom: 1px dashed #000; }
-          .item-title { display: flex; justify-content: space-between; gap: 8px; font-size: 16px; }
-          .quantity { min-width: 26px; text-align: center; border: 1px solid #000; }
-          .english-name { direction: ltr; text-align: right; font-size: 11px; }
-          .note { margin-top: 4px; padding: 4px; border: 1px solid #000; font-weight: 700; }
-          .total { display: flex; justify-content: space-between; margin-top: 10px; padding: 8px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; font-size: 19px; font-weight: 900; }
-          footer { margin-top: 10px; text-align: center; font-size: 11px; }
-          @media print { body { width: 72mm; } }
+          body { width: 76mm; margin: 0 auto; color: #000; background: #fff; font-family: Arial, Tahoma, sans-serif; font-size: 11px; line-height: 1.25; }
+          header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 3px; }
+          h1 { margin: 0; font-size: 18px; }
+          .order-number { font-size: 13px; font-weight: 900; }
+          .meta { padding: 3px 0; border-bottom: 1px dashed #000; }
+          .meta-line { display: flex; justify-content: space-between; gap: 5px; }
+          .item { padding: 3px 0; border-bottom: 1px dashed #000; }
+          .item-title { display: flex; justify-content: space-between; gap: 5px; font-size: 13px; }
+          .details { font-size: 10px; }
+          .note { margin-top: 2px; font-size: 10px; font-weight: 800; }
+          .order-note { padding: 3px 0; border-bottom: 1px dashed #000; font-weight: 800; }
+          .total { display: flex; justify-content: space-between; padding-top: 4px; border-top: 2px solid #000; font-size: 15px; font-weight: 900; }
+          @media print { body { width: 76mm; } }
         </style>
       </head>
       <body>
-        <header><h1>مأكولاتي</h1><div>إيصال تجهيز الطلب</div></header>
+        <header><h1>مأكولاتي</h1><span class="order-number">#${orderNumber}</span></header>
         <div class="meta">
-          <div><strong>رقم الطلب</strong><span>${orderNumber}</span></div>
-          <div><strong>الوقت</strong><span>${orderTime}</span></div>
-          <div><strong>العميل</strong><span>${escapeReceiptHtml(order.customerName)}</span></div>
-          <div><strong>الجوال</strong><span dir="ltr">${escapeReceiptHtml(order.customerPhone)}</span></div>
-          <div><strong>نوع الطلب</strong><span>${order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}</span></div>
+          <div class="meta-line"><strong>${order.orderType === 'delivery' ? 'توصيل' : 'استلام'}</strong><span>${orderTime}</span></div>
+          <div class="meta-line"><strong>${escapeReceiptHtml(order.customerName)}</strong><span dir="ltr">${escapeReceiptHtml(order.customerPhone)}</span></div>
         </div>
         ${itemsHtml}
-        ${order.notes?.trim() ? `<div class="note">ملاحظات الطلب: ${escapeReceiptHtml(order.notes)}</div>` : ''}
+        ${order.notes?.trim() ? `<div class="order-note">ملاحظة الطلب: ${escapeReceiptHtml(order.notes)}</div>` : ''}
         <div class="total"><span>الإجمالي</span><span>${escapeReceiptHtml(order.total)} ر.س</span></div>
-        <footer>تمت الطباعة من لوحة موظفي مأكولاتي</footer>
         <script>window.addEventListener('load', () => { window.print(); });<\/script>
       </body>
     </html>`);
