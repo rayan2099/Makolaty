@@ -3116,18 +3116,23 @@ const StaffDashboard = () => {
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState('');
   const [activeView, setActiveView] = useState<'orders' | 'menu'>('orders');
-  const [orderFilter, setOrderFilter] = useState<'active' | 'completed'>('active');
+  const [orderFilter, setOrderFilter] = useState<'active' | 'completed' | 'cancelled'>('active');
   const [analyticsDate, setAnalyticsDate] = useState(() => localDateKey(new Date()));
   const [printingOrderId, setPrintingOrderId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-  const [statusNotice, setStatusNotice] = useState<{ status: 'pending' | 'completed'; customerName: string } | null>(null);
-  const activeOrders = orders.filter(order => order.status !== 'completed');
+  const [statusNotice, setStatusNotice] = useState<{ status: 'pending' | 'completed' | 'cancelled'; customerName: string } | null>(null);
+  const activeOrders = orders.filter(order => order.status !== 'completed' && order.status !== 'cancelled');
   const completedOrders = orders.filter(order => order.status === 'completed');
-  const filteredOrders = orderFilter === 'completed' ? completedOrders : activeOrders;
+  const cancelledOrders = orders.filter(order => order.status === 'cancelled');
+  const filteredOrders = orderFilter === 'completed'
+    ? completedOrders
+    : orderFilter === 'cancelled'
+      ? cancelledOrders
+      : activeOrders;
   const sortedFilteredOrders = [...filteredOrders].sort((firstOrder, secondOrder) => {
     const firstTime = orderCreatedAtDate(firstOrder.createdAt)?.getTime() ?? 0;
     const secondTime = orderCreatedAtDate(secondOrder.createdAt)?.getTime() ?? 0;
-    return orderFilter === 'completed' ? secondTime - firstTime : firstTime - secondTime;
+    return orderFilter === 'active' ? firstTime - secondTime : secondTime - firstTime;
   });
   const analyticsOrders = orders.filter(order => {
     const createdAt = orderCreatedAtDate(order.createdAt);
@@ -3136,7 +3141,10 @@ const StaffDashboard = () => {
   const analyticsCustomers = new Set(
     analyticsOrders.map(order => normalizeCustomerPhone(order.customerPhone)).filter(Boolean)
   ).size;
-  const analyticsSales = analyticsOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+  const analyticsSales = analyticsOrders.reduce(
+    (sum, order) => order.status === 'cancelled' ? sum : sum + Number(order.total || 0),
+    0
+  );
 
   useEffect(() => {
     if (!isStaffUnlocked) return;
@@ -3210,7 +3218,7 @@ const StaffDashboard = () => {
       if (!data) throw new Error('Order was not found.');
       const updatedOrder = orders.find(order => order.id === id);
       setOrders(current => current.map(order => order.id === id ? { ...order, status } : order));
-      if (status === 'completed' || status === 'pending') {
+      if (status === 'completed' || status === 'pending' || status === 'cancelled') {
         setStatusNotice({ status, customerName: updatedOrder?.customerName || '' });
       }
     } catch (err) {
@@ -3273,24 +3281,32 @@ const StaffDashboard = () => {
               'fixed left-1/2 top-5 z-[100] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center gap-3 rounded-2xl border p-4 shadow-2xl backdrop-blur-xl',
               statusNotice.status === 'completed'
                 ? 'border-green-400/30 bg-green-950/95 shadow-green-950/40'
-                : 'border-primary/30 bg-[#28210a]/95 shadow-black/40'
+                : statusNotice.status === 'cancelled'
+                  ? 'border-red-400/30 bg-red-950/95 shadow-red-950/40'
+                  : 'border-primary/30 bg-[#28210a]/95 shadow-black/40'
             )}
           >
             <span className={cn(
               'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
               statusNotice.status === 'completed'
                 ? 'bg-green-400 text-green-950'
-                : 'bg-primary text-secondary'
+                : statusNotice.status === 'cancelled'
+                  ? 'bg-red-400 text-red-950'
+                  : 'bg-primary text-secondary'
             )}>
-              {statusNotice.status === 'completed'
-                ? <CheckCircle2 className="h-6 w-6" strokeWidth={3} />
-                : <ClipboardList className="h-6 w-6" />}
+              {statusNotice.status === 'pending'
+                ? <ClipboardList className="h-6 w-6" />
+                : statusNotice.status === 'completed'
+                  ? <CheckCircle2 className="h-6 w-6" strokeWidth={3} />
+                  : <X className="h-6 w-6" strokeWidth={3} />}
             </span>
             <div className="min-w-0 flex-1">
               <p className="font-black text-white">
                 {statusNotice.status === 'completed'
                   ? t('تم إكمال الطلب بنجاح', 'Order completed successfully')
-                  : t('تمت إعادة فتح الطلب', 'Order reopened')}
+                  : statusNotice.status === 'cancelled'
+                    ? t('تم إلغاء الطلب', 'Order cancelled')
+                    : t('تمت إعادة فتح الطلب', 'Order reopened')}
               </p>
               <p className="mt-0.5 truncate text-xs font-bold text-white/55">
                 {statusNotice.status === 'completed'
@@ -3298,10 +3314,15 @@ const StaffDashboard = () => {
                     `تم نقل طلب ${statusNotice.customerName} إلى قسم مكتملة.`,
                     `${statusNotice.customerName}'s order was moved to Completed.`
                   )
-                  : t(
-                    `عاد طلب ${statusNotice.customerName} إلى الطلبات الحالية.`,
-                    `${statusNotice.customerName}'s order returned to Current orders.`
-                  )}
+                  : statusNotice.status === 'cancelled'
+                    ? t(
+                      `تم نقل طلب ${statusNotice.customerName} إلى قسم ملغاة.`,
+                      `${statusNotice.customerName}'s order was moved to Cancelled.`
+                    )
+                    : t(
+                      `عاد طلب ${statusNotice.customerName} إلى الطلبات الحالية.`,
+                      `${statusNotice.customerName}'s order returned to Current orders.`
+                    )}
               </p>
             </div>
             <button
@@ -3372,10 +3393,11 @@ const StaffDashboard = () => {
 
         {activeView === 'orders' && (
           <div className="mb-8 space-y-5">
-            <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-2 sm:max-w-md">
+            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-2 sm:max-w-2xl">
               {([
                 ['active', t('الطلبات الحالية', 'Current orders'), activeOrders.length],
                 ['completed', t('مكتملة', 'Completed'), completedOrders.length],
+                ['cancelled', t('ملغاة', 'Cancelled'), cancelledOrders.length],
               ] as const).map(([filter, label, count]) => (
                 <button
                   key={filter}
@@ -3448,12 +3470,16 @@ const StaffDashboard = () => {
               <h2 className="text-2xl font-black text-white">
                 {orderFilter === 'completed'
                   ? t('سجل الطلبات المكتملة', 'Completed order history')
-                  : t('طابور الطلبات الحالية', 'Current order queue')}
+                  : orderFilter === 'cancelled'
+                    ? t('سجل الطلبات الملغاة', 'Cancelled order history')
+                    : t('طابور الطلبات الحالية', 'Current order queue')}
               </h2>
               <p className="mt-1 text-xs font-bold text-white/35">
                 {orderFilter === 'completed'
                   ? t('الأحدث يظهر أولاً.', 'Newest orders appear first.')
-                  : t('الأقدم يظهر أولاً لضمان تجهيز الطلبات بالترتيب.', 'Oldest orders appear first for preparation in order.')}
+                  : orderFilter === 'cancelled'
+                    ? t('الطلبات التي ألغاها العملاء أو الموظفون.', 'Orders cancelled by customers or staff.')
+                    : t('الأقدم يظهر أولاً لضمان تجهيز الطلبات بالترتيب.', 'Oldest orders appear first for preparation in order.')}
               </p>
             </div>
             <span className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-black text-white/50">
@@ -3477,12 +3503,14 @@ const StaffDashboard = () => {
                 "glass relative overflow-hidden rounded-3xl border p-5 md:p-6",
                 order.status === 'completed'
                   ? "border-green-500/25"
-                  : "border-primary/30 shadow-[0_12px_35px_rgba(255,210,0,0.07)]"
+                  : order.status === 'cancelled'
+                    ? "border-red-500/25"
+                    : "border-primary/30 shadow-[0_12px_35px_rgba(255,210,0,0.07)]"
               )}
             >
               <div className={cn(
                 'absolute inset-y-0 start-0 w-1.5',
-                order.status === 'completed' ? 'bg-green-500' : 'bg-primary'
+                order.status === 'completed' ? 'bg-green-500' : order.status === 'cancelled' ? 'bg-red-500' : 'bg-primary'
               )} />
               <div
                 role="button"
@@ -3505,10 +3533,14 @@ const StaffDashboard = () => {
                     'flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl border',
                     order.status === 'completed'
                       ? 'border-green-500/25 bg-green-500/10 text-green-300'
-                      : 'border-primary/25 bg-primary/10 text-primary'
+                      : order.status === 'cancelled'
+                        ? 'border-red-500/25 bg-red-500/10 text-red-300'
+                        : 'border-primary/25 bg-primary/10 text-primary'
                   )}>
                     <span className="text-[9px] font-black uppercase">{t('الدور', 'Queue')}</span>
-                    <span className="text-xl font-black">{order.status === 'completed' ? '✓' : orderIndex + 1}</span>
+                    <span className="text-xl font-black">
+                      {order.status === 'completed' ? '✓' : order.status === 'cancelled' ? '×' : orderIndex + 1}
+                    </span>
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -3542,18 +3574,20 @@ const StaffDashboard = () => {
                     type="button"
                     onClick={event => {
                       event.stopPropagation();
-                      if (order.id) updateStatus(order.id, order.status === 'completed' ? 'pending' : 'completed');
+                      if (order.id) updateStatus(order.id, order.status === 'pending' || order.status === 'confirmed' ? 'completed' : 'pending');
                     }}
                     disabled={!order.id}
                     className={cn(
                       'flex min-w-[130px] items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-black transition-all active:scale-95 disabled:opacity-40',
                       order.status === 'completed'
                         ? 'border-green-500/30 bg-green-500/15 text-green-300 hover:bg-green-500/20'
-                        : 'border-primary/30 bg-primary/15 text-primary hover:bg-primary/20'
+                        : order.status === 'cancelled'
+                          ? 'border-red-500/30 bg-red-500/15 text-red-300 hover:bg-red-500/20'
+                          : 'border-primary/30 bg-primary/15 text-primary hover:bg-primary/20'
                     )}
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    {order.status === 'completed'
+                    {order.status === 'completed' || order.status === 'cancelled'
                       ? t('إعادة فتح الطلب', 'Reopen order')
                       : t('تحديد كمكتملة', 'Mark completed')}
                   </button>
@@ -3662,14 +3696,31 @@ const StaffDashboard = () => {
                     </button>
                   </div>
                 )}
-                {order.status !== 'completed' && (
+                {order.status !== 'completed' && order.status !== 'cancelled' && (
                   <button
                     type="button"
                     onClick={() => window.open(generateWhatsAppLink(order), '_blank')}
-                    className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 font-black text-white hover:bg-white/10"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 font-black text-white hover:bg-white/10"
                   >
                     <ExternalLink className="h-4 w-4" />
                     {t('فتح واتساب', 'Open WhatsApp')}
+                  </button>
+                )}
+                {order.status !== 'completed' && order.status !== 'cancelled' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const shouldCancel = window.confirm(t(
+                        `هل أنت متأكد من إلغاء طلب ${order.customerName}؟`,
+                        `Are you sure you want to cancel ${order.customerName}'s order?`
+                      ));
+                      if (shouldCancel && order.id) updateStatus(order.id, 'cancelled');
+                    }}
+                    disabled={!order.id}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-red-500/25 bg-red-500/10 py-3 font-black text-red-300 transition-all hover:bg-red-500/20 disabled:opacity-40"
+                  >
+                    <X className="h-4 w-4" />
+                    {t('إلغاء الطلب', 'Cancel order')}
                   </button>
                 )}
               </div>
