@@ -329,11 +329,10 @@ const MenuItemImage = ({ item, priority = false }: { item: MenuItem; priority?: 
         alt={language === 'ar' ? item.nameAr : item.nameEn}
         width={320}
         height={400}
-        loading={priority ? "eager" : "lazy"}
+        loading="eager"
         fetchPriority={priority ? "high" : "auto"}
         className={cn(
-          "relative h-full w-full transition-[opacity,transform] duration-500",
-          isLoaded ? "opacity-100" : "opacity-0",
+          "relative h-full w-full opacity-100 transition-transform duration-500",
           shouldShowFullArtwork
             ? "object-contain"
             : shouldUseSquareFrame
