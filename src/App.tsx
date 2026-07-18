@@ -350,6 +350,63 @@ const MenuItemImage = ({ item, priority = false }: { item: MenuItem; priority?: 
   );
 };
 
+const translateItemNote = (note: string) => {
+  const original = note.trim();
+  if (!original) return '';
+
+  const containsArabic = /[\u0600-\u06FF]/.test(original);
+  if (containsArabic) {
+    let translated = original;
+    const replacements: Array<[RegExp, string]> = [
+      [/بدون/gi, 'No'],
+      [/زيادة|اضافي|إضافي|اكسترا/gi, ', extra'],
+      [/كاتشاب|كاتشب/gi, 'ketchup'],
+      [/مايونيز/gi, 'mayonnaise'],
+      [/بصل/gi, 'onions'],
+      [/مخلل/gi, 'pickles'],
+      [/جبن|جبنة/gi, 'cheese'],
+      [/ثوم/gi, 'garlic'],
+      [/حراق/gi, 'spicy'],
+    ];
+
+    replacements.forEach(([pattern, replacement]) => {
+      translated = translated.replace(pattern, replacement);
+    });
+    translated = translated
+      .replace(/\s*،\s*/g, ', ')
+      .replace(/\s*,\s*,+/g, ', ')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/^,\s*/, '')
+      .trim();
+
+    return translated !== original
+      ? `\n  🇸🇦 ${original}\n  🇬🇧 ${translated}`
+      : `\n  ${original}`;
+  }
+
+  let translated = original;
+  const replacements: Array<[RegExp, string]> = [
+    [/\bno\b/gi, 'بدون'],
+    [/\bextra\b/gi, 'زيادة'],
+    [/\bketchup\b/gi, 'كاتشاب'],
+    [/\bmayonnaise\b|\bmayo\b/gi, 'مايونيز'],
+    [/\bonions?\b/gi, 'بصل'],
+    [/\bpickles?\b/gi, 'مخلل'],
+    [/\bcheese\b/gi, 'جبن'],
+    [/\bgarlic\b/gi, 'ثوم'],
+    [/\bspicy\b/gi, 'حراق'],
+  ];
+
+  replacements.forEach(([pattern, replacement]) => {
+    translated = translated.replace(pattern, replacement);
+  });
+  translated = translated.replace(/\s*,\s*/g, '، ').replace(/\s{2,}/g, ' ').trim();
+
+  return translated !== original
+    ? `\n  🇬🇧 ${original}\n  🇸🇦 ${translated}`
+    : `\n  🇬🇧 ${original}`;
+};
+
 const generateWhatsAppLink = (order: Order) => {
   const staffPhone = formatPhone(STAFF_WHATSAPP);
   
@@ -365,7 +422,7 @@ const generateWhatsAppLink = (order: Order) => {
       if (i.spicyLevel === 2) options.push('حراق اكسترا');
       const optionsStr = options.length > 0 ? ` [${options.join(' + ')}]` : '';
       const itemNote = i.itemNote?.trim()
-        ? `\n  📝 *ملاحظة الصنف / Item note:* ${i.itemNote.trim()}`
+        ? `\n  📝 *ملاحظة الصنف / Item note:*${translateItemNote(i.itemNote)}`
         : '';
       
       return `• ${i.quantity} ${i.nameAr} (${i.nameEn})${sizeStr}${optionsStr}${itemNote}\n  ${i.basePrice ?? i.finalPrice} SR + إضافات ${(i.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0)} SR = ${i.finalPrice} SR للحبة`;
@@ -797,7 +854,7 @@ const CartDrawer = ({
                                 addOnConfigurationKey(item.addOns),
                                 event.target.value
                               )}
-                              placeholder={t('مثال: بدون بصل...', 'Example: no onions...')}
+                              placeholder={t('مثال: بدون كاتشاب، زيادة مايونيز...', 'Example: no ketchup, extra mayonnaise...')}
                               rows={2}
                               maxLength={200}
                               className="w-full resize-none bg-transparent text-xs font-bold text-white placeholder:text-white/20 focus:outline-none"
