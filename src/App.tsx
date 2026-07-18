@@ -3120,6 +3120,7 @@ const StaffDashboard = () => {
   const [analyticsDate, setAnalyticsDate] = useState(() => localDateKey(new Date()));
   const [printingOrderId, setPrintingOrderId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [statusNotice, setStatusNotice] = useState<{ status: 'pending' | 'completed'; customerName: string } | null>(null);
   const activeOrders = orders.filter(order => order.status !== 'completed');
   const completedOrders = orders.filter(order => order.status === 'completed');
   const filteredOrders = orderFilter === 'completed' ? completedOrders : activeOrders;
@@ -3167,6 +3168,12 @@ const StaffDashboard = () => {
     };
   }, [isStaffUnlocked]);
 
+  useEffect(() => {
+    if (!statusNotice) return;
+    const timeout = window.setTimeout(() => setStatusNotice(null), 3500);
+    return () => window.clearTimeout(timeout);
+  }, [statusNotice]);
+
   const handleLogin = () => {
     if (passcode.trim() !== STAFF_PASSCODE) {
       setLoginError(t('رمز الدخول غير صحيح', 'Incorrect access code'));
@@ -3187,6 +3194,7 @@ const StaffDashboard = () => {
     setOrderFilter('active');
     setPrintingOrderId(null);
     setExpandedOrderId(null);
+    setStatusNotice(null);
   };
 
   const updateStatus = async (id: string, status: Order['status']) => {
@@ -3200,7 +3208,11 @@ const StaffDashboard = () => {
         .maybeSingle();
       if (error) throw error;
       if (!data) throw new Error('Order was not found.');
+      const updatedOrder = orders.find(order => order.id === id);
       setOrders(current => current.map(order => order.id === id ? { ...order, status } : order));
+      if (status === 'completed' || status === 'pending') {
+        setStatusNotice({ status, customerName: updatedOrder?.customerName || '' });
+      }
     } catch (err) {
       await handleSupabaseError(err, OperationType.UPDATE, path);
       window.alert(t(
@@ -3249,6 +3261,60 @@ const StaffDashboard = () => {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
+      <AnimatePresence>
+        {statusNotice && (
+          <motion.div
+            initial={{ opacity: 0, y: -24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.97 }}
+            role="status"
+            aria-live="polite"
+            className={cn(
+              'fixed left-1/2 top-5 z-[100] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center gap-3 rounded-2xl border p-4 shadow-2xl backdrop-blur-xl',
+              statusNotice.status === 'completed'
+                ? 'border-green-400/30 bg-green-950/95 shadow-green-950/40'
+                : 'border-primary/30 bg-[#28210a]/95 shadow-black/40'
+            )}
+          >
+            <span className={cn(
+              'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
+              statusNotice.status === 'completed'
+                ? 'bg-green-400 text-green-950'
+                : 'bg-primary text-secondary'
+            )}>
+              {statusNotice.status === 'completed'
+                ? <CheckCircle2 className="h-6 w-6" strokeWidth={3} />
+                : <ClipboardList className="h-6 w-6" />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-black text-white">
+                {statusNotice.status === 'completed'
+                  ? t('تم إكمال الطلب بنجاح', 'Order completed successfully')
+                  : t('تمت إعادة فتح الطلب', 'Order reopened')}
+              </p>
+              <p className="mt-0.5 truncate text-xs font-bold text-white/55">
+                {statusNotice.status === 'completed'
+                  ? t(
+                    `تم نقل طلب ${statusNotice.customerName} إلى قسم مكتملة.`,
+                    `${statusNotice.customerName}'s order was moved to Completed.`
+                  )
+                  : t(
+                    `عاد طلب ${statusNotice.customerName} إلى الطلبات الحالية.`,
+                    `${statusNotice.customerName}'s order returned to Current orders.`
+                  )}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setStatusNotice(null)}
+              aria-label={t('إغلاق الرسالة', 'Dismiss message')}
+              className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-12">
           <div>
