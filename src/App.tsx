@@ -3119,6 +3119,7 @@ const StaffDashboard = () => {
   const [orderFilter, setOrderFilter] = useState<'active' | 'completed'>('active');
   const [analyticsDate, setAnalyticsDate] = useState(() => localDateKey(new Date()));
   const [printingOrderId, setPrintingOrderId] = useState<string | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const activeOrders = orders.filter(order => order.status !== 'completed');
   const completedOrders = orders.filter(order => order.status === 'completed');
   const filteredOrders = orderFilter === 'completed' ? completedOrders : activeOrders;
@@ -3185,6 +3186,7 @@ const StaffDashboard = () => {
     setActiveView('orders');
     setOrderFilter('active');
     setPrintingOrderId(null);
+    setExpandedOrderId(null);
   };
 
   const updateStatus = async (id: string, status: Order['status']) => {
@@ -3406,7 +3408,22 @@ const StaffDashboard = () => {
                 'absolute inset-y-0 start-0 w-1.5',
                 order.status === 'completed' ? 'bg-green-500' : 'bg-primary'
               )} />
-              <div className="mb-5 flex flex-col gap-4 border-b border-white/8 pb-5 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={expandedOrderId === order.id}
+                onClick={() => setExpandedOrderId(current => current === order.id ? null : order.id ?? null)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setExpandedOrderId(current => current === order.id ? null : order.id ?? null);
+                  }
+                }}
+                className={cn(
+                  'flex cursor-pointer flex-col gap-4 sm:flex-row sm:items-center sm:justify-between',
+                  expandedOrderId === order.id && 'mb-5 border-b border-white/8 pb-5'
+                )}
+              >
                 <div className="flex items-center gap-4">
                   <div className={cn(
                     'flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl border',
@@ -3427,6 +3444,17 @@ const StaffDashboard = () => {
                     <p className="mt-1 flex items-center gap-2 text-sm font-bold text-white/45" dir="ltr">
                       <Phone className="h-3 w-3" /> {order.customerPhone}
                     </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <span className="rounded-lg bg-white/5 px-2 py-1 text-[10px] font-black text-white/45">
+                        {order.orderType === 'delivery' ? t('توصيل', 'Delivery') : t('استلام', 'Pickup')}
+                      </span>
+                      <span className="rounded-lg bg-white/5 px-2 py-1 text-[10px] font-black text-white/45">
+                        {order.items.reduce((sum, item) => sum + item.quantity, 0)} {t('صنف', 'items')}
+                      </span>
+                      <span className="rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-black text-primary" dir="ltr">
+                        {order.total} SR
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:justify-end">
@@ -3436,7 +3464,10 @@ const StaffDashboard = () => {
                   </div>
                   <button
                     type="button"
-                    onClick={() => order.id && updateStatus(order.id, order.status === 'completed' ? 'pending' : 'completed')}
+                    onClick={event => {
+                      event.stopPropagation();
+                      if (order.id) updateStatus(order.id, order.status === 'completed' ? 'pending' : 'completed');
+                    }}
                     disabled={!order.id}
                     className={cn(
                       'flex min-w-[130px] items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-black transition-all active:scale-95 disabled:opacity-40',
@@ -3450,9 +3481,17 @@ const StaffDashboard = () => {
                       ? t('إعادة فتح الطلب', 'Reopen order')
                       : t('تحديد كمكتملة', 'Mark completed')}
                   </button>
+                  <span className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/45 transition-transform',
+                    expandedOrderId === order.id && 'rotate-90 bg-primary/10 text-primary'
+                  )}>
+                    <ChevronRight className="h-5 w-5" />
+                  </span>
                 </div>
               </div>
 
+              {expandedOrderId === order.id && (
+              <>
               <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2">
                 {order.items.map((item, idx) => (
                   <div key={idx} className="flex justify-start items-center bg-white/5 p-3 rounded-xl gap-3">
@@ -3558,6 +3597,8 @@ const StaffDashboard = () => {
                   </button>
                 )}
               </div>
+              </>
+              )}
             </motion.div>
           ))}
         </div>
