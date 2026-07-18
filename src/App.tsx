@@ -1142,22 +1142,24 @@ const CheckoutModal = ({
                   placeholder="https://maps.app.goo.gl/..."
                   aria-label={t('رابط موقع التوصيل', 'Delivery location link')}
                 />
-                <button
-                  type="button"
-                  onClick={handleResolveMapsLink}
-                  disabled={!mapsLinkInput || isResolving}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-primary px-4 py-4 font-black text-secondary transition-all hover:bg-accent disabled:opacity-50"
-                >
-                  {isResolving ? (
-                    <>
-                      <Clock className="h-4 w-4 animate-spin" /> {t('جارٍ قراءة الموقع...', 'Reading location...')}
-                    </>
-                  ) : (
-                    <>
-                      <MapPin className="h-4 w-4" /> {t('تأكيد موقع التوصيل', 'Confirm delivery location')}
-                    </>
-                  )}
-                </button>
+                {!customerCoordinates && (
+                  <button
+                    type="button"
+                    onClick={handleResolveMapsLink}
+                    disabled={!mapsLinkInput || isResolving}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-primary px-4 py-4 font-black text-secondary transition-all hover:bg-accent disabled:opacity-50"
+                  >
+                    {isResolving ? (
+                      <>
+                        <Clock className="h-4 w-4 animate-spin" /> {t('جارٍ قراءة الموقع...', 'Reading location...')}
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="h-4 w-4" /> {t('تأكيد موقع التوصيل', 'Confirm delivery location')}
+                      </>
+                    )}
+                  </button>
+                )}
                 {resolveError && (
                   <p className="text-xs font-bold leading-relaxed text-red-400">{resolveError}</p>
                 )}
