@@ -126,6 +126,18 @@ const bilingualName = (nameAr: string, nameEn: string, language: Language) => (
   language === 'ar' ? `${nameAr} (${nameEn})` : `${nameEn} (${nameAr})`
 );
 
+const normalizeArabicItemNote = (note: string) => {
+  const replacements: Array<[RegExp, string]> = [
+    [/(?<![\p{L}\p{N}])(?:كتشب|كاتشاب|كاتشب|ketchup)(?![\p{L}\p{N}])/giu, 'كاتشب'],
+    [/(?<![\p{L}\p{N}])(?:مايونيز|مايونيس|mayonnaise|mayo)(?![\p{L}\p{N}])/giu, 'مايونيز'],
+  ];
+
+  return replacements.reduce(
+    (normalizedNote, [pattern, replacement]) => normalizedNote.replace(pattern, replacement),
+    note.trim()
+  );
+};
+
 const addOnConfigurationKey = (addOns: SelectedAddOn[] = []) => (
   addOns.map(addOn => addOn.id).sort().join(',')
 );
@@ -394,7 +406,7 @@ const generateWhatsAppLink = (order: Order) => {
           ? `${mark}${sectionLanguage === 'ar' ? 'الخيارات' : 'Options'}: ${options.join(sectionLanguage === 'ar' ? '، ' : ', ')}`
           : '',
         item.itemNote?.trim()
-          ? `${mark}${sectionLanguage === 'ar' ? 'ملاحظة' : 'Note'}: ${item.itemNote.trim()}`
+          ? `${mark}${sectionLanguage === 'ar' ? 'ملاحظة' : 'Note'}: ${normalizeArabicItemNote(item.itemNote)}`
           : '',
       ].filter(Boolean).join('\n');
     }).join(`\n${thinLine}\n`);
@@ -852,7 +864,13 @@ const CartDrawer = ({
                                 addOnConfigurationKey(item.addOns),
                                 event.target.value
                               )}
-                              placeholder={t('مثال: بدون كاتشاب، زيادة مايونيز...', 'Example: no ketchup, extra mayonnaise...')}
+                              onBlur={event => onUpdateItemNote(
+                                item.id,
+                                item.selectedSize,
+                                addOnConfigurationKey(item.addOns),
+                                normalizeArabicItemNote(event.target.value)
+                              )}
+                              placeholder={t('مثال: بدون كاتشب، زيادة مايونيز...', 'Example: no ketchup, extra mayonnaise...')}
                               rows={2}
                               maxLength={200}
                               className="w-full resize-none bg-transparent text-xs font-bold text-white placeholder:text-white/20 focus:outline-none"
