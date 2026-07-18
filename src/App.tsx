@@ -3193,19 +3193,19 @@ const StaffDashboard = () => {
     const path = `orders/${id}`;
     try {
       const { data, error } = await supabase
-        .from('orders')
-        .update({ status })
-        .eq('id', id)
-        .select('id, status')
+        .rpc('update_order_status_passcode', {
+          order_id: id,
+          new_status: status,
+        })
         .maybeSingle();
       if (error) throw error;
-      if (!data) throw new Error('Order status update was blocked by the database policy.');
+      if (!data) throw new Error('Order was not found.');
       setOrders(current => current.map(order => order.id === id ? { ...order, status } : order));
     } catch (err) {
       await handleSupabaseError(err, OperationType.UPDATE, path);
       window.alert(t(
-        'تعذر تحديث حالة الطلب. شغّل ملف صلاحيات لوحة الموظفين في Supabase ثم حاول مرة أخرى.',
-        'Could not update the order status. Run the staff dashboard policy SQL in Supabase, then try again.'
+        'تعذر تحديث حالة الطلب. شغّل ترحيل دالة تحديث حالة الطلب في Supabase ثم حاول مرة أخرى.',
+        'Could not update the order status. Run the order-status function migration in Supabase, then try again.'
       ));
     }
   };
