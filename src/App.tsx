@@ -26,7 +26,10 @@ import {
   LogOut,
   Trash2,
   Upload,
-  Search
+  Search,
+  Printer,
+  ClipboardList,
+  UtensilsCrossed
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './supabase';
@@ -331,6 +334,77 @@ const formatOrderTime = (createdAt: Order['createdAt']) => {
   if (createdAt instanceof Date) return createdAt.toLocaleTimeString();
   if (typeof createdAt?.toDate === 'function') return createdAt.toDate().toLocaleTimeString();
   return '';
+};
+
+const escapeReceiptHtml = (value: unknown) => String(value ?? '')
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#039;');
+
+const printOrderReceipt = (order: Order) => {
+  const printWindow = window.open('', '_blank', 'width=420,height=720');
+  if (!printWindow) {
+    window.alert('يرجى السماح بالنوافذ المنبثقة لطباعة الطلب');
+    return;
+  }
+
+  const itemsHtml = order.items.map(item => `
+    <section class="item">
+      <div class="item-title">
+        <strong>${escapeReceiptHtml(item.nameAr)}</strong>
+        <strong class="quantity">${escapeReceiptHtml(item.quantity)}</strong>
+      </div>
+      <div class="english-name">${escapeReceiptHtml(item.nameEn)}</div>
+      ${item.selectedSize ? `<div>الحجم: ${escapeReceiptHtml(item.selectedSize)}</div>` : ''}
+      ${(item.addOns || []).map(addOn => `<div>إضافة: ${escapeReceiptHtml(addOn.nameAr)}</div>`).join('')}
+      ${item.itemNote?.trim() ? `<div class="note">ملاحظة: ${escapeReceiptHtml(normalizeArabicItemNote(item.itemNote))}</div>` : ''}
+    </section>
+  `).join('');
+  const orderNumber = escapeReceiptHtml(order.id ? String(order.id).slice(-8).toUpperCase() : 'جديد');
+  const orderTime = escapeReceiptHtml(formatOrderTime(order.createdAt));
+
+  printWindow.document.write(`<!doctype html>
+    <html lang="ar" dir="rtl">
+      <head>
+        <meta charset="utf-8" />
+        <title>طلب ${orderNumber}</title>
+        <style>
+          @page { size: 80mm auto; margin: 4mm; }
+          * { box-sizing: border-box; }
+          body { width: 72mm; margin: 0 auto; color: #000; background: #fff; font-family: Arial, Tahoma, sans-serif; font-size: 13px; line-height: 1.55; }
+          header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; }
+          h1 { margin: 0; font-size: 24px; }
+          .meta { padding: 8px 0; border-bottom: 1px dashed #000; }
+          .meta div { display: flex; justify-content: space-between; gap: 8px; }
+          .item { padding: 8px 0; border-bottom: 1px dashed #000; }
+          .item-title { display: flex; justify-content: space-between; gap: 8px; font-size: 16px; }
+          .quantity { min-width: 26px; text-align: center; border: 1px solid #000; }
+          .english-name { direction: ltr; text-align: right; font-size: 11px; }
+          .note { margin-top: 4px; padding: 4px; border: 1px solid #000; font-weight: 700; }
+          .total { display: flex; justify-content: space-between; margin-top: 10px; padding: 8px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; font-size: 19px; font-weight: 900; }
+          footer { margin-top: 10px; text-align: center; font-size: 11px; }
+          @media print { body { width: 72mm; } }
+        </style>
+      </head>
+      <body>
+        <header><h1>مأكولاتي</h1><div>إيصال تجهيز الطلب</div></header>
+        <div class="meta">
+          <div><strong>رقم الطلب</strong><span>${orderNumber}</span></div>
+          <div><strong>الوقت</strong><span>${orderTime}</span></div>
+          <div><strong>العميل</strong><span>${escapeReceiptHtml(order.customerName)}</span></div>
+          <div><strong>الجوال</strong><span dir="ltr">${escapeReceiptHtml(order.customerPhone)}</span></div>
+          <div><strong>نوع الطلب</strong><span>${order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}</span></div>
+        </div>
+        ${itemsHtml}
+        ${order.notes?.trim() ? `<div class="note">ملاحظات الطلب: ${escapeReceiptHtml(order.notes)}</div>` : ''}
+        <div class="total"><span>الإجمالي</span><span>${escapeReceiptHtml(order.total)} ر.س</span></div>
+        <footer>تمت الطباعة من لوحة موظفي مأكولاتي</footer>
+        <script>window.addEventListener('load', () => { window.print(); });<\/script>
+      </body>
+    </html>`);
+  printWindow.document.close();
 };
 
 // --- Helpers ---
@@ -3004,7 +3078,7 @@ const StaffDashboard = () => {
   const [isStaffUnlocked, setIsStaffUnlocked] = useState(() => sessionStorage.getItem('makolaty_staff_unlocked') === 'true');
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [activeView, setActiveView] = useState<'orders' | 'menu'>('menu');
+  const [activeView, setActiveView] = useState<'orders' | 'menu'>('orders');
 
   useEffect(() => {
     if (!isStaffUnlocked) return;
@@ -3052,7 +3126,7 @@ const StaffDashboard = () => {
     sessionStorage.removeItem('makolaty_staff_unlocked');
     setIsStaffUnlocked(false);
     setOrders([]);
-    setActiveView('menu');
+    setActiveView('orders');
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -3108,7 +3182,11 @@ const StaffDashboard = () => {
         <div className="flex justify-between items-center mb-12">
           <div>
             <h1 className="text-4xl font-black text-primary">{t('لوحة الموظفين', 'Staff dashboard')}</h1>
-            <p className="text-white/40">{t('إدارة قائمة المطعم', 'Manage the restaurant menu')}</p>
+            <p className="text-white/40">
+              {activeView === 'orders'
+                ? t('متابعة الطلبات وتجهيزها وطباعتها', 'Review, prepare, and print orders')
+                : t('إدارة قائمة المطعم', 'Manage the restaurant menu')}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitch />
@@ -3118,10 +3196,56 @@ const StaffDashboard = () => {
           </div>
         </div>
 
+        <div className="mb-8 grid grid-cols-2 gap-3 rounded-3xl border border-white/10 bg-white/[0.035] p-2">
+          <button
+            type="button"
+            onClick={() => setActiveView('orders')}
+            className={cn(
+              'flex items-center justify-center gap-2 rounded-2xl px-4 py-4 font-black transition-all',
+              activeView === 'orders'
+                ? 'bg-primary text-secondary shadow-lg shadow-primary/20'
+                : 'text-white/45 hover:bg-white/5 hover:text-white'
+            )}
+          >
+            <ClipboardList className="h-5 w-5" />
+            {t('الطلبات', 'Orders')}
+            {orders.length > 0 && (
+              <span className={cn(
+                'rounded-full px-2 py-0.5 text-[10px]',
+                activeView === 'orders' ? 'bg-secondary/15' : 'bg-primary/15 text-primary'
+              )}>
+                {orders.length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView('menu')}
+            className={cn(
+              'flex items-center justify-center gap-2 rounded-2xl px-4 py-4 font-black transition-all',
+              activeView === 'menu'
+                ? 'bg-primary text-secondary shadow-lg shadow-primary/20'
+                : 'text-white/45 hover:bg-white/5 hover:text-white'
+            )}
+          >
+            <UtensilsCrossed className="h-5 w-5" />
+            {t('إدارة القائمة', 'Menu management')}
+          </button>
+        </div>
+
         {activeView === 'menu' ? (
           <MenuManagement />
         ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {orders.length === 0 && (
+            <div className="glass col-span-full rounded-3xl px-6 py-16 text-center">
+              <ClipboardList className="mx-auto mb-4 h-12 w-12 text-white/20" />
+              <h2 className="text-xl font-black text-white">{t('لا توجد طلبات حتى الآن', 'No orders yet')}</h2>
+              <p className="mt-2 text-sm font-bold text-white/35">
+                {t('ستظهر الطلبات الجديدة هنا تلقائياً.', 'New orders will appear here automatically.')}
+              </p>
+            </div>
+          )}
           {orders.map(order => (
             <motion.div 
               key={order.id}
@@ -3212,6 +3336,14 @@ const StaffDashboard = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => printOrderReceipt(order)}
+                  className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-3 font-black text-white transition-all hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+                >
+                  <Printer className="h-4 w-4" />
+                  {t('طباعة إيصال الطلب', 'Print order receipt')}
+                </button>
                 {order.status === 'pending' && (
                   <button 
                     onClick={() => {
