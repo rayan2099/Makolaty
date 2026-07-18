@@ -2,6 +2,7 @@ export interface MenuSize {
   name: string;
   price: number;
   calories?: number;
+  image?: string;
 }
 
 export interface MenuItem {
@@ -16,6 +17,8 @@ export interface MenuItem {
   isAvailable?: boolean;
   allowExtraChicken?: boolean;
   sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SelectedAddOn {
