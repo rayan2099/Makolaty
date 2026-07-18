@@ -3118,6 +3118,7 @@ const StaffDashboard = () => {
   const [activeView, setActiveView] = useState<'orders' | 'menu'>('orders');
   const [orderFilter, setOrderFilter] = useState<'active' | 'completed' | 'cancelled'>('active');
   const [analyticsDate, setAnalyticsDate] = useState(() => localDateKey(new Date()));
+  const [analyticsRange, setAnalyticsRange] = useState<'today' | 'yesterday' | 'week' | 'month' | 'custom'>('today');
   const [printingOrderId, setPrintingOrderId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [statusNotice, setStatusNotice] = useState<{ status: 'pending' | 'completed' | 'cancelled'; customerName: string } | null>(null);
@@ -3134,9 +3135,24 @@ const StaffDashboard = () => {
     const secondTime = orderCreatedAtDate(secondOrder.createdAt)?.getTime() ?? 0;
     return orderFilter === 'active' ? firstTime - secondTime : secondTime - firstTime;
   });
+  const analyticsToday = new Date();
+  analyticsToday.setHours(0, 0, 0, 0);
+  const analyticsStart = new Date(analyticsToday);
+  const analyticsEnd = new Date(analyticsToday);
+  analyticsEnd.setDate(analyticsEnd.getDate() + 1);
+  if (analyticsRange === 'yesterday') {
+    analyticsStart.setDate(analyticsStart.getDate() - 1);
+    analyticsEnd.setDate(analyticsEnd.getDate() - 1);
+  } else if (analyticsRange === 'week') {
+    analyticsStart.setDate(analyticsStart.getDate() - 6);
+  } else if (analyticsRange === 'month') {
+    analyticsStart.setDate(analyticsStart.getDate() - 29);
+  }
   const analyticsOrders = orders.filter(order => {
     const createdAt = orderCreatedAtDate(order.createdAt);
-    return createdAt ? localDateKey(createdAt) === analyticsDate : false;
+    if (!createdAt) return false;
+    if (analyticsRange === 'custom') return localDateKey(createdAt) === analyticsDate;
+    return createdAt >= analyticsStart && createdAt < analyticsEnd;
   });
   const analyticsCustomers = new Set(
     analyticsOrders.map(order => normalizeCustomerPhone(order.customerPhone)).filter(Boolean)
@@ -3435,10 +3451,42 @@ const StaffDashboard = () => {
                   <input
                     type="date"
                     value={analyticsDate}
-                    onChange={event => setAnalyticsDate(event.target.value)}
+                    onChange={event => {
+                      setAnalyticsDate(event.target.value);
+                      setAnalyticsRange('custom');
+                    }}
                     className="bg-transparent text-white outline-none [color-scheme:dark]"
                   />
                 </label>
+              </div>
+              <div className="mb-5 grid grid-cols-4 gap-2 rounded-2xl border border-white/8 bg-black/15 p-1.5">
+                {([
+                  ['today', t('اليوم', 'Today')],
+                  ['yesterday', t('أمس', 'Yesterday')],
+                  ['week', t('آخر أسبوع', 'Last 7 days')],
+                  ['month', t('آخر شهر', 'Last 30 days')],
+                ] as const).map(([range, label]) => (
+                  <button
+                    key={range}
+                    type="button"
+                    onClick={() => {
+                      setAnalyticsRange(range);
+                      const rangeDate = new Date();
+                      if (range === 'yesterday') rangeDate.setDate(rangeDate.getDate() - 1);
+                      if (range === 'week') rangeDate.setDate(rangeDate.getDate() - 6);
+                      if (range === 'month') rangeDate.setDate(rangeDate.getDate() - 29);
+                      setAnalyticsDate(localDateKey(rangeDate));
+                    }}
+                    className={cn(
+                      'rounded-xl px-2 py-2.5 text-[10px] font-black transition-all sm:text-xs',
+                      analyticsRange === range
+                        ? 'bg-primary text-secondary shadow-md shadow-primary/10'
+                        : 'text-white/40 hover:bg-white/5 hover:text-white'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
               <div className="grid grid-cols-3 gap-2 md:gap-4">
                 <div className="rounded-2xl border border-primary/15 bg-primary/5 p-3 text-center md:p-4">
