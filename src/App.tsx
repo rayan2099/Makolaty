@@ -650,7 +650,6 @@ const CartDrawer = ({
   menuItems,
   onUpdateQty, 
   onRemove,
-  onUpdateOption,
   onUpdateItemNote,
   onAdd,
   onCheckout,
@@ -661,7 +660,6 @@ const CartDrawer = ({
   menuItems: MenuItem[];
   onUpdateQty: (id: string, size: string | undefined, addOnKey: string, delta: number) => void;
   onRemove: (id: string, size: string | undefined, addOnKey: string) => void;
-  onUpdateOption: (id: string, size: string | undefined, addOnKey: string, option: 'ketchup' | 'mayo' | 'spicy', level: number) => void;
   onUpdateItemNote: (id: string, size: string | undefined, addOnKey: string, note: string) => void;
   onAdd: (item: MenuItem) => void;
   onCheckout: () => void;
@@ -787,36 +785,6 @@ const CartDrawer = ({
                             </p>
                           ))}
                           
-                          <div className="flex flex-row flex-wrap gap-1 justify-start">
-                            {[
-                              { label: t('سبايسي', 'Spicy'), key: 'spicy', level: item.spicyLevel || 0 },
-                              { label: t('مايونيز', 'Mayo'), key: 'mayo', level: item.mayoLevel || 0 },
-                              { label: t('كاتشب', 'Ketchup'), key: 'ketchup', level: item.ketchupLevel || 0 }
-                            ].map(opt => (
-                              <div key={opt.key} className="flex items-center gap-0.5">
-                                {opt.level > 0 && (
-                                  <button
-                                    onClick={() => onUpdateOption(item.id, item.selectedSize, addOnConfigurationKey(item.addOns), opt.key as any, opt.level === 2 ? 1 : 2)}
-                                    className="w-4 h-4 rounded-full bg-primary text-secondary flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-md"
-                                  >
-                                    {opt.level === 2 ? <Minus className="w-2.5 h-2.5" /> : <Plus className="w-2.5 h-2.5" />}
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => onUpdateOption(item.id, item.selectedSize, addOnConfigurationKey(item.addOns), opt.key as any, opt.level === 0 ? 1 : 0)}
-                                  className={cn(
-                                    "px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all flex items-center gap-1",
-                                    opt.level > 0 
-                                      ? "bg-primary border-primary text-secondary" 
-                                      : "bg-white/5 border-white/10 text-white/30"
-                                  )}
-                                >
-                                  {opt.level === 2 && <span className="text-[7px] bg-secondary/10 px-0.5 rounded">{t('اكسترا', 'Extra')}</span>}
-                                  {opt.label}
-                                </button>
-                              </div>
-                            ))}
-                          </div>
                           <div className="mt-3 rounded-xl border border-primary/15 bg-black/15 p-2.5 focus-within:border-primary/50">
                             <label className="mb-1.5 block text-[10px] font-black text-white/45">
                               {t('ملاحظة لهذا الصنف', 'Note for this item')}
@@ -1563,15 +1531,6 @@ const Home = () => {
     setCart(prev => prev.filter(i => !(i.id === id && i.selectedSize === size && addOnConfigurationKey(i.addOns) === addOnKey)));
   };
 
-  const updateOption = (id: string, size: string | undefined, addOnKey: string, option: 'ketchup' | 'mayo' | 'spicy', level: number) => {
-    setCart(prev => prev.map(item => {
-      if (item.id === id && item.selectedSize === size && addOnConfigurationKey(item.addOns) === addOnKey) {
-        return { ...item, [`${option}Level`]: level };
-      }
-      return item;
-    }));
-  };
-
   const updateItemNote = (id: string, size: string | undefined, addOnKey: string, note: string) => {
     setCart(prev => prev.map(item => (
       item.id === id
@@ -1755,7 +1714,6 @@ const Home = () => {
         menuItems={menuItems}
         onUpdateQty={updateQty}
         onRemove={removeFromCart}
-        onUpdateOption={updateOption}
         onUpdateItemNote={updateItemNote}
         onAdd={addToCart}
         onCheckout={() => setIsCheckoutOpen(true)}
