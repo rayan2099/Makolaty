@@ -1043,7 +1043,7 @@ const CheckoutModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -1053,12 +1053,27 @@ const CheckoutModal = ({
       <motion.div 
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="relative w-full max-w-lg glass rounded-[3rem] p-10 flex flex-col max-h-[90vh] border border-white/10 shadow-2xl"
+        className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-lg flex-col overflow-y-auto rounded-[2rem] border border-white/10 p-5 shadow-2xl glass no-scrollbar sm:max-h-[90vh] sm:rounded-[3rem] sm:p-8"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl -z-10" />
-        <h2 className="text-4xl font-black text-primary mb-8 text-right shrink-0">{t('بيانات العميل', 'Customer details')}</h2>
+        <div className="pointer-events-none absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl -z-10" />
+        <div className="mb-6 flex shrink-0 items-start justify-between gap-4 text-right">
+          <div>
+            <p className="mb-1 text-xs font-black uppercase tracking-[0.2em] text-white/40">
+              {t('إتمام الطلب', 'Checkout')}
+            </p>
+            <h2 className="text-3xl font-black text-primary sm:text-4xl">{t('بيانات العميل', 'Customer details')}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('إغلاق', 'Close')}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
         
-        <div className="space-y-8 text-right overflow-y-auto pr-2 no-scrollbar">
+        <div className="space-y-7 text-right">
           <div className="space-y-3">
             <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 justify-end">
               {t('الاسم الكامل', 'Full name')} <User className="w-3 h-3" />
@@ -1087,23 +1102,31 @@ const CheckoutModal = ({
 
           <div className="space-y-3">
             <label className="text-base font-black text-white/40 uppercase tracking-[0.2em] text-right block">{t('نوع الطلب', 'Order type')}</label>
-            <div className="flex gap-4">
+            <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t('نوع الطلب', 'Order type')}>
               <button 
+                type="button"
+                role="radio"
+                aria-checked={form.type === 'pickup'}
                 onClick={() => setForm({...form, type: 'pickup'})}
                 className={cn(
-                  "flex-1 py-4 rounded-2xl font-black border transition-all",
+                  "flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border px-3 py-4 font-black transition-all",
                   form.type === 'pickup' ? "bg-primary text-secondary border-primary shadow-lg shadow-primary/20" : "bg-white/5 border-white/10 text-white/40"
                 )}
               >
+                <ShoppingBag className="h-6 w-6" />
                 {t('استلام من الفرع', 'Pickup')}
               </button>
               <button 
+                type="button"
+                role="radio"
+                aria-checked={form.type === 'delivery'}
                 onClick={() => setForm({...form, type: 'delivery'})}
                 className={cn(
-                  "flex-1 py-4 rounded-2xl font-black border transition-all",
+                  "flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border px-3 py-4 font-black transition-all",
                   form.type === 'delivery' ? "bg-primary text-secondary border-primary shadow-lg shadow-primary/20" : "bg-white/5 border-white/10 text-white/40"
                 )}
               >
+                <MapPin className="h-6 w-6" />
                 {t('توصيل للمنزل', 'Delivery')}
               </button>
             </div>
@@ -1135,9 +1158,22 @@ const CheckoutModal = ({
                 )}
               </button>
               {customerCoordinates && (
-                <p className="text-primary text-xs font-bold leading-relaxed">
-                  سنستخدم هذا الموقع لحساب المسافة ورسوم التوصيل.
-                </p>
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/10 p-4">
+                  <a
+                    href={form.maps}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex shrink-0 items-center gap-1 text-xs font-black text-primary hover:underline"
+                  >
+                    {t('عرض الخريطة', 'View map')} <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                  <div className="text-right">
+                    <p className="font-black text-primary">{t('تم تحديد موقع التوصيل', 'Delivery location selected')}</p>
+                    <p className="mt-1 text-xs font-bold text-white/50">
+                      {t('سنستخدمه لحساب المسافة ورسوم التوصيل.', 'It will be used to calculate distance and delivery fees.')}
+                    </p>
+                  </div>
+                </div>
               )}
               {locationError && (
                 <p className="text-red-400 text-xs font-bold leading-relaxed">{locationError}</p>
@@ -1223,9 +1259,31 @@ const CheckoutModal = ({
           )}
         </div>
 
-        <div className="pt-8 shrink-0">
+        <div className="pt-7">
           <div className="mb-4 max-h-52 space-y-3 overflow-y-auto rounded-2xl border border-white/10 bg-white/5 p-4 text-right">
             <p className="text-xs font-black uppercase tracking-widest text-white/40">{t('ملخص الطلب', 'Order summary')}</p>
+            <div className="grid grid-cols-1 gap-2 border-y border-white/10 py-3 sm:grid-cols-2">
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-black/10 px-3 py-2">
+                <span className="font-black text-white">
+                  {form.type === 'delivery' ? t('توصيل للمنزل', 'Delivery') : t('استلام من الفرع', 'Pickup')}
+                </span>
+                <span className="text-xs font-bold text-white/40">{t('نوع الطلب', 'Order type')}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-black/10 px-3 py-2">
+                {form.type === 'delivery' ? (
+                  customerCoordinates ? (
+                    <a href={form.maps} target="_blank" rel="noreferrer" className="flex items-center gap-1 font-black text-primary hover:underline">
+                      {t('عرض الموقع', 'View location')} <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  ) : (
+                    <span className="font-black text-amber-300">{t('مطلوب', 'Required')}</span>
+                  )
+                ) : (
+                  <span className="font-black text-white">{t('الفرع', 'Branch')}</span>
+                )}
+                <span className="text-xs font-bold text-white/40">{t('الموقع', 'Location')}</span>
+              </div>
+            </div>
             {items.map((item, index) => (
               <div key={`${item.id}-${item.selectedSize}-${index}`} className="border-t border-white/5 pt-3 first:border-0 first:pt-0">
                 <div className="flex items-start justify-between gap-3">
@@ -1261,6 +1319,7 @@ const CheckoutModal = ({
             </div>
           </div>
           <button 
+            type="button"
             disabled={!form.name || !form.phone || isSubmitting || isDeliveryBlocked}
             onClick={() => onSubmit(form)}
             className="w-full py-5 bg-primary text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 disabled:opacity-50 disabled:grayscale hover:bg-accent transition-all flex items-center justify-center gap-3"
