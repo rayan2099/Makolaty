@@ -5,8 +5,8 @@
   --category-card-size: 120px;
   --category-icon-size: 72px;
   --meal-card-width: 320px;
-  --meal-card-height: 740px;
-  --meal-card-image-height: 400px;
+  --meal-card-height: 620px;
+  --meal-card-image-height: 340px;
 }
 
 @theme {

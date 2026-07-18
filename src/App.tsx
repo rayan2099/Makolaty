@@ -556,16 +556,16 @@ const MenuCard = ({ item, onAdd, priority = false, pastaChickenExtra }: { item: 
         )}
       </div>
       <div className={cn(
-        "p-6 flex flex-col flex-grow relative bg-secondary/80 backdrop-blur-xl rounded-t-3xl border-t border-white/10",
+        "p-5 flex flex-col flex-grow relative bg-secondary/80 backdrop-blur-xl rounded-t-3xl border-t border-white/10",
         shouldShowFullArtwork || shouldUseSquareArtwork ? "mt-0" : "-mt-8"
       )}>
-        <div className="mb-4 min-h-[58px] text-right">
+        <div className="mb-3 min-h-[54px] text-right">
           <h3 className="line-clamp-2 font-black text-xl leading-tight text-primary mb-1">{language === 'ar' ? item.nameAr : item.nameEn}</h3>
           <p className="truncate text-white/40 text-xs font-bold uppercase tracking-widest">{language === 'ar' ? item.nameEn : item.nameAr}</p>
         </div>
         
         {item.sizes && (
-          <div className="flex gap-2 mb-6">
+          <div className="mb-4 flex gap-2">
             {item.sizes.map(s => (
               <button
                 key={s.name}
@@ -588,7 +588,7 @@ const MenuCard = ({ item, onAdd, priority = false, pastaChickenExtra }: { item: 
             onClick={() => setIsAddOnSelected(value => !value)}
             disabled={isUnavailable}
             className={cn(
-              "mb-5 flex w-full items-center gap-3 rounded-2xl border p-3 text-start transition-all",
+              "mb-4 flex w-full items-center gap-3 rounded-2xl border p-2.5 text-start transition-all",
               isAddOnSelected
                 ? "border-primary/70 bg-primary/10 shadow-[0_8px_24px_rgba(255,210,0,0.10)]"
                 : "border-white/10 bg-white/[0.035] hover:border-primary/40 hover:bg-white/[0.06]"
