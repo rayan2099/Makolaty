@@ -343,31 +343,46 @@ const escapeReceiptHtml = (value: unknown) => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
-const printOrderReceipt = (order: Order) => {
+const printOrderReceipt = (order: Order, receiptLanguage: Language) => {
   const printWindow = window.open('', '_blank', 'width=420,height=720');
   if (!printWindow) {
     window.alert('يرجى السماح بالنوافذ المنبثقة لطباعة الطلب');
     return;
   }
 
+  const isArabic = receiptLanguage === 'ar';
+  const receiptText = isArabic ? {
+    restaurant: 'مأكولاتي', delivery: 'توصيل', pickup: 'استلام', addOn: 'إضافة', note: 'ملاحظة',
+    orderNote: 'ملاحظة الطلب', total: 'الإجمالي', currency: 'ر.س', freshOrder: 'جديد', order: 'طلب',
+  } : {
+    restaurant: 'Makolaty', delivery: 'Delivery', pickup: 'Pickup', addOn: 'Add-on', note: 'Note',
+    orderNote: 'Order note', total: 'Total', currency: 'SR', freshOrder: 'NEW', order: 'Order',
+  };
+  const itemNote = (note: string) => isArabic ? normalizeArabicItemNote(note) : translateItemNoteToEnglish(note);
   const itemsHtml = order.items.map(item => `
     <section class="item">
       <div class="item-title">
-        <strong>${escapeReceiptHtml(item.quantity)} × ${escapeReceiptHtml(item.nameAr)}</strong>
-        ${item.selectedSize ? `<span>${escapeReceiptHtml(item.selectedSize)}</span>` : ''}
+        <strong>${escapeReceiptHtml(item.quantity)} × ${escapeReceiptHtml(isArabic ? item.nameAr : item.nameEn)}</strong>
+        ${item.selectedSize ? `<span>${escapeReceiptHtml(localizedSize(item.selectedSize, receiptLanguage))}</span>` : ''}
       </div>
-      ${(item.addOns || []).length ? `<div class="details">إضافة: ${(item.addOns || []).map(addOn => escapeReceiptHtml(addOn.nameAr)).join('، ')}</div>` : ''}
-      ${item.itemNote?.trim() ? `<div class="note">ملاحظة: ${escapeReceiptHtml(normalizeArabicItemNote(item.itemNote))}</div>` : ''}
+      ${(item.addOns || []).length ? `<div class="details">${receiptText.addOn}: ${(item.addOns || []).map(addOn => escapeReceiptHtml(isArabic ? addOn.nameAr : addOn.nameEn)).join(isArabic ? '، ' : ', ')}</div>` : ''}
+      ${item.itemNote?.trim() ? `<div class="note">${receiptText.note}: ${escapeReceiptHtml(itemNote(item.itemNote))}</div>` : ''}
     </section>
   `).join('');
-  const orderNumber = escapeReceiptHtml(order.id ? String(order.id).slice(-8).toUpperCase() : 'جديد');
+  const orderNumber = escapeReceiptHtml(order.id ? String(order.id).slice(-8).toUpperCase() : receiptText.freshOrder);
   const orderTime = escapeReceiptHtml(formatOrderTime(order.createdAt));
+  const orderNote = order.notes?.trim()
+    ? (isArabic ? order.notes.trim() : translateItemNoteToEnglish(order.notes))
+    : '';
+  const customerReceiptName = isArabic
+    ? order.customerName
+    : romanizeArabic(order.customerName);
 
   printWindow.document.write(`<!doctype html>
-    <html lang="ar" dir="rtl">
+    <html lang="${receiptLanguage}" dir="${isArabic ? 'rtl' : 'ltr'}">
       <head>
         <meta charset="utf-8" />
-        <title>طلب ${orderNumber}</title>
+        <title>${receiptText.order} ${orderNumber}</title>
         <style>
           @page { size: 80mm auto; margin: 2mm; }
           * { box-sizing: border-box; }
@@ -387,14 +402,14 @@ const printOrderReceipt = (order: Order) => {
         </style>
       </head>
       <body>
-        <header><h1>مأكولاتي</h1><span class="order-number">#${orderNumber}</span></header>
+        <header><h1>${receiptText.restaurant}</h1><span class="order-number">#${orderNumber}</span></header>
         <div class="meta">
-          <div class="meta-line"><strong>${order.orderType === 'delivery' ? 'توصيل' : 'استلام'}</strong><span>${orderTime}</span></div>
-          <div class="meta-line"><strong>${escapeReceiptHtml(order.customerName)}</strong><span dir="ltr">${escapeReceiptHtml(order.customerPhone)}</span></div>
+          <div class="meta-line"><strong>${order.orderType === 'delivery' ? receiptText.delivery : receiptText.pickup}</strong><span>${orderTime}</span></div>
+          <div class="meta-line"><strong>${escapeReceiptHtml(customerReceiptName)}</strong><span dir="ltr">${escapeReceiptHtml(order.customerPhone)}</span></div>
         </div>
         ${itemsHtml}
-        ${order.notes?.trim() ? `<div class="order-note">ملاحظة الطلب: ${escapeReceiptHtml(order.notes)}</div>` : ''}
-        <div class="total"><span>الإجمالي</span><span>${escapeReceiptHtml(order.total)} ر.س</span></div>
+        ${orderNote ? `<div class="order-note">${receiptText.orderNote}: ${escapeReceiptHtml(orderNote)}</div>` : ''}
+        <div class="total"><span>${receiptText.total}</span><span>${escapeReceiptHtml(order.total)} ${receiptText.currency}</span></div>
         <script>window.addEventListener('load', () => { window.print(); });<\/script>
       </body>
     </html>`);
@@ -3073,6 +3088,14 @@ const StaffDashboard = () => {
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState('');
   const [activeView, setActiveView] = useState<'orders' | 'menu'>('orders');
+  const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('pending');
+  const [printingOrderId, setPrintingOrderId] = useState<string | null>(null);
+  const filteredOrders = orderFilter === 'all'
+    ? orders
+    : orders.filter(order => order.status === orderFilter);
+  const orderCount = (status: 'pending' | 'confirmed' | 'completed') => (
+    orders.filter(order => order.status === status).length
+  );
 
   useEffect(() => {
     if (!isStaffUnlocked) return;
@@ -3121,6 +3144,8 @@ const StaffDashboard = () => {
     setIsStaffUnlocked(false);
     setOrders([]);
     setActiveView('orders');
+    setOrderFilter('pending');
+    setPrintingOrderId(null);
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -3227,20 +3252,49 @@ const StaffDashboard = () => {
           </button>
         </div>
 
+        {activeView === 'orders' && (
+          <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
+            {([
+              ['pending', t('جديدة', 'Pending'), orderCount('pending')],
+              ['confirmed', t('قيد التجهيز', 'Preparing'), orderCount('confirmed')],
+              ['completed', t('مكتملة', 'Completed'), orderCount('completed')],
+              ['all', t('الكل', 'All'), orders.length],
+            ] as const).map(([filter, label, count]) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setOrderFilter(filter)}
+                className={cn(
+                  'flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-black transition-all',
+                  orderFilter === filter
+                    ? 'border-primary bg-primary text-secondary'
+                    : 'border-white/10 bg-white/5 text-white/50 hover:border-white/20 hover:text-white'
+                )}
+              >
+                {label}
+                <span className={cn(
+                  'rounded-full px-2 py-0.5 text-[10px]',
+                  orderFilter === filter ? 'bg-secondary/15' : 'bg-white/10'
+                )}>{count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {activeView === 'menu' ? (
           <MenuManagement />
         ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {orders.length === 0 && (
+          {filteredOrders.length === 0 && (
             <div className="glass col-span-full rounded-3xl px-6 py-16 text-center">
               <ClipboardList className="mx-auto mb-4 h-12 w-12 text-white/20" />
-              <h2 className="text-xl font-black text-white">{t('لا توجد طلبات حتى الآن', 'No orders yet')}</h2>
+              <h2 className="text-xl font-black text-white">{t('لا توجد طلبات في هذه الحالة', 'No orders in this status')}</h2>
               <p className="mt-2 text-sm font-bold text-white/35">
                 {t('ستظهر الطلبات الجديدة هنا تلقائياً.', 'New orders will appear here automatically.')}
               </p>
             </div>
           )}
-          {orders.map(order => (
+          {filteredOrders.map(order => (
             <motion.div 
               key={order.id}
               layout
@@ -3260,9 +3314,14 @@ const StaffDashboard = () => {
                 <div className="text-right">
                   <span className={cn(
                     "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                    order.status === 'pending' ? "bg-primary/20 text-primary" : "bg-green-500/20 text-green-500"
+                    order.status === 'pending' ? "bg-primary/20 text-primary" :
+                    order.status === 'confirmed' ? "bg-blue-500/20 text-blue-300" : "bg-green-500/20 text-green-400"
                   )}>
-                    {order.status}
+                    {order.status === 'pending'
+                      ? t('طلب جديد', 'Pending')
+                      : order.status === 'confirmed'
+                        ? t('قيد التجهيز', 'Preparing')
+                        : t('مكتمل', 'Completed')}
                   </span>
                   <p className="text-xs text-white/20 mt-1">
                     {formatOrderTime(order.createdAt)}
@@ -3332,12 +3391,38 @@ const StaffDashboard = () => {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => printOrderReceipt(order)}
+                  onClick={() => setPrintingOrderId(current => current === order.id ? null : order.id ?? null)}
                   className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-3 font-black text-white transition-all hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
                 >
                   <Printer className="h-4 w-4" />
-                  {t('طباعة إيصال الطلب', 'Print order receipt')}
+                  {printingOrderId === order.id
+                    ? t('اختر لغة الإيصال', 'Choose receipt language')
+                    : t('طباعة إيصال الطلب', 'Print order receipt')}
                 </button>
+                {printingOrderId === order.id && (
+                  <div className="col-span-2 grid grid-cols-2 gap-2 rounded-2xl border border-primary/20 bg-primary/5 p-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        printOrderReceipt(order, 'ar');
+                        setPrintingOrderId(null);
+                      }}
+                      className="rounded-xl bg-primary px-3 py-3 font-black text-secondary transition-transform active:scale-95"
+                    >
+                      طباعة بالعربية
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        printOrderReceipt(order, 'en');
+                        setPrintingOrderId(null);
+                      }}
+                      className="rounded-xl border border-white/15 bg-white/10 px-3 py-3 font-black text-white transition-transform active:scale-95"
+                    >
+                      Print in English
+                    </button>
+                  </div>
+                )}
                 {order.status === 'pending' && (
                   <button 
                     onClick={() => {
