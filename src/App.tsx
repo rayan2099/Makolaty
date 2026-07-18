@@ -201,6 +201,15 @@ const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
     const override = BUILT_IN_MENU_OVERRIDES.get(item.id);
     if (!override) return item;
     const currentImage = item.image?.trim() ?? '';
+    const sizes = item.sizes?.map(size => {
+      const builtInSize = override.sizes?.find(candidate => candidate.name === size.name);
+      return {
+        ...size,
+        // Keep staff uploads authoritative, but supply bundled size artwork when
+        // an older database row has not stored a size image yet.
+        image: size.image?.trim() || builtInSize?.image,
+      };
+    }) ?? override.sizes;
 
     return {
       ...item,
@@ -210,6 +219,7 @@ const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
       // Images are database-authoritative. Never substitute another image
       // automatically; staff must explicitly upload every image change.
       image: LEGACY_AUTOMATIC_MENU_IMAGES.has(currentImage) ? '' : currentImage,
+      sizes,
     };
   })
 );
