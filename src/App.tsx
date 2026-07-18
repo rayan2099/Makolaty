@@ -349,131 +349,105 @@ const MenuItemImage = ({ item, priority = false }: { item: MenuItem; priority?: 
   );
 };
 
-const translateItemNote = (note: string) => {
-  const original = note.trim();
-  if (!original) return '';
-
-  const containsArabic = /[\u0600-\u06FF]/.test(original);
-  if (containsArabic) {
-    let translated = original;
-    const replacements: Array<[RegExp, string]> = [
-      [/بدون/gi, 'No'],
-      [/زيادة|اضافي|إضافي|اكسترا/gi, ', extra'],
-      [/كاتشاب|كاتشب/gi, 'ketchup'],
-      [/مايونيز/gi, 'mayonnaise'],
-      [/بصل/gi, 'onions'],
-      [/مخلل/gi, 'pickles'],
-      [/جبن|جبنة/gi, 'cheese'],
-      [/ثوم/gi, 'garlic'],
-      [/حراق/gi, 'spicy'],
-    ];
-
-    replacements.forEach(([pattern, replacement]) => {
-      translated = translated.replace(pattern, replacement);
-    });
-    translated = translated
-      .replace(/\s*،\s*/g, ', ')
-      .replace(/\s*,\s*,+/g, ', ')
-      .replace(/\s{2,}/g, ' ')
-      .replace(/^,\s*/, '')
-      .trim();
-
-    return translated !== original
-      ? `\n  🇸🇦 ${original}\n  🇬🇧 ${translated}`
-      : `\n  ${original}`;
-  }
-
-  let translated = original;
-  const replacements: Array<[RegExp, string]> = [
-    [/\bno\b/gi, 'بدون'],
-    [/\bextra\b/gi, 'زيادة'],
-    [/\bketchup\b/gi, 'كاتشاب'],
-    [/\bmayonnaise\b|\bmayo\b/gi, 'مايونيز'],
-    [/\bonions?\b/gi, 'بصل'],
-    [/\bpickles?\b/gi, 'مخلل'],
-    [/\bcheese\b/gi, 'جبن'],
-    [/\bgarlic\b/gi, 'ثوم'],
-    [/\bspicy\b/gi, 'حراق'],
-  ];
-
-  replacements.forEach(([pattern, replacement]) => {
-    translated = translated.replace(pattern, replacement);
-  });
-  translated = translated.replace(/\s*,\s*/g, '، ').replace(/\s{2,}/g, ' ').trim();
-
-  return translated !== original
-    ? `\n  🇬🇧 ${original}\n  🇸🇦 ${translated}`
-    : `\n  🇬🇧 ${original}`;
-};
-
 const generateWhatsAppLink = (order: Order) => {
   const staffPhone = formatPhone(STAFF_WHATSAPP);
   const subtotal = order.subtotal ?? order.items.reduce(
     (sum, item) => sum + (item.finalPrice * item.quantity),
     0
   );
-  const line = '━━━━━━━━━━━━━━━━━━';
-  const thinLine = '──────────────────';
-  
-  const itemsList = order.items
-    .map((i, index) => {
-      const options: string[] = [];
-      i.addOns?.forEach(addOn => {
-        options.push(`  ＋ ${addOn.nameAr} (${addOn.nameEn}): ${addOn.price} SR`);
-      });
-      if (i.ketchupLevel === 1) options.push('كاتشب');
-      if (i.ketchupLevel === 2) options.push('كاتشب اكسترا');
-      if (i.mayoLevel === 1) options.push('مايونيز');
-      if (i.mayoLevel === 2) options.push('مايونيز اكسترا');
-      if (i.spicyLevel === 1) options.push('حراق');
-      if (i.spicyLevel === 2) options.push('حراق اكسترا');
-      const pricedAddOnsCount = i.addOns?.length ?? 0;
-      const freeOptions = options.slice(pricedAddOnsCount);
-      const addOnsTotal = (i.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0);
-      const basePrice = i.basePrice ?? (i.finalPrice - addOnsTotal);
-      const itemTotal = i.finalPrice * i.quantity;
-      const itemNote = i.itemNote?.trim()
-        ? `\n  📝 *ملاحظة الصنف / Item note:*${translateItemNote(i.itemNote)}`
-        : '';
+  const rtl = '\u200F';
+  const ltr = '\u200E';
+  const line = '━━━━━━━━━━━━━━';
+  const thinLine = '──────────────';
 
-      return [
-        `*${index + 1}. ${i.quantity} × ${i.nameAr} (${i.nameEn})*`,
-        i.selectedSize ? `  الحجم / Size: ${i.selectedSize}` : '',
-        `  سعر المنتج / Item: ${basePrice} SR`,
-        ...options.slice(0, pricedAddOnsCount),
-        freeOptions.length > 0 ? `  الخيارات / Options: ${freeOptions.join(' + ')}` : '',
-        itemNote,
-        `  *إجمالي الصنف / Item total: ${itemTotal} SR*`,
-      ].filter(Boolean).join('\n');
-    })
-    .join(`\n${thinLine}\n`);
-  
+  const getFreeOptions = (item: CartItem, language: Language) => {
+    const options: string[] = [];
+    if (item.ketchupLevel === 1) options.push(language === 'ar' ? 'كاتشب' : 'Ketchup');
+    if (item.ketchupLevel === 2) options.push(language === 'ar' ? 'كاتشب إضافي' : 'Extra ketchup');
+    if (item.mayoLevel === 1) options.push(language === 'ar' ? 'مايونيز' : 'Mayonnaise');
+    if (item.mayoLevel === 2) options.push(language === 'ar' ? 'مايونيز إضافي' : 'Extra mayonnaise');
+    if (item.spicyLevel === 1) options.push(language === 'ar' ? 'حراق' : 'Spicy');
+    if (item.spicyLevel === 2) options.push(language === 'ar' ? 'حراق إضافي' : 'Extra spicy');
+    return options;
+  };
+
+  const arabicItems = order.items.map((item, index) => {
+    const addOnsTotal = (item.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0);
+    const basePrice = item.basePrice ?? (item.finalPrice - addOnsTotal);
+    const options = getFreeOptions(item, 'ar');
+    return [
+      `${rtl}*${index + 1}) ${item.nameAr}*`,
+      `${rtl}الكمية: *${item.quantity}*`,
+      item.selectedSize ? `${rtl}الحجم: ${localizedSize(item.selectedSize, 'ar')}` : '',
+      `${rtl}سعر المنتج: ${basePrice} ر.س`,
+      ...(item.addOns || []).map(addOn => `${rtl}إضافة: ${addOn.nameAr} (+${addOn.price} ر.س)`),
+      options.length ? `${rtl}الخيارات: ${options.join('، ')}` : '',
+      item.itemNote?.trim() ? `${rtl}ملاحظة الصنف: ${item.itemNote.trim()}` : '',
+      `${rtl}*إجمالي الصنف: ${item.finalPrice * item.quantity} ر.س*`,
+    ].filter(Boolean).join('\n');
+  }).join(`\n${thinLine}\n`);
+
+  const englishItems = order.items.map((item, index) => {
+    const addOnsTotal = (item.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0);
+    const basePrice = item.basePrice ?? (item.finalPrice - addOnsTotal);
+    const options = getFreeOptions(item, 'en');
+    return [
+      `${ltr}*${index + 1}) ${item.nameEn}*`,
+      `${ltr}Quantity: *${item.quantity}*`,
+      item.selectedSize ? `${ltr}Size: ${localizedSize(item.selectedSize, 'en')}` : '',
+      `${ltr}Item price: ${basePrice} SR`,
+      ...(item.addOns || []).map(addOn => `${ltr}Add-on: ${addOn.nameEn} (+${addOn.price} SR)`),
+      options.length ? `${ltr}Options: ${options.join(', ')}` : '',
+      item.itemNote?.trim() ? `${ltr}Item note: ${item.itemNote.trim()}` : '',
+      `${ltr}*Item total: ${item.finalPrice * item.quantity} SR*`,
+    ].filter(Boolean).join('\n');
+  }).join(`\n${thinLine}\n`);
+
   const message = [
-    `🛒 *طلب جديد من مأكولاتي*`,
+    `${rtl}🛒 *طلب جديد من مأكولاتي*`,
     line,
-    `👤 *بيانات العميل*`,
-    `الاسم / Name: ${order.customerName}`,
-    `الجوال / Mobile: ${order.customerPhone}`,
-    '',
-    `📦 *نوع الطلب / Order type*`,
-    order.orderType === 'delivery' ? 'توصيل للمنزل / Delivery' : 'استلام من الفرع / Pickup',
-    order.orderType === 'delivery' ? `📍 *الموقع / Location:*\n${order.googleMapsLink}` : '🏪 *الموقع / Location:* الفرع',
+    `${rtl}👤 *بيانات العميل*`,
+    `${rtl}الاسم: ${order.customerName}`,
+    `${rtl}الجوال: ${order.customerPhone}`,
+    `${rtl}نوع الطلب: ${order.orderType === 'delivery' ? 'توصيل للمنزل' : 'استلام من الفرع'}`,
+    order.orderType === 'delivery' ? `${rtl}📍 *موقع التوصيل:*\n${order.googleMapsLink}` : `${rtl}🏪 الموقع: الفرع`,
     line,
-    `🧾 *ملخص الطلب / Order summary*`,
-    '',
-    itemsList,
-    order.notes?.trim() ? `${line}\n📝 *ملاحظات الطلب / Order notes:*\n${order.notes}` : '',
+    `${rtl}🧾 *ملخص الطلب*`,
+    arabicItems,
+    order.notes?.trim() ? `${rtl}📝 *ملاحظات الطلب:*\n${rtl}${order.notes}` : '',
     line,
-    `💳 *تفاصيل الحساب / Payment summary*`,
-    `قيمة الطلب / Subtotal: *${subtotal} SR*`,
-    order.orderType === 'delivery' ? `رسوم التوصيل / Delivery fee: *${order.deliveryFee ?? 0} SR*` : '',
+    `${rtl}💳 *تفاصيل الحساب*`,
+    `${rtl}قيمة الطلب: *${subtotal} ر.س*`,
+    order.orderType === 'delivery' ? `${rtl}رسوم التوصيل: *${order.deliveryFee ?? 0} ر.س*` : '',
     order.orderType === 'delivery' && order.deliveryDistanceKm != null
-      ? `المسافة / Distance: *${order.deliveryDistanceKm} كم*`
+      ? `${rtl}المسافة: *${order.deliveryDistanceKm} كم*`
       : '',
     thinLine,
-    `💰 *الإجمالي / Total: ${order.total} SR*`,
+    `${rtl}💰 *الإجمالي: ${order.total} ر.س*`,
+    '',
     line,
-    `✅ يرجى تأكيد الطلب مع العميل`,
+    `${ltr}🛒 *NEW MAKOLATY ORDER*`,
+    line,
+    `${ltr}👤 *CUSTOMER DETAILS*`,
+    `${ltr}Name: ${order.customerName}`,
+    `${ltr}Mobile: ${order.customerPhone}`,
+    `${ltr}Order type: ${order.orderType === 'delivery' ? 'Delivery' : 'Pickup'}`,
+    order.orderType === 'delivery' ? `${ltr}📍 *Delivery location:*\n${order.googleMapsLink}` : `${ltr}🏪 Location: Branch`,
+    line,
+    `${ltr}🧾 *ORDER SUMMARY*`,
+    englishItems,
+    order.notes?.trim() ? `${ltr}📝 *Order notes:*\n${ltr}${order.notes}` : '',
+    line,
+    `${ltr}💳 *PAYMENT SUMMARY*`,
+    `${ltr}Subtotal: *${subtotal} SR*`,
+    order.orderType === 'delivery' ? `${ltr}Delivery fee: *${order.deliveryFee ?? 0} SR*` : '',
+    order.orderType === 'delivery' && order.deliveryDistanceKm != null
+      ? `${ltr}Distance: *${order.deliveryDistanceKm} km*`
+      : '',
+    thinLine,
+    `${ltr}💰 *TOTAL: ${order.total} SR*`,
+    line,
+    `${rtl}✅ يرجى تأكيد الطلب مع العميل`,
   ].filter(Boolean).join('\n');
 
   return `https://wa.me/${staffPhone}?text=${encodeURIComponent(message)}`;
