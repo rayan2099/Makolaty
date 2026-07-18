@@ -18,7 +18,7 @@ $menu$
   {
     "id": "sh-6",
     "nameAr": "صاروخ دجاج",
-    "nameEn": "Chicken Rocket",
+    "nameEn": "Chicken Sarokh",
     "category": "shawarma",
     "price": 11,
     "calories": 650,
@@ -27,7 +27,7 @@ $menu$
   {
     "id": "sh-10",
     "nameAr": "صاروخ أمريكي",
-    "nameEn": "American Rocket",
+    "nameEn": "American Sarokh",
     "category": "shawarma",
     "price": 16,
     "calories": 700,
@@ -36,7 +36,7 @@ $menu$
   {
     "id": "sh-15",
     "nameAr": "صاروخ شامي",
-    "nameEn": "Levant Rocket",
+    "nameEn": "Levant Sarokh",
     "category": "shawarma",
     "price": 11,
     "calories": 720,
@@ -72,7 +72,7 @@ $menu$
   {
     "id": "sh-18",
     "nameAr": "صاروخ قرصان دجاج",
-    "nameEn": "Chicken Pirate Rocket",
+    "nameEn": "Chicken Pirate Sarokh",
     "category": "shawarma",
     "price": 12,
     "calories": 580,
@@ -90,7 +90,7 @@ $menu$
   {
     "id": "sh-1",
     "nameAr": "صاروخ مأكولاتي",
-    "nameEn": "Makolaty Rocket",
+    "nameEn": "Makolaty Sarokh",
     "category": "shawarma",
     "price": 11,
     "calories": 660,
@@ -144,7 +144,7 @@ $menu$
   {
     "id": "sh-19",
     "nameAr": "شاورما صاروخ تركي",
-    "nameEn": "Turkish Shawarma Rocket",
+    "nameEn": "Turkish Shawarma Sarokh",
     "category": "shawarma",
     "price": 11,
     "calories": 949,
@@ -201,7 +201,7 @@ $menu$
   {
     "id": "sh-21",
     "nameAr": "صاروخ إسبيشل مكسيكي",
-    "nameEn": "Special Mexican Rocket",
+    "nameEn": "Special Mexican Sarokh",
     "category": "shawarma",
     "price": 13,
     "calories": 890,
@@ -1067,7 +1067,7 @@ $menu$
   {
     "id": "ml-16",
     "nameAr": "وجبة صاروخ دجاج",
-    "nameEn": "Chicken Rocket Meal",
+    "nameEn": "Chicken Sarokh Meal",
     "category": "meals",
     "price": 18,
     "calories": 850,
@@ -1689,7 +1689,7 @@ $menu$
   {
     "id": "sh-6",
     "nameAr": "صاروخ دجاج",
-    "nameEn": "Chicken Rocket",
+    "nameEn": "Chicken Sarokh",
     "category": "shawarma",
     "price": 11,
     "calories": 650,
@@ -1698,7 +1698,7 @@ $menu$
   {
     "id": "sh-10",
     "nameAr": "صاروخ أمريكي",
-    "nameEn": "American Rocket",
+    "nameEn": "American Sarokh",
     "category": "shawarma",
     "price": 16,
     "calories": 700,
@@ -1707,7 +1707,7 @@ $menu$
   {
     "id": "sh-15",
     "nameAr": "صاروخ شامي",
-    "nameEn": "Levant Rocket",
+    "nameEn": "Levant Sarokh",
     "category": "shawarma",
     "price": 11,
     "calories": 720,
@@ -1743,7 +1743,7 @@ $menu$
   {
     "id": "sh-18",
     "nameAr": "صاروخ قرصان دجاج",
-    "nameEn": "Chicken Pirate Rocket",
+    "nameEn": "Chicken Pirate Sarokh",
     "category": "shawarma",
     "price": 12,
     "calories": 580,
@@ -1761,7 +1761,7 @@ $menu$
   {
     "id": "sh-1",
     "nameAr": "صاروخ مأكولاتي",
-    "nameEn": "Makolaty Rocket",
+    "nameEn": "Makolaty Sarokh",
     "category": "shawarma",
     "price": 11,
     "calories": 660,
@@ -1815,7 +1815,7 @@ $menu$
   {
     "id": "sh-19",
     "nameAr": "شاورما صاروخ تركي",
-    "nameEn": "Turkish Shawarma Rocket",
+    "nameEn": "Turkish Shawarma Sarokh",
     "category": "shawarma",
     "price": 11,
     "calories": 949,
@@ -1872,7 +1872,7 @@ $menu$
   {
     "id": "sh-21",
     "nameAr": "صاروخ إسبيشل مكسيكي",
-    "nameEn": "Special Mexican Rocket",
+    "nameEn": "Special Mexican Sarokh",
     "category": "shawarma",
     "price": 13,
     "calories": 890,
@@ -2738,7 +2738,7 @@ $menu$
   {
     "id": "ml-16",
     "nameAr": "وجبة صاروخ دجاج",
-    "nameEn": "Chicken Rocket Meal",
+    "nameEn": "Chicken Sarokh Meal",
     "category": "meals",
     "price": 18,
     "calories": 850,

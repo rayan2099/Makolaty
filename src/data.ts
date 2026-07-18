@@ -10,21 +10,21 @@ const sizes = (...entries: Array<[string, number, number?]>): MenuSize[] => (
 
 const RAW_INITIAL_MENU: MenuItem[] = [
   // Shawarma — the printed menu plus the "New" section.
-  { id: 'sh-6', nameAr: 'صاروخ دجاج', nameEn: 'Chicken Rocket', category: 'shawarma', price: 11, calories: 650, image: '/menu/shawarma/chicken-shawarma.jpeg' },
-  { id: 'sh-10', nameAr: 'صاروخ أمريكي', nameEn: 'American Rocket', category: 'shawarma', price: 16, calories: 700, image: '/menu/shawarma/american-rocket.jpeg' },
-  { id: 'sh-15', nameAr: 'صاروخ شامي', nameEn: 'Levant Rocket', category: 'shawarma', price: 11, calories: 720, image: '/menu/shawarma/shami-rocket.jpeg' },
+  { id: 'sh-6', nameAr: 'صاروخ دجاج', nameEn: 'Chicken Sarokh', category: 'shawarma', price: 11, calories: 650, image: '/menu/shawarma/chicken-shawarma.jpeg' },
+  { id: 'sh-10', nameAr: 'صاروخ أمريكي', nameEn: 'American Sarokh', category: 'shawarma', price: 16, calories: 700, image: '/menu/shawarma/american-rocket.jpeg' },
+  { id: 'sh-15', nameAr: 'صاروخ شامي', nameEn: 'Levant Sarokh', category: 'shawarma', price: 11, calories: 720, image: '/menu/shawarma/shami-rocket.jpeg' },
   { id: 'sh-12', nameAr: 'شاورما تورتيلا', nameEn: 'Tortilla Shawarma', category: 'shawarma', price: 12, calories: 740, image: '/menu/shawarma/tortilla-shawarma.jpeg' },
   { id: 'sh-11', nameAr: 'صامولي دجاج', nameEn: 'Chicken Samoli', category: 'shawarma', price: 4, calories: 378, image: '/menu/shawarma/samoli-shawarma.jpeg' },
   { id: 'sh-9', nameAr: 'مفرود دجاج', nameEn: 'Chicken Mafrood', category: 'shawarma', price: 5, calories: 320, image: '/menu/shawarma/mafrood-shawarma.jpeg' },
-  { id: 'sh-18', nameAr: 'صاروخ قرصان دجاج', nameEn: 'Chicken Pirate Rocket', category: 'shawarma', price: 12, calories: 580, image: '' },
+  { id: 'sh-18', nameAr: 'صاروخ قرصان دجاج', nameEn: 'Chicken Pirate Sarokh', category: 'shawarma', price: 12, calories: 580, image: '' },
   { id: 'sh-14', nameAr: 'شاورما صغير صاج', nameEn: 'Small Shawarma Saj', category: 'shawarma', price: 6, calories: 300, image: '/menu/shawarma/small-saj.jpeg' },
-  { id: 'sh-1', nameAr: 'صاروخ مأكولاتي', nameEn: 'Makolaty Rocket', category: 'shawarma', price: 11, calories: 660, image: '/menu/shawarma/makolaty-rocket.jpeg' },
+  { id: 'sh-1', nameAr: 'صاروخ مأكولاتي', nameEn: 'Makolaty Sarokh', category: 'shawarma', price: 11, calories: 660, image: '/menu/shawarma/makolaty-rocket.jpeg' },
   { id: 'sh-7', nameAr: 'جامبو دجاج', nameEn: 'Chicken Jumbo', category: 'shawarma', price: 10, calories: 470, image: '/menu/shawarma/jumbo-shawarma.jpeg' },
   { id: 'sh-4', nameAr: 'صحن شاورما دجاج', nameEn: 'Chicken Shawarma Plate', category: 'shawarma', price: 19, calories: 1311, image: '/menu/shawarma/arabic-shawarma-plate.jpeg' },
   { id: 'sh-22', nameAr: 'صحن عربي دجاج', nameEn: 'Arabic Chicken Plate', category: 'shawarma', price: 16, calories: 1095, image: '' },
   { id: 'sh-5', nameAr: 'صحن عربي قرصان', nameEn: 'Arabic Pirate Plate', category: 'shawarma', price: 17, calories: 900, image: '/menu/shawarma/arabic-pirate-plate.jpeg' },
   { id: 'sh-8', nameAr: 'لغاويص شاورما', nameEn: 'Shawarma Ghwais', category: 'shawarma', price: 13, calories: 1811, image: '/menu/shawarma/laghawis-shawarma.jpeg' },
-  { id: 'sh-19', nameAr: 'شاورما صاروخ تركي', nameEn: 'Turkish Shawarma Rocket', category: 'shawarma', price: 11, calories: 949, image: '' },
+  { id: 'sh-19', nameAr: 'شاورما صاروخ تركي', nameEn: 'Turkish Shawarma Sarokh', category: 'shawarma', price: 11, calories: 949, image: '' },
   { id: 'sh-20', nameAr: 'شاورما عربي تركي', nameEn: 'Turkish Arabic Shawarma', category: 'shawarma', price: 16, calories: 1100, image: '' },
   { id: 'sh-3', nameAr: 'شاورما عربي تركي دبل', nameEn: 'Double Turkish Arabic Shawarma', category: 'shawarma', price: 20, calories: 1300, image: '/menu/shawarma/arabic-turkish-double.jpeg' },
   {
@@ -32,7 +32,7 @@ const RAW_INITIAL_MENU: MenuItem[] = [
     image: '/menu/shawarma/tabbouleh-shawarma.jpeg', sizes: sizes(['عادي', 11, 480], ['بازوكا', 16, 985]),
   },
   { id: 'sh-2', nameAr: 'بازوكا شاورما', nameEn: 'Bazooka Shawarma', category: 'shawarma', price: 16, calories: 715, image: '/menu/shawarma/bazooka-shawarma.jpeg' },
-  { id: 'sh-21', nameAr: 'صاروخ إسبيشل مكسيكي', nameEn: 'Special Mexican Rocket', category: 'shawarma', price: 13, calories: 890, image: '' },
+  { id: 'sh-21', nameAr: 'صاروخ إسبيشل مكسيكي', nameEn: 'Special Mexican Sarokh', category: 'shawarma', price: 13, calories: 890, image: '' },
   {
     id: 'sh-23', nameAr: 'إضافة دجاج شاورما', nameEn: 'Extra Shawarma Chicken', category: 'shawarma', price: 3,
     image: '', sizes: sizes(['صغير', 3], ['كبير', 5]),
@@ -89,7 +89,7 @@ const RAW_INITIAL_MENU: MenuItem[] = [
   { id: 'ml-4', nameAr: 'وجبة زنجر برجر', nameEn: 'Zinger Burger Meal', category: 'meals', price: 18, calories: 850, image: '/menu/meals/zinger-burger-meal.jpeg' },
   { id: 'ml-14', nameAr: 'وجبة فاهيتا دجاج', nameEn: 'Chicken Fajita Meal', category: 'meals', price: 20, calories: 850, image: '/menu/meals/chicken-fajita-meal.jpeg' },
   { id: 'ml-15', nameAr: 'وجبة روست دجاج', nameEn: 'Roast Chicken Meal', category: 'meals', price: 18, calories: 630, image: '/menu/meals/roast-chicken-meal.jpeg' },
-  { id: 'ml-16', nameAr: 'وجبة صاروخ دجاج', nameEn: 'Chicken Rocket Meal', category: 'meals', price: 18, calories: 850, image: '/menu/meals/chicken-rocket-meal.jpeg' },
+  { id: 'ml-16', nameAr: 'وجبة صاروخ دجاج', nameEn: 'Chicken Sarokh Meal', category: 'meals', price: 18, calories: 850, image: '/menu/meals/chicken-rocket-meal.jpeg' },
   { id: 'ml-17', nameAr: 'وجبة عربي دجاج', nameEn: 'Arabic Chicken Meal', category: 'meals', price: 22, calories: 850, image: '/menu/meals/arabic-chicken-meal.jpeg' },
 
   // Sandwiches.

@@ -18,7 +18,7 @@ insert into public.menu_items (
   (
     'sh-1',
     'صاروخ مأكولاتي',
-    'Makolaty Rocket',
+    'Makolaty Sarokh',
     'shawarma',
     11,
     660,
@@ -144,7 +144,7 @@ insert into public.menu_items (
   (
     'sh-10',
     'صاروخ أمريكي',
-    'American Rocket',
+    'American Sarokh',
     'shawarma',
     16,
     800,
@@ -214,7 +214,7 @@ insert into public.menu_items (
   (
     'sh-15',
     'صاروخ شامي',
-    'Shami Rocket',
+    'Shami Sarokh',
     'shawarma',
     11,
     720,
