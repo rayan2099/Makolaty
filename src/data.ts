@@ -129,7 +129,7 @@ const RAW_INITIAL_MENU: MenuItem[] = [
   { id: 'ps-4', nameAr: 'باستا جمبري', nameEn: 'Shrimp Pasta', category: 'pasta', price: 20, calories: 460, image: '/menu/pasta/shrimp.jpg', sizes: sizes(['صغير', 20, 460], ['كبير', 30, 930]) },
 
   // Appetizers.
-  { id: 'ap-1', nameAr: 'بطاطس جبن', nameEn: 'Potatoes and Cheese', category: 'appetizers', price: 10, calories: 350, image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80' },
+  { id: 'ap-1', nameAr: 'بطاطس جبن', nameEn: 'Potatoes and Cheese', category: 'appetizers', price: 10, calories: 350, image: '' },
   { id: 'ap-2', nameAr: 'بطاطس', nameEn: 'Potatoes', category: 'appetizers', price: 6, calories: 311, image: '/menu/appetizers/french-fries.png', sizes: sizes(['صغير', 6, 311], ['وسط', 8, 540], ['كبير', 14, 630]) },
   { id: 'ap-5', nameAr: 'ورق عنب', nameEn: 'Vine Leaves', category: 'appetizers', price: 6, calories: 433, image: '/menu/appetizers/vine-leaves.jpeg', sizes: sizes(['صغير', 6, 433], ['كبير', 15, 650]) },
   { id: 'ap-7', nameAr: 'حمص', nameEn: 'Hummus', category: 'appetizers', price: 7, calories: 210, image: '/menu/appetizers/mixed-appetizers.jpeg' },

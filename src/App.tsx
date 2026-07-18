@@ -188,11 +188,9 @@ const BUILT_IN_MENU_OVERRIDES = new Map(
     .map(item => [item.id, item])
 );
 const CANONICAL_MENU_IDS = new Set(INITIAL_MENU.map(item => item.id));
-const LOCKED_BUILT_IN_IMAGE_IDS = new Set([
-  'ap-9',
-  'broast-nuggets-regular',
-  'broast-nuggets-spicy',
-  ...Array.from({ length: 17 }, (_, index) => `ml-${index + 1}`),
+const LEGACY_AUTOMATIC_MENU_IMAGES = new Set([
+  'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
 ]);
 const LOCKED_BUILT_IN_CATEGORY_IDS = new Set(
   Array.from({ length: 11 }, (_, index) => `sw-${index + 5}`)
@@ -203,21 +201,15 @@ const applyBuiltInMenuOverrides = (items: MenuItem[]) => (
     const override = BUILT_IN_MENU_OVERRIDES.get(item.id);
     if (!override) return item;
     const currentImage = item.image?.trim() ?? '';
-    const overrideImage = override.image?.trim() ?? '';
-    const isSupabaseUploadedImage = currentImage.includes('/menu-images/');
-    const isLocalBundledImage = currentImage.startsWith('/menu/');
-    const shouldUseOverrideImage = (
-      !currentImage
-      || (LOCKED_BUILT_IN_IMAGE_IDS.has(item.id) && !isSupabaseUploadedImage)
-      || (!isSupabaseUploadedImage && overrideImage.startsWith('/menu/') && (override.category === 'drinks' || !isLocalBundledImage))
-    );
 
     return {
       ...item,
       nameAr: override.nameAr,
       nameEn: override.nameEn,
       category: LOCKED_BUILT_IN_CATEGORY_IDS.has(item.id) ? override.category : item.category,
-      image: shouldUseOverrideImage ? override.image : item.image,
+      // Images are database-authoritative. Never substitute another image
+      // automatically; staff must explicitly upload every image change.
+      image: LEGACY_AUTOMATIC_MENU_IMAGES.has(currentImage) ? '' : currentImage,
     };
   })
 );
@@ -308,6 +300,11 @@ const MenuItemImage = ({ item, priority = false }: { item: MenuItem; priority?: 
   const shouldShowFullArtwork = shouldUseFullArtworkItem(item);
   const shouldUseSquareFrame = isSquareArtworkItem(item);
   const shouldUseDrinkFrame = isDrinkItem(item);
+
+  useEffect(() => {
+    setHasImageError(false);
+    setIsLoaded(false);
+  }, [item.image]);
 
   if (!item.image || hasImageError) {
     return (
@@ -2001,14 +1998,22 @@ const MenuManagement = () => {
     setIsImporting(true);
 
     const now = new Date().toISOString();
-    const payload = INITIAL_MENU.map((item, index) => sanitizeForSupabase({
-      ...item,
-      isAvailable: true,
-      allowExtraChicken: true,
-      sortOrder: index,
-      createdAt: now,
-      updatedAt: now,
-    }));
+    const existingItemsById = new Map(items.map(item => [item.id, item]));
+    const payload = INITIAL_MENU.map((item, index) => {
+      const existingItem = existingItemsById.get(item.id);
+
+      return sanitizeForSupabase({
+        ...item,
+        // Importing menu data must never replace an existing item's image.
+        // Images can only be changed through the dedicated image uploader.
+        image: existingItem ? existingItem.image : item.image,
+        isAvailable: existingItem?.isAvailable ?? true,
+        allowExtraChicken: existingItem?.allowExtraChicken ?? true,
+        sortOrder: existingItem?.sortOrder ?? index,
+        createdAt: existingItem?.createdAt ?? now,
+        updatedAt: now,
+      });
+    });
 
     try {
       const { error } = await supabase
@@ -2061,7 +2066,7 @@ const MenuManagement = () => {
     try {
       const uploadedImageUrl = selectedImageFile
         ? await uploadMenuImage(selectedImageFile, id)
-        : selectedItem?.image || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';
+        : selectedItem?.image || '';
 
       saveStage = 'item';
       const payload = sanitizeForSupabase({
