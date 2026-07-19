@@ -14,8 +14,8 @@ export interface DeliveryQuote {
 }
 
 export const RESTAURANT_LOCATION: Coordinates = {
-  lat: 26.3651328,
-  lng: 43.9386112,
+  lat: 26.4114298,
+  lng: 43.9174798,
 };
 
 const EARTH_RADIUS_KM = 6371;

@@ -39,9 +39,15 @@ import { supabase } from './supabase';
 import { cn } from './lib/utils';
 import { MenuItem, CartItem, Order, SelectedAddOn, CATEGORIES, STAFF_WHATSAPP } from './types';
 import { INITIAL_MENU } from './data';
-import { extractCoordinatesFromMapsLink, getDeliveryQuote, isShortMapsLink, type DeliveryQuote } from './delivery';
+import {
+  calculateDistanceKm,
+  extractCoordinatesFromMapsLink,
+  getDeliveryQuote,
+  isShortMapsLink,
+  RESTAURANT_LOCATION,
+  type DeliveryQuote,
+} from './delivery';
 import { useResolveMapsLink } from './hooks/useResolveMapsLink';
-import { useDeliveryDistance } from './hooks/useDeliveryDistance';
 
 type Language = 'ar' | 'en';
 
@@ -1199,20 +1205,16 @@ const CheckoutModal = ({
   const customerCoordinates = form.type === 'delivery'
     ? extractCoordinatesFromMapsLink(form.maps)
     : null;
-  const {
-    result: deliveryDistance,
-    isLoading: isCalculatingDistance,
-    error: deliveryDistanceError,
-  } = useDeliveryDistance(customerCoordinates);
+  const deliveryDistanceKm = customerCoordinates
+    ? calculateDistanceKm(RESTAURANT_LOCATION, customerCoordinates)
+    : null;
   const hasShortMapsLink = form.type === 'delivery' && isShortMapsLink(mapsLinkInput);
-  const deliveryQuote: DeliveryQuote | null = form.type === 'delivery' && deliveryDistance
-    ? getDeliveryQuote(orderSubtotal, deliveryDistance.distanceKm)
+  const deliveryQuote: DeliveryQuote | null = form.type === 'delivery' && deliveryDistanceKm != null
+    ? getDeliveryQuote(orderSubtotal, deliveryDistanceKm)
     : null;
   const finalTotal = orderSubtotal + (deliveryQuote?.isAllowed ? deliveryQuote.fee : 0);
   const isDeliveryBlocked = form.type === 'delivery' && (
     !customerCoordinates
-    || isCalculatingDistance
-    || Boolean(deliveryDistanceError)
     || !deliveryQuote?.isAllowed
   );
   const amountNeededForDelivery = deliveryQuote?.minimumSubtotal
@@ -1414,17 +1416,6 @@ const CheckoutModal = ({
                   </div>
                 </div>
               )}
-              {customerCoordinates && isCalculatingDistance && (
-                <div className="flex items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-primary/10 p-4 text-sm font-black text-primary">
-                  <Clock className="h-4 w-4 animate-spin" />
-                  {t('جارٍ حساب مسافة القيادة...', 'Calculating driving distance...')}
-                </div>
-              )}
-              {deliveryDistanceError && (
-                <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-center text-xs font-bold text-red-300">
-                  {t(deliveryDistanceError, 'Could not calculate driving distance. Please try again.')}
-                </p>
-              )}
               {deliveryQuote && (
                 <div className={cn(
                   "rounded-2xl p-4 border text-right space-y-3",
@@ -1443,9 +1434,7 @@ const CheckoutModal = ({
                           )}
                     </p>
                     <p className="text-white/50 text-xs font-bold">
-                      {deliveryDistance?.source === 'mapbox_driving'
-                        ? t('مسافة القيادة', 'Driving distance')
-                        : t('المسافة التقريبية الاحتياطية', 'Fallback approximate distance')}: {deliveryQuote.distanceKm} {t('كم', 'km')}
+                      {t('المسافة التقريبية', 'Approximate distance')}: {deliveryQuote.distanceKm} {t('كم', 'km')}
                     </p>
                   </div>
                   {!deliveryQuote.isAllowed && amountNeededForDelivery > 0 && (
@@ -1533,7 +1522,7 @@ const CheckoutModal = ({
             disabled={!form.name || !form.phone || isSubmitting || isDeliveryBlocked}
             onClick={() => onSubmit({
               ...form,
-              deliveryDistanceKm: deliveryDistance?.distanceKm,
+              deliveryDistanceKm: deliveryDistanceKm ?? undefined,
             })}
             className="w-full py-5 bg-primary text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 disabled:opacity-50 disabled:grayscale hover:bg-accent transition-all flex items-center justify-center gap-3"
           >

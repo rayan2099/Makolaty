@@ -42,6 +42,13 @@ assert.deepEqual(parsedAt, { lat: 26.392082, lng: 43.9386112 });
 const exactDistance = calculateDistanceKm(RESTAURANT_LOCATION, RESTAURANT_LOCATION);
 assert.equal(Number(exactDistance.toFixed(2)), 0);
 
+assert.deepEqual(RESTAURANT_LOCATION, { lat: 26.4114298, lng: 43.9174798 });
+const knownCustomerDistance = calculateDistanceKm(
+  RESTAURANT_LOCATION,
+  { lat: 26.3989811, lng: 43.9051056 }
+);
+assert.equal(Number(knownCustomerDistance.toFixed(2)), 1.85);
+
 const mockResponse = (url: string, body = '') => ({
   url,
   text: async () => body,
