@@ -77,6 +77,7 @@ export const extractCoordinatesFromText = (value: string): Coordinates | null =>
   const patterns = [
     /@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)(?:,\d+(?:\.\d+)?z)?/,
     /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/,
+    /[?&]saddr=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)(?:[&#]|$)/,
     /[?&]q=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)(?:[&#]|$)/,
     /[?&]ll=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)(?:[&#]|$)/,
     /"(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)"/,
@@ -99,11 +100,16 @@ export const resolveGoogleMapsLink = async (
   timeoutMs = 5000
 ): Promise<ResolvedMapsLink> => {
   const url = parseGoogleMapsUrl(value);
+  const requestUrl = new URL(url);
+  if (requestUrl.hostname.toLowerCase() === 'maps.app.goo.gl') {
+    requestUrl.search = '';
+    requestUrl.hash = '';
+  }
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetchImpl(url.toString(), {
+    const response = await fetchImpl(requestUrl.toString(), {
       redirect: 'follow',
       signal: controller.signal,
       headers: {

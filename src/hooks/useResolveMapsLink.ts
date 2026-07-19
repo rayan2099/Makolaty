@@ -7,9 +7,9 @@ const ERROR_MESSAGES_AR: Record<MapsLinkErrorCode | 'METHOD_NOT_ALLOWED', string
   MISSING_URL: 'يرجى لصق رابط خرائط Google أولاً.',
   INVALID_URL: 'الرابط غير صحيح. يرجى التأكد من رابط خرائط Google.',
   UNSUPPORTED_DOMAIN: 'نقبل روابط خرائط Google فقط.',
-  COORDINATES_NOT_FOUND: 'لم نتمكن من العثور على إحداثيات في هذا الرابط. جرّب زر تحديد موقعي للتوصيل.',
-  TIMEOUT: 'استغرق قراءة الرابط وقتاً طويلاً. جرّب زر تحديد موقعي للتوصيل.',
-  RESOLUTION_FAILED: 'تعذر قراءة رابط الخرائط. جرّب زر تحديد موقعي للتوصيل.',
+  COORDINATES_NOT_FOUND: 'لم نتمكن من قراءة الموقع. افتح خرائط Google، اضغط مشاركة، ثم انسخ رابطاً جديداً.',
+  TIMEOUT: 'استغرق رابط الخرائط وقتاً طويلاً. انسخ رابط مشاركة جديداً من خرائط Google وحاول مرة أخرى.',
+  RESOLUTION_FAILED: 'تعذر قراءة رابط الخرائط. انسخ رابط مشاركة جديداً من خرائط Google وحاول مرة أخرى.',
   METHOD_NOT_ALLOWED: 'حدث خطأ في طريقة الطلب. جرّب مرة أخرى.',
 };
 

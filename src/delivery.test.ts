@@ -39,6 +39,11 @@ assert.deepEqual(parsedQ, { lat: 26.392082, lng: 43.9386112 });
 const parsedAt = extractCoordinatesFromMapsLink('https://www.google.com/maps/place/test/@26.392082,43.9386112,17z');
 assert.deepEqual(parsedAt, { lat: 26.392082, lng: 43.9386112 });
 
+const parsedDirectionsOrigin = extractCoordinatesFromMapsLink(
+  'https://www.google.com/maps?daddr=Makolaty&saddr=26.3989809,43.9076808&dirflg=d'
+);
+assert.deepEqual(parsedDirectionsOrigin, { lat: 26.3989809, lng: 43.9076808 });
+
 const exactDistance = calculateDistanceKm(RESTAURANT_LOCATION, RESTAURANT_LOCATION);
 assert.equal(Number(exactDistance.toFixed(2)), 0);
 
@@ -66,8 +71,11 @@ const mockResponse = (url: string, body = '') => ({
 }) as Response;
 
 const resolvedShortLink = await resolveGoogleMapsLink(
-  'https://maps.app.goo.gl/PsEFCrFhaPtYmgpv7',
-  async () => mockResponse('https://www.google.com/maps/place/test/@26.392082,43.9386112,17z')
+  'https://maps.app.goo.gl/PsEFCrFhaPtYmgpv7?g_st=ic',
+  async (url) => {
+    assert.equal(url, 'https://maps.app.goo.gl/PsEFCrFhaPtYmgpv7');
+    return mockResponse('https://www.google.com/maps/place/test/@26.392082,43.9386112,17z');
+  }
 );
 assert.deepEqual(
   { lat: resolvedShortLink.lat, lng: resolvedShortLink.lng },
