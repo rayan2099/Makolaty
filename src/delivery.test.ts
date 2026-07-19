@@ -48,6 +48,17 @@ const knownCustomerDistance = calculateDistanceKm(
   { lat: 26.3989811, lng: 43.9051056 }
 );
 assert.equal(Number(knownCustomerDistance.toFixed(2)), 1.85);
+assert.equal(getDeliveryQuote(20, knownCustomerDistance).isAllowed, true);
+
+const calibratedLocations = [
+  { lat: 26.3989811, lng: 43.9051056 },
+  { lat: 26.428, lng: 43.9175 },
+  { lat: 26.4114, lng: 43.89 },
+];
+calibratedLocations.forEach(location => {
+  const distance = calculateDistanceKm(RESTAURANT_LOCATION, location);
+  assert.equal(getDeliveryQuote(20, distance).isAllowed, true);
+});
 
 const mockResponse = (url: string, body = '') => ({
   url,

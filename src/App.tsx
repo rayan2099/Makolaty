@@ -44,6 +44,7 @@ import {
   extractCoordinatesFromMapsLink,
   getDeliveryQuote,
   isShortMapsLink,
+  NEAR_DELIVERY_RADIUS_KM,
   RESTAURANT_LOCATION,
   type DeliveryQuote,
 } from './delivery';
@@ -1434,7 +1435,12 @@ const CheckoutModal = ({
                           )}
                     </p>
                     <p className="text-white/50 text-xs font-bold">
-                      {t('المسافة التقريبية', 'Approximate distance')}: {deliveryQuote.distanceKm} {t('كم', 'km')}
+                      {t('نطاق التوصيل', 'Delivery zone')}: {deliveryQuote.distanceKm <= NEAR_DELIVERY_RADIUS_KM
+                        ? t('قريب', 'Near')
+                        : t('ممتد', 'Extended')}
+                    </p>
+                    <p className="text-white/40 text-[11px] font-bold">
+                      {t('المسافة المباشرة المرجعية', 'Reference direct distance')}: {deliveryQuote.distanceKm} {t('كم', 'km')}
                     </p>
                   </div>
                   {!deliveryQuote.isAllowed && amountNeededForDelivery > 0 && (

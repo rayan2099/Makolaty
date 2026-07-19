@@ -19,6 +19,7 @@ export const RESTAURANT_LOCATION: Coordinates = {
 };
 
 const EARTH_RADIUS_KM = 6371;
+export const NEAR_DELIVERY_RADIUS_KM = 3;
 
 const toRadians = (value: number) => value * (Math.PI / 180);
 
@@ -46,7 +47,7 @@ export const isShortMapsLink = (value: string) => {
 
 export const getDeliveryQuote = (subtotal: number, distanceKm: number): DeliveryQuote => {
   const roundedDistance = Number(distanceKm.toFixed(2));
-  const isNear = distanceKm <= 4;
+  const isNear = distanceKm <= NEAR_DELIVERY_RADIUS_KM;
 
   if (isNear) {
     return {
@@ -54,8 +55,8 @@ export const getDeliveryQuote = (subtotal: number, distanceKm: number): Delivery
       fee: subtotal >= 30 ? 5 : 10,
       isAllowed: true,
       messageAr: subtotal >= 30
-        ? 'المسافة 4 كم أو أقل والفاتورة 30 ريال فأكثر: رسوم التوصيل 5 ريال.'
-        : 'المسافة 4 كم أو أقل والفاتورة أقل من 30 ريال: رسوم التوصيل 10 ريال.',
+        ? 'العنوان داخل نطاق التوصيل القريب والفاتورة 30 ريال فأكثر: رسوم التوصيل 5 ريال.'
+        : 'العنوان داخل نطاق التوصيل القريب والفاتورة أقل من 30 ريال: رسوم التوصيل 10 ريال.',
     };
   }
 
@@ -65,7 +66,7 @@ export const getDeliveryQuote = (subtotal: number, distanceKm: number): Delivery
       fee: 0,
       isAllowed: false,
       minimumSubtotal: 30,
-      messageAr: 'المسافة أكثر من 4 كم. للتوصيل يجب أن تكون قيمة الطلب 30 ريال أو أكثر، أضف أصنافاً إضافية لإكمال الطلب.',
+      messageAr: 'العنوان داخل نطاق التوصيل الممتد. للتوصيل يجب أن تكون قيمة الطلب 30 ريال أو أكثر، أضف أصنافاً إضافية لإكمال الطلب.',
     };
   }
 
@@ -74,7 +75,7 @@ export const getDeliveryQuote = (subtotal: number, distanceKm: number): Delivery
     fee: subtotal >= 50 ? 5 : 10,
     isAllowed: true,
     messageAr: subtotal >= 50
-      ? 'المسافة أكثر من 4 كم والفاتورة 50 ريال فأكثر: رسوم التوصيل 5 ريال.'
-      : 'المسافة أكثر من 4 كم والفاتورة من 30 إلى أقل من 50 ريال: رسوم التوصيل 10 ريال.',
+      ? 'العنوان داخل نطاق التوصيل الممتد والفاتورة 50 ريال فأكثر: رسوم التوصيل 5 ريال.'
+      : 'العنوان داخل نطاق التوصيل الممتد والفاتورة من 30 إلى أقل من 50 ريال: رسوم التوصيل 10 ريال.',
   };
 };
