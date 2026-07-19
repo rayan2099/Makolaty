@@ -3126,7 +3126,7 @@ const MenuManagement = () => {
 };
 
 const StaffDashboard = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isStaffUnlocked, setIsStaffUnlocked] = useState(() => sessionStorage.getItem('makolaty_staff_unlocked') === 'true');
   const [passcode, setPasscode] = useState('');
@@ -3135,7 +3135,6 @@ const StaffDashboard = () => {
   const [orderFilter, setOrderFilter] = useState<'active' | 'completed' | 'cancelled'>('active');
   const [analyticsDate, setAnalyticsDate] = useState(() => localDateKey(new Date()));
   const [analyticsRange, setAnalyticsRange] = useState<'today' | 'yesterday' | 'week' | 'month' | 'custom'>('today');
-  const [printingOrderId, setPrintingOrderId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [statusNotice, setStatusNotice] = useState<{ status: 'pending' | 'completed' | 'cancelled'; customerName: string } | null>(null);
   const activeOrders = orders.filter(order => order.status !== 'completed' && order.status !== 'cancelled');
@@ -3232,7 +3231,6 @@ const StaffDashboard = () => {
     setOrders([]);
     setActiveView('orders');
     setOrderFilter('active');
-    setPrintingOrderId(null);
     setExpandedOrderId(null);
     setStatusNotice(null);
   };
@@ -3728,38 +3726,12 @@ const StaffDashboard = () => {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setPrintingOrderId(current => current === order.id ? null : order.id ?? null)}
+                  onClick={() => printOrderReceipt(order, language)}
                   className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-3 font-black text-white transition-all hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
                 >
                   <Printer className="h-4 w-4" />
-                  {printingOrderId === order.id
-                    ? t('اختر لغة الإيصال', 'Choose receipt language')
-                    : t('طباعة إيصال الطلب', 'Print order receipt')}
+                  {t('طباعة إيصال الطلب', 'Print order receipt')}
                 </button>
-                {printingOrderId === order.id && (
-                  <div className="col-span-2 grid grid-cols-2 gap-2 rounded-2xl border border-primary/20 bg-primary/5 p-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        printOrderReceipt(order, 'ar');
-                        setPrintingOrderId(null);
-                      }}
-                      className="rounded-xl bg-primary px-3 py-3 font-black text-secondary transition-transform active:scale-95"
-                    >
-                      طباعة بالعربية
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        printOrderReceipt(order, 'en');
-                        setPrintingOrderId(null);
-                      }}
-                      className="rounded-xl border border-white/15 bg-white/10 px-3 py-3 font-black text-white transition-transform active:scale-95"
-                    >
-                      Print in English
-                    </button>
-                  </div>
-                )}
                 {order.status !== 'completed' && order.status !== 'cancelled' && (
                   <button
                     type="button"
