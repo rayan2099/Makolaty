@@ -13,6 +13,8 @@ const RESTAURANT_LOCATION: Coordinates = {
   lng: 43.9174798,
 };
 
+const MAX_SNAP_RADIUS_METERS = 50;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -82,6 +84,17 @@ Deno.serve(async request => {
   url.searchParams.set('alternatives', 'false');
   url.searchParams.set('overview', 'false');
   url.searchParams.set('steps', 'false');
+  url.searchParams.set('radiuses', `${MAX_SNAP_RADIUS_METERS};${MAX_SNAP_RADIUS_METERS}`);
+
+  const loggedUrl = new URL(url);
+  loggedUrl.searchParams.set('access_token', '[redacted]');
+  console.info(JSON.stringify({
+    event: 'mapbox_directions_request',
+    profile: 'mapbox/driving',
+    origin: RESTAURANT_LOCATION,
+    destination,
+    requestUrl: loggedUrl.toString(),
+  }));
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 6000);
