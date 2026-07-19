@@ -70,4 +70,4 @@ export const CATEGORIES = [
   { id: 'sauces', nameAr: 'صوصات', nameEn: 'Sauces' },
 ];
 
-export const STAFF_WHATSAPP = '+966535110460';
+export const STAFF_WHATSAPP = '+966507172127';
