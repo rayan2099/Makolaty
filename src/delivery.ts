@@ -44,8 +44,7 @@ export const isShortMapsLink = (value: string) => {
   return trimmed.includes('maps.app.goo.gl') || trimmed.includes('goo.gl/maps');
 };
 
-export const getDeliveryQuote = (subtotal: number, customerLocation: Coordinates): DeliveryQuote => {
-  const distanceKm = calculateDistanceKm(RESTAURANT_LOCATION, customerLocation);
+export const getDeliveryQuote = (subtotal: number, distanceKm: number): DeliveryQuote => {
   const roundedDistance = Number(distanceKm.toFixed(2));
   const isNear = distanceKm <= 4;
 

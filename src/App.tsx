@@ -41,6 +41,7 @@ import { MenuItem, CartItem, Order, SelectedAddOn, CATEGORIES, STAFF_WHATSAPP } 
 import { INITIAL_MENU } from './data';
 import { extractCoordinatesFromMapsLink, getDeliveryQuote, isShortMapsLink, type DeliveryQuote } from './delivery';
 import { useResolveMapsLink } from './hooks/useResolveMapsLink';
+import { useDeliveryDistance } from './hooks/useDeliveryDistance';
 
 type Language = 'ar' | 'en';
 
@@ -1198,12 +1199,22 @@ const CheckoutModal = ({
   const customerCoordinates = form.type === 'delivery'
     ? extractCoordinatesFromMapsLink(form.maps)
     : null;
+  const {
+    result: deliveryDistance,
+    isLoading: isCalculatingDistance,
+    error: deliveryDistanceError,
+  } = useDeliveryDistance(customerCoordinates);
   const hasShortMapsLink = form.type === 'delivery' && isShortMapsLink(mapsLinkInput);
-  const deliveryQuote: DeliveryQuote | null = form.type === 'delivery' && customerCoordinates
-    ? getDeliveryQuote(orderSubtotal, customerCoordinates)
+  const deliveryQuote: DeliveryQuote | null = form.type === 'delivery' && deliveryDistance
+    ? getDeliveryQuote(orderSubtotal, deliveryDistance.distanceKm)
     : null;
   const finalTotal = orderSubtotal + (deliveryQuote?.isAllowed ? deliveryQuote.fee : 0);
-  const isDeliveryBlocked = form.type === 'delivery' && (!customerCoordinates || !deliveryQuote?.isAllowed);
+  const isDeliveryBlocked = form.type === 'delivery' && (
+    !customerCoordinates
+    || isCalculatingDistance
+    || Boolean(deliveryDistanceError)
+    || !deliveryQuote?.isAllowed
+  );
   const amountNeededForDelivery = deliveryQuote?.minimumSubtotal
     ? Math.max(0, deliveryQuote.minimumSubtotal - orderSubtotal)
     : 0;
@@ -1403,6 +1414,17 @@ const CheckoutModal = ({
                   </div>
                 </div>
               )}
+              {customerCoordinates && isCalculatingDistance && (
+                <div className="flex items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-primary/10 p-4 text-sm font-black text-primary">
+                  <Clock className="h-4 w-4 animate-spin" />
+                  {t('جارٍ حساب مسافة القيادة...', 'Calculating driving distance...')}
+                </div>
+              )}
+              {deliveryDistanceError && (
+                <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-center text-xs font-bold text-red-300">
+                  {t(deliveryDistanceError, 'Could not calculate driving distance. Please try again.')}
+                </p>
+              )}
               {deliveryQuote && (
                 <div className={cn(
                   "rounded-2xl p-4 border text-right space-y-3",
@@ -1421,7 +1443,9 @@ const CheckoutModal = ({
                           )}
                     </p>
                     <p className="text-white/50 text-xs font-bold">
-                      {t('المسافة التقريبية', 'Approximate distance')}: {deliveryQuote.distanceKm} {t('كم', 'km')}
+                      {deliveryDistance?.source === 'mapbox_driving'
+                        ? t('مسافة القيادة', 'Driving distance')
+                        : t('المسافة التقريبية الاحتياطية', 'Fallback approximate distance')}: {deliveryQuote.distanceKm} {t('كم', 'km')}
                     </p>
                   </div>
                   {!deliveryQuote.isAllowed && amountNeededForDelivery > 0 && (
@@ -1507,7 +1531,10 @@ const CheckoutModal = ({
           <button 
             type="button"
             disabled={!form.name || !form.phone || isSubmitting || isDeliveryBlocked}
-            onClick={() => onSubmit(form)}
+            onClick={() => onSubmit({
+              ...form,
+              deliveryDistanceKm: deliveryDistance?.distanceKm,
+            })}
             className="w-full py-5 bg-primary text-secondary font-black rounded-2xl text-xl shadow-2xl shadow-primary/20 disabled:opacity-50 disabled:grayscale hover:bg-accent transition-all flex items-center justify-center gap-3"
           >
             {isSubmitting ? (
@@ -1863,10 +1890,10 @@ const Home = () => {
   const handleCheckout = async (formData: any) => {
     setIsSubmitting(true);
     const subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
-    const customerCoordinates = formData.type === 'delivery'
-      ? extractCoordinatesFromMapsLink(formData.maps)
+    const deliveryDistanceKm = Number(formData.deliveryDistanceKm);
+    const deliveryQuote = formData.type === 'delivery' && Number.isFinite(deliveryDistanceKm)
+      ? getDeliveryQuote(subtotal, deliveryDistanceKm)
       : null;
-    const deliveryQuote = customerCoordinates ? getDeliveryQuote(subtotal, customerCoordinates) : null;
 
     if (formData.type === 'delivery' && (!deliveryQuote || !deliveryQuote.isAllowed)) {
       alert(deliveryQuote?.messageAr || 'يرجى إضافة موقع صحيح للتوصيل.');

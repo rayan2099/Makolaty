@@ -10,23 +10,26 @@ const pointAtDistanceKm = (northKm: number) => ({
 const nearLocation = pointAtDistanceKm(3);
 const farLocation = pointAtDistanceKm(5);
 
-const nearLow = getDeliveryQuote(20, nearLocation);
+const nearDistance = calculateDistanceKm(RESTAURANT_LOCATION, nearLocation);
+const farDistance = calculateDistanceKm(RESTAURANT_LOCATION, farLocation);
+
+const nearLow = getDeliveryQuote(20, nearDistance);
 assert.equal(nearLow.isAllowed, true);
 assert.equal(nearLow.fee, 10);
 
-const nearHigh = getDeliveryQuote(30, nearLocation);
+const nearHigh = getDeliveryQuote(30, nearDistance);
 assert.equal(nearHigh.isAllowed, true);
 assert.equal(nearHigh.fee, 5);
 
-const farBlocked = getDeliveryQuote(29, farLocation);
+const farBlocked = getDeliveryQuote(29, farDistance);
 assert.equal(farBlocked.isAllowed, false);
 assert.equal(farBlocked.minimumSubtotal, 30);
 
-const farMid = getDeliveryQuote(30, farLocation);
+const farMid = getDeliveryQuote(30, farDistance);
 assert.equal(farMid.isAllowed, true);
 assert.equal(farMid.fee, 10);
 
-const farHigh = getDeliveryQuote(50, farLocation);
+const farHigh = getDeliveryQuote(50, farDistance);
 assert.equal(farHigh.isAllowed, true);
 assert.equal(farHigh.fee, 5);
 
