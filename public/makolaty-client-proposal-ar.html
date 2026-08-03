@@ -1,0 +1,359 @@
+Homebrew 6.0.12
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#edf2f4" />
+  <title>العرض الفني والمالي للعميل — تطبيق ماكولاتي</title>
+  <style>
+    :root {
+      --bg: #edf2f4;
+      --panel: #ffffff;
+      --panel-2: #f4f7f8;
+      --line: #dce5ea;
+      --text: #17202a;
+      --muted: #62717b;
+      --brand: #2f6b8a;
+      --brand-dark: #ffffff;
+      --navy: #0d425e;
+      --gold: #f2c94c;
+      --green: #26785a;
+      --red: #a43d3d;
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 90% 0%, rgba(47,107,138,.12), transparent 34%),
+        var(--bg);
+      font-family: Tahoma, Arial, sans-serif;
+      line-height: 1.7;
+    }
+    button, input, select { font: inherit; }
+    .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+    aside {
+      position: sticky; top: 0; height: 100vh; padding: 24px 16px;
+      background: linear-gradient(155deg, #10202b, #173b4e); border-left: 1px solid rgba(255,255,255,.10);
+      box-shadow: -8px 0 28px rgba(23,32,42,.12);
+    }
+    .brand-lockup { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .client-logo { width: 72px; height: 72px; object-fit: contain; border-radius: 18px; background: #fff; padding: 5px; }
+    .brand { color: var(--gold); font-size: 26px; font-weight: 900; margin-bottom: 4px; }
+    .proposal-logo { display: block; width: 150px; height: 150px; object-fit: contain; margin: 0 0 22px auto; border-radius: 26px; background: #fff; padding: 8px; box-shadow: 0 10px 30px rgba(23,32,42,.10); }
+    .sub { color: #b9cad4; font-size: 12px; margin-bottom: 24px; }
+    nav { display: grid; gap: 8px; }
+    nav button {
+      border: 0; padding: 12px 14px; border-radius: 14px; cursor: pointer;
+      color: #d8e4ea; background: transparent; text-align: right; font-weight: 800;
+    }
+    nav button:hover, nav button.active { color: var(--gold); background: rgba(242,201,76,.14); }
+    main { width: min(1220px, 100%); margin: auto; padding: 34px; }
+    section { display: none; animation: appear .2s ease; }
+    section.active { display: block; }
+    @keyframes appear { from { opacity: .3; transform: translateY(5px); } }
+    h1 { font-size: clamp(28px, 5vw, 52px); line-height: 1.15; margin: 0 0 12px; color: var(--navy); }
+    h2 { color: var(--navy); margin: 0 0 12px; }
+    h3 { margin: 0 0 8px; }
+    p { margin-top: 0; }
+    .lead { max-width: 850px; color: var(--muted); font-size: 18px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 22px 0; }
+    .grid.two { grid-template-columns: repeat(2, 1fr); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: 0 8px 28px rgba(23,32,42,.06); }
+    .card p, .card li { color: var(--muted); }
+    .metric { font-size: 30px; font-weight: 900; color: var(--brand); }
+    .price { font-size: clamp(38px, 7vw, 72px); font-weight: 900; line-height: 1.1; color: var(--navy); }
+    .price small { font-size: 18px; color: var(--muted); }
+    .price-card { border: 2px solid var(--gold); background: linear-gradient(145deg, #fffdf4, #ffffff); }
+    .badge { display: inline-block; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 800; }
+    .ok { background: rgba(22,135,82,.10); color: var(--green); }
+    .warn { background: rgba(196,61,72,.10); color: var(--red); }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 16px; background: var(--panel); }
+    th, td { border-bottom: 1px solid var(--line); padding: 13px; text-align: right; }
+    th { color: #ffffff; background: var(--text); }
+    tr:last-child td { border-bottom: 0; }
+    label { display: block; margin: 10px 0 5px; color: var(--muted); font-weight: 700; }
+    input, select {
+      width: 100%; color: var(--text); background: var(--panel-2); border: 1px solid var(--line);
+      border-radius: 12px; padding: 11px; outline: none;
+    }
+    input:focus, select:focus { border-color: var(--brand); }
+    .btn { border: 0; border-radius: 13px; padding: 12px 18px; cursor: pointer; font-weight: 900; background: var(--text); color: #ffffff; }
+    .btn:hover { background: var(--brand); }
+    .result { margin-top: 14px; padding: 14px; border-radius: 14px; background: #fffbec; border: 1px solid #f0dfa0; }
+    code, pre { direction: ltr; text-align: left; background: #f3f5f7; color: #30353a; border: 1px solid #dfe3e7; border-radius: 12px; }
+    code { padding: 2px 6px; }
+    pre { padding: 16px; overflow: auto; white-space: pre-wrap; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .flow span { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 13px; font-weight: 800; }
+    .flow b { color: var(--brand); }
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { margin: 8px 0; }
+    .checklist li::before { content: "✓"; color: var(--green); font-weight: 900; margin-left: 8px; }
+    .note { border-right: 4px solid var(--brand); padding: 12px 16px; background: var(--panel-2); border-radius: 12px; }
+    footer { color: var(--muted); text-align: center; margin-top: 40px; font-size: 12px; }
+    @media (max-width: 850px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { position: relative; height: auto; border-left: 0; border-bottom: 1px solid var(--line); }
+      nav { grid-template-columns: repeat(2, 1fr); }
+      main { padding: 20px 14px; }
+      .grid, .grid.two { grid-template-columns: 1fr; }
+      table { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <div class="brand-lockup">
+        <img class="client-logo" src="./logo.jpeg" alt="شعار ماكولاتي" width="72" height="72" />
+        <div class="brand">ماكولاتي</div>
+      </div>
+      <div class="sub">عرض مقدم إلى العميل: مطعم ماكولاتي — الإصدار 1.0</div>
+      <nav id="nav">
+        <button class="active" data-page="overview">نظرة عامة</button>
+        <button data-page="proposal">العرض المالي</button>
+        <button data-page="branches">الفروع</button>
+        <button data-page="orders">دورة الطلب</button>
+        <button data-page="delivery">التوصيل والسائقون</button>
+        <button data-page="payments">الدفع الإلكتروني</button>
+        <button data-page="kitchen">طباعة المطبخ</button>
+        <button data-page="acceptance">التسليم والتشغيل</button>
+      </nav>
+    </aside>
+
+    <main>
+      <section id="overview" class="active">
+        <img class="proposal-logo" src="./logo.jpeg" alt="شعار مطعم ماكولاتي" width="150" height="150" />
+        <h1>عرض تطوير تطبيق ماكولاتي للطلبات والتوصيل</h1>
+        <p class="lead">نقدم للمطعم منظومة رقمية عربية متكاملة تربط العميل بفرعي المطعم والمطبخ والسائق، من لحظة اختيار الوجبة والدفع وحتى تجهيز الطلب وتسليمه.</p>
+        <div class="grid">
+          <article class="card"><div class="metric">2</div><h3>فرعان</h3><p>قائمة، ساعات عمل، مخزون، طابعة وموقع مستقل لكل فرع.</p></article>
+          <article class="card"><div class="metric">4</div><h3>واجهات</h3><p>العميل، الموظف، المطبخ، والسائق.</p></article>
+          <article class="card"><div class="metric">لحظي</div><h3>تحديث الطلبات</h3><p>حالات الطلب وموقع السائق تتحدث فورًا دون إعادة تحميل.</p></article>
+        </div>
+        <div class="card price-card">
+          <span class="badge ok">عرض متكامل لفرعين</span>
+          <h2>قيمة تنفيذ المشروع</h2>
+          <div class="price">19,400 <small>ريال سعودي</small></div>
+          <p>تشمل تطوير وتجهيز وتشغيل التطبيق الموضح في هذا العرض. الصيانة السنوية غير داخلة في قيمة التنفيذ.</p>
+        </div>
+        <div class="card">
+          <h2>الأدوار</h2>
+          <table>
+            <thead><tr><th>الدور</th><th>الصلاحيات الرئيسية</th></tr></thead>
+            <tbody>
+              <tr><td>العميل</td><td>اختيار الفرع، الطلب، الدفع، إضافة ملاحظات لكل صنف، وتتبع الطلب.</td></tr>
+              <tr><td>الكاشير/الموظف</td><td>استلام الطلبات، تعديل الحالة، قبول الدفع عند الاستلام، وإسناد السائق.</td></tr>
+              <tr><td>المطبخ</td><td>عرض التذاكر، قبولها، بدء التحضير، إنهاؤها، وإعادة الطباعة.</td></tr>
+              <tr><td>السائق</td><td>قبول المهمة، فتح الملاحة، تحديث الحالة، وإثبات التسليم.</td></tr>
+              <tr><td>المدير</td><td>إدارة الفرعين والقائمة والأسعار والسائقين والتقارير والصلاحيات.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="proposal">
+        <h1>العرض الفني والمالي</h1>
+        <p class="lead">الهدف هو توفير تجربة طلب سهلة للعميل، وتشغيل منظم داخل الفرعين، وتقليل الأخطاء اليدوية وتسريع انتقال الطلب من الدفع إلى المطبخ ثم السائق.</p>
+
+        <div class="grid two">
+          <article class="card price-card">
+            <h2>تنفيذ المشروع كاملًا</h2>
+            <div class="price">19,400 <small>ريال</small></div>
+            <p>قيمة مستقلة لتنفيذ نطاق العمل الوارد في هذه الوثيقة لفرعين.</p>
+          </article>
+          <article class="card">
+            <h2>الصيانة السنوية</h2>
+            <div class="price">1,700 <small>ريال سنويًا</small></div>
+            <p><strong>غير مشمولة</strong> ضمن مبلغ 19,400 ريال، ويتم التعاقد عليها بشكل منفصل عند رغبة العميل.</p>
+          </article>
+        </div>
+
+        <div class="card">
+          <h2>الخدمات المشمولة في مبلغ 19,400 ريال</h2>
+          <ul class="checklist">
+            <li>تطوير تطبيق طلبات عربي متجاوب يعمل على الجوال والكمبيوتر.</li>
+            <li>تجهيز نظام موحد لفرعين مع فصل الطلبات والإعدادات لكل فرع.</li>
+            <li>واجهة العميل لاستعراض القائمة، اختيار الإضافات، كتابة الملاحظات وإتمام الطلب.</li>
+            <li>لوحة إدارة للمطعم للتحكم بالقائمة والأسعار والتوفر والطلبات.</li>
+            <li>شاشة تشغيل للمطبخ لاستقبال الطلبات وتحديث مراحل التحضير.</li>
+            <li>نظام للسائقين لاستلام مهام التوصيل وتحديث حالة الطلب.</li>
+            <li>ربط بوابة الدفع الإلكتروني بعد توفير حساب التاجر وبيانات الربط.</li>
+            <li>ربط الطباعة الحرارية للمطبخ بعد توفير الأجهزة المتوافقة في الفرعين.</li>
+            <li>تطبيق قواعد رسوم التوصيل والمسافة والحد الأدنى للطلب.</li>
+            <li>اختبار رحلة الطلب كاملة قبل الإطلاق وتسليم النظام جاهزًا للتشغيل.</li>
+            <li>شرح أساسي لفريق المطعم على إدارة الطلبات والقائمة والتشغيل اليومي.</li>
+          </ul>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <h2>ما تغطيه الصيانة السنوية</h2>
+            <ul>
+              <li>متابعة الأعطال البرمجية وإصلاحها.</li>
+              <li>التحديثات الأمنية والتوافقية الضرورية.</li>
+              <li>الدعم الفني للاستفسارات التشغيلية.</li>
+              <li>تعديلات بسيطة لا تغيّر نطاق النظام الأساسي.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h2>بنود غير مشمولة في السعر</h2>
+            <ul>
+              <li>رسوم بوابة الدفع ونسب العمليات البنكية.</li>
+              <li>أجهزة الطباعة والأجهزة اللوحية وأجهزة الشبكة.</li>
+              <li>رسوم الرسائل أو الخرائط أو الخدمات الخارجية المدفوعة.</li>
+              <li>ميزات جديدة أو فروع إضافية خارج النطاق المذكور.</li>
+              <li>الصيانة السنوية البالغة 1,700 ريال.</li>
+            </ul>
+          </article>
+        </div>
+
+        <p class="note">أي رسوم حكومية أو ضريبة قيمة مضافة — إن كانت واجبة — توضح بشكل منفصل في العقد أو الفاتورة النهائية. جدول الدفعات ومدة التنفيذ يعتمدان رسميًا بعد اعتماد النطاق وتوفر بيانات الفرعين وحسابات الربط والأجهزة.</p>
+      </section>
+
+      <section id="branches">
+        <h1>إدارة فرعين</h1>
+        <div class="grid two">
+          <article class="card"><span class="badge ok">مفتوح</span><h2>الفرع الأول</h2><p>يتم إعداد الاسم والعنوان والإحداثيات والهاتف وساعات العمل والطابعة الخاصة بالفرع.</p></article>
+          <article class="card"><span class="badge ok">مفتوح</span><h2>الفرع الثاني</h2><p>إعدادات مستقلة بالكامل مع إمكانية إيقاف استقبال الطلبات مؤقتًا.</p></article>
+        </div>
+        <div class="card">
+          <h2>قاعدة اختيار الفرع</h2>
+          <ul class="checklist">
+            <li>يختار النظام أقرب فرع مفتوح للعميل تلقائيًا.</li>
+            <li>يستطيع العميل تغيير الفرع قبل إضافة المنتجات للسلة.</li>
+            <li>بعد الدفع لا يمكن تغيير الفرع إلا بواسطة المدير مع تسجيل العملية.</li>
+            <li>طلبات كل فرع تبقى منفصلة ولا تظهر للفرع الآخر.</li>
+            <li>الأسعار والتوفر والطابعة ونطاق التوصيل قابلة للتخصيص لكل فرع.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="orders">
+        <h1>دورة حياة الطلب</h1>
+        <div class="card">
+          <div class="flow">
+            <span>جديد</span><b>←</b><span>مؤكد</span><b>←</b><span>قيد التحضير</span><b>←</b><span>جاهز</span><b>←</b><span>مع السائق</span><b>←</b><span>تم التسليم</span>
+          </div>
+        </div>
+        <div class="grid two">
+          <article class="card"><h2>بيانات الطلب</h2><ul><li>رقم طلب واضح ومتسلسل لكل فرع.</li><li>المنتجات، الأحجام والإضافات.</li><li>ملاحظة منفصلة تحت كل صنف بالعربية والإنجليزية.</li><li>طريقة الدفع وحالتها.</li><li>عنوان العميل ورابط الخريطة والمسافة.</li></ul></article>
+          <article class="card"><h2>الإشعارات</h2><ul><li>إشعار للفرع عند إنشاء الطلب.</li><li>إشعار للمطبخ بعد تأكيد الدفع.</li><li>إشعار للسائق بعد الإسناد.</li><li>رسالة للعميل عند كل تغيير مهم.</li></ul></article>
+        </div>
+      </section>
+
+      <section id="delivery">
+        <h1>التوصيل والسائقون</h1>
+        <table>
+          <thead><tr><th>المسافة من الفرع</th><th>قيمة المنتجات</th><th>النتيجة</th></tr></thead>
+          <tbody>
+            <tr><td>4 كم أو أقل</td><td>أقل من 30 ريال</td><td>10 ريال</td></tr>
+            <tr><td>4 كم أو أقل</td><td>30 ريال فأكثر</td><td>5 ريالات</td></tr>
+            <tr><td>أكثر من 4 كم</td><td>30 إلى أقل من 50 ريال</td><td>10 ريال</td></tr>
+            <tr><td>أكثر من 4 كم</td><td>50 ريال فأكثر</td><td>5 ريالات</td></tr>
+          </tbody>
+        </table>
+
+        <div class="grid two">
+          <div class="card">
+            <h2>حاسبة تجريبية</h2>
+            <label for="subtotal">قيمة المنتجات (ريال)</label>
+            <input id="subtotal" type="number" min="0" value="35" />
+            <label for="distance">المسافة من الفرع (كم)</label>
+            <input id="distance" type="number" min="0" step="0.1" value="3.5" />
+            <button class="btn" id="calculate" type="button">احسب الرسوم</button>
+            <div class="result" id="deliveryResult">الرسوم: 5 ريالات</div>
+          </div>
+          <div class="card">
+            <h2>تطبيق السائق</h2>
+            <ul class="checklist">
+              <li>دخول برقم الجوال ورمز مؤقت.</li>
+              <li>حالة السائق: متاح، مشغول، غير متاح.</li>
+              <li>عرض مهام فرعه فقط.</li>
+              <li>فتح Google Maps أو Apple Maps.</li>
+              <li>زر استلمت الطلب، وصلت، تم التسليم.</li>
+              <li>إثبات التسليم بصورة أو رمز من العميل.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="payments">
+        <h1>بوابة الدفع</h1>
+        <p class="lead">يتم ربط مزود دفع معتمد في السعودية بالتنسيق مع المطعم، مع دعم مدى وApple Pay والبطاقات بحسب خدمات حساب التاجر.</p>
+        <div class="grid">
+          <article class="card"><h2>مدى</h2><p>دفع آمن من صفحة المزود دون حفظ بيانات البطاقة في خوادم ماكولاتي.</p></article>
+          <article class="card"><h2>Apple Pay</h2><p>تفعيل النطاق وشهادة التاجر حسب متطلبات المزود.</p></article>
+          <article class="card"><h2>عند الاستلام</h2><p>خيار قابل للتفعيل أو الإيقاف لكل فرع.</p></article>
+        </div>
+        <div class="card">
+          <h2>حماية عملية الدفع</h2>
+          <p class="note">لا ينتقل الطلب إلى المطبخ بصفة “مدفوع” إلا بعد وصول تأكيد رسمي وآمن من بوابة الدفع، مما يقلل الطلبات الوهمية وأخطاء تسجيل المدفوعات.</p>
+        </div>
+      </section>
+
+      <section id="kitchen">
+        <h1>طباعة المطبخ</h1>
+        <div class="grid two">
+          <article class="card"><h2>محتوى التذكرة</h2><ul><li>اسم الفرع ورقم الطلب والوقت.</li><li>كل صنف بخط كبير والكمية.</li><li>الحجم والإضافات.</li><li>ملاحظة الصنف مباشرة تحته.</li><li>نوع الطلب: استلام أو توصيل.</li></ul></article>
+          <article class="card"><h2>آلية الطباعة</h2><ul><li>طابعة حرارية ESC/POS لكل فرع.</li><li>خدمة محلية Print Bridge داخل الفرع.</li><li>طباعة تلقائية بعد تأكيد الطلب.</li><li>زر إعادة طباعة مع سجل كامل.</li><li>تنبيه صوتي ومرئي عند فشل الطباعة.</li></ul></article>
+        </div>
+        <p class="note">يتم تجهيز آلية طباعة موثوقة داخل كل فرع، مع قائمة انتظار وإعادة محاولة وتنبيه واضح إذا تعذر وصول التذكرة إلى الطابعة.</p>
+      </section>
+
+      <section id="acceptance">
+        <h1>التسليم والتشغيل</h1>
+        <div class="card">
+          <ul class="checklist">
+            <li>العميل يستطيع اختيار الفرع أو يتم اختيار الأقرب بدقة.</li>
+            <li>كل فرع يرى طلباته وقائمته وسائقيه فقط.</li>
+            <li>لا يدخل طلب مدفوع للمطبخ قبل تأكيد Webhook.</li>
+            <li>كل طلب مؤكد يُطبع مرة واحدة تلقائيًا في الفرع الصحيح.</li>
+            <li>فشل الطباعة يظهر فورًا ويمكن إعادة المحاولة.</li>
+            <li>رسوم التوصيل تطابق الجدول في جميع الحالات الحدّية.</li>
+            <li>السائق لا يرى إلا المهمة المسندة إليه وبياناتها اللازمة.</li>
+            <li>ملاحظات كل صنف تظهر تحته في الشاشة والطباعة وملخص الطلب.</li>
+            <li>التطبيق يعمل بالعربية RTL على الهاتف والكمبيوتر.</li>
+            <li>توجد بيئة تجريبية واختبارات دفع وطباعة قبل الإنتاج.</li>
+          </ul>
+        </div>
+        <p class="note">يتم الإطلاق النهائي بعد توفير المطعم لحساب بوابة الدفع وأجهزة الطباعة وبيانات الفرعين، ثم إجراء اختبار فعلي للدفع والطباعة والطلب والتوصيل في كل فرع.</p>
+      </section>
+
+      <footer>ماكولاتي — العرض الفني والمالي لتطبيق الطلبات والتوصيل | قيمة التنفيذ 19,400 ريال | الصيانة السنوية منفصلة 1,700 ريال</footer>
+    </main>
+  </div>
+
+  <script>
+    const nav = document.getElementById('nav');
+    nav.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-page]');
+      if (!button) return;
+      document.querySelectorAll('nav button').forEach((item) => item.classList.remove('active'));
+      document.querySelectorAll('main section').forEach((item) => item.classList.remove('active'));
+      button.classList.add('active');
+      document.getElementById(button.dataset.page).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    document.getElementById('calculate').addEventListener('click', () => {
+      const subtotal = Number(document.getElementById('subtotal').value || 0);
+      const distance = Number(document.getElementById('distance').value || 0);
+      const output = document.getElementById('deliveryResult');
+      let message = '';
+      if (distance <= 4) {
+        message = `رسوم التوصيل: ${subtotal >= 30 ? 5 : 10} ريال`;
+      } else if (subtotal < 30) {
+        message = 'التوصيل غير متاح: الحد الأدنى للطلب خارج 4 كم هو 30 ريالًا';
+      } else {
+        message = `رسوم التوصيل: ${subtotal >= 50 ? 5 : 10} ريال`;
+      }
+      output.textContent = message;
+    });
+  </script>
+</body>
+</html>
