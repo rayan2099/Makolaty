@@ -2052,6 +2052,62 @@ const Home = () => {
         )}
       </section>
 
+      <footer className="border-t border-white/10 bg-black/20">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <div className="grid gap-4 md:grid-cols-2 mb-8">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-center">
+              <Clock className="mx-auto mb-3 h-7 w-7 text-primary" aria-hidden="true" />
+              <h2 className="text-xl font-black text-white">{t('ساعات العمل', 'Opening hours')}</h2>
+              <p className="mt-2 mb-0 font-bold text-white/60">
+                {t('يوميًا من الساعة 4:00 مساءً إلى الساعة 3:00 صباحًا', 'Daily from 4:00 PM to 3:00 AM')}
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-center">
+              <Phone className="mx-auto mb-3 h-7 w-7 text-primary" aria-hidden="true" />
+              <h2 className="text-xl font-black text-white">{t('رقم التواصل', 'Contact number')}</h2>
+              <a
+                href="tel:+966532819067"
+                dir="ltr"
+                className="mt-2 inline-block font-black text-primary transition-opacity hover:opacity-80"
+              >
+                +966 53 281 9067
+              </a>
+            </div>
+          </div>
+
+          <section id="privacy-and-terms" className="block rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
+            <h2 className="text-2xl font-black text-primary">
+              {t('سياسة الخصوصية والاستخدام', 'Privacy Policy and Terms of Use')}
+            </h2>
+            <div className="mt-5 grid gap-6 md:grid-cols-2">
+              <div>
+                <h3 className="font-black text-white">{t('سياسة الخصوصية', 'Privacy Policy')}</h3>
+                <p className="mt-2 mb-0 text-sm font-bold leading-7 text-white/55">
+                  {t(
+                    'نجمع البيانات اللازمة لتنفيذ الطلب، مثل الاسم ورقم الجوال والعنوان وتفاصيل الطلب. تُستخدم هذه البيانات لتأكيد الطلب وتجهيزه وتوصيله وتقديم الدعم، ولا نبيع بيانات العملاء. تتم معالجة معلومات الدفع عبر مزود دفع معتمد ولا نحفظ بيانات البطاقة البنكية.',
+                    'We collect the information required to fulfil your order, such as your name, mobile number, address, and order details. This information is used to confirm, prepare, and deliver orders and provide support. We do not sell customer data, and card details are processed by an approved payment provider and are not stored by us.'
+                  )}
+                </p>
+              </div>
+              <div>
+                <h3 className="font-black text-white">{t('سياسة الاستخدام', 'Terms of Use')}</h3>
+                <p className="mt-2 mb-0 text-sm font-bold leading-7 text-white/55">
+                  {t(
+                    'يلتزم العميل بإدخال بيانات صحيحة. يخضع قبول الطلب لتوفر الأصناف وساعات عمل الفرع وإمكانية خدمة العنوان. يُعد تأكيد الطلب موافقة على الأصناف والأسعار ورسوم التوصيل المعروضة، وتخضع عمليات الإلغاء والاسترداد لحالة الطلب وسياسة المطعم ومزود الدفع.',
+                    'Customers must provide accurate information. Order acceptance depends on item availability, branch opening hours, and delivery coverage. Confirming an order means accepting the displayed items, prices, and delivery fees. Cancellations and refunds depend on the order status and the policies of the restaurant and payment provider.'
+                  )}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <p className="mt-8 mb-0 text-center text-xs font-bold text-white/35">
+            © {new Date().getFullYear()} {t('ماكولاتي. جميع الحقوق محفوظة.', 'Makolaty. All rights reserved.')}
+          </p>
+        </div>
+      </footer>
+
       <CartDrawer 
         isOpen={isCartOpen} 
         onClose={() => setIsCartOpen(false)} 
